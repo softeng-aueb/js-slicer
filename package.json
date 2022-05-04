@@ -1,0 +1,25 @@
+{
+  "name": "js-slicer",
+  "version": "0.0.1",
+  "description": "A program slicing library for JavaScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/softeng-aueb/js-slicer.git"
+  },
+  "keywords": [
+    "program",
+    "slicing",
+    "PDG",
+    "CFG"
+  ],
+  "author": "A. Krikorian, V. Zafeiris",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/softeng-aueb/js-slicer/issues"
+  },
+  "homepage": "https://github.com/softeng-aueb/js-slicer#readme"
+}
