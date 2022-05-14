@@ -20,7 +20,7 @@ class Parser {
 }
 
 let func = Parser.parse([
-    "function add(a, b) {",
+    "(a, b) => {",
     "let x = a+b;",
     "  return x;",
     "}"

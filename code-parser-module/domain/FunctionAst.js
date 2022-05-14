@@ -7,33 +7,43 @@ const AstObjectTypesParser = require("../helpers/AstObjectTypesParser");
 class FunctionAst {
     constructor(ast) {
         this.ast = ast;
-        this.codeParsedObj = this.ast && this.ast.program && this.ast.program.body && this.ast.program.body[0];
+        this.codeParsedObj = (this.isRegularFunction())
+            ? this.ast && this.ast.program && this.ast.program.body && this.ast.program.body[0]
+            : this.ast && this.ast.program && this.ast.program.body && this.ast.program.body[0] && this.ast.program.body[0].expression
     }
 
     isFunction() {
-        return this.codeParsedObj && this.codeParsedObj.type === AST_OBJECT_TYPES.FUNCTION_DECLARATION;
+        return this.isRegularFunction() || this.isArrowFunction();
+    }
+
+    isRegularFunction() {
+        return (this.codeParsedObj && this.codeParsedObj.type === AST_OBJECT_TYPES.FUNCTION_DECLARATION) ? true : false;
+    }
+
+    isArrowFunction() {
+        return (this.codeParsedObj && this.codeParsedObj.type === AST_OBJECT_TYPES.ARROW_FUNCTION_EXPRESSION) ? true : false;
     }
 
     getFunctionName() {
-        return this.codeParsedObj.id && this.codeParsedObj.id.name;
+        return (this.isRegularFunction()) ? this.codeParsedObj.id && this.codeParsedObj.id.name : "";
     }
 
-    getFunctionArgs(){
-        const params = this.codeParsedObj && this.codeParsedObj.params || [];
-        return params.map(p => new FunctionParam(p.type, p.name));
+    getFunctionArgs() {
+        let args =  this.codeParsedObj && this.codeParsedObj.params || [];;
+        return args.map(p => new FunctionParam(p.type, p.name));
     }
 
-    getFunctionType(){
-        if(this.codeParsedObj && this.codeParsedObj.async === true) return FUNCTION_TYPES.ASYNC;
+    getFunctionType() {
+        if (this.codeParsedObj && this.codeParsedObj.async === true) return FUNCTION_TYPES.ASYNC;
         return FUNCTION_TYPES.SYNC;
     }
 
-    getFunctionBody(){
+    getFunctionBody() {
         const bodyStatements = this.codeParsedObj && this.codeParsedObj.body && this.codeParsedObj.body.body || [];
         return bodyStatements.map(statement => {
-            if(statement.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION){
+            if (statement.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION) {
                 return AstObjectTypesParser.variableDeclarationsParser(statement);
-            }else if(statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT){
+            } else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
                 return AstObjectTypesParser.returnStatementParser(statement);
             }
         });
