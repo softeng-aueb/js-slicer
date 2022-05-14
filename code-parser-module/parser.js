@@ -1,5 +1,5 @@
 const recast = require("recast");
-const FunctionAst = require("./classes/FunctionAst");
+const FunctionAst = require("./domain/FunctionAst");
 class Parser {
 
     static parse (functionString){
@@ -10,7 +10,9 @@ class Parser {
         const functionName = ast.getFunctionName();
         const functionArgs = ast.getFunctionArgs();
         const functionType = ast.getFunctionType();
+        const functionBody = ast.getFunctionBody();
 
+        console.log(recast.parse(functionString.join("\n")))
     }
 
 
@@ -18,8 +20,7 @@ class Parser {
 
 Parser.parse([
     "function add(a, b) {",
-    "  return a +",
-    "    // Weird formatting, huh?",
-    "    b;",
+    "let x = a+b;",
+    "  return x;",
     "}"
 ]);
