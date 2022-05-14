@@ -1,4 +1,4 @@
-class Function {
+class FunctionObj {
 
     constructor(name, args, body, type) {
         this._name = name;
@@ -41,4 +41,4 @@ class Function {
     }
 }
 
-module.exports = Function;
+module.exports = FunctionObj;
