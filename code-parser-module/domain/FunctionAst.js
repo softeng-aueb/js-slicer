@@ -17,11 +17,22 @@ class FunctionAst {
     }
 
     isRegularFunction() {
-        return (this.codeParsedObj && this.codeParsedObj.type === AST_OBJECT_TYPES.FUNCTION_DECLARATION) ? true : false;
+        return (this.ast
+            && this.ast.program
+            && this.ast.program.body
+            && this.ast.program.body[0]
+            && this.ast.program.body[0].type === AST_OBJECT_TYPES.FUNCTION_DECLARATION)
+            ? true : false;
     }
 
     isArrowFunction() {
-        return (this.codeParsedObj && this.codeParsedObj.type === AST_OBJECT_TYPES.ARROW_FUNCTION_EXPRESSION) ? true : false;
+        return (this.ast
+            && this.ast.program
+            && this.ast.program.body
+            && this.ast.program.body[0]
+            && this.ast.program.body[0].expression
+            &&  this.ast.program.body[0].expression.type === AST_OBJECT_TYPES.ARROW_FUNCTION_EXPRESSION)
+            ? true : false;
     }
 
     getFunctionName() {
@@ -29,7 +40,8 @@ class FunctionAst {
     }
 
     getFunctionArgs() {
-        let args =  this.codeParsedObj && this.codeParsedObj.params || [];;
+        let args = this.codeParsedObj && this.codeParsedObj.params || [];
+        ;
         return args.map(p => new FunctionParam(p.type, p.name));
     }
 
