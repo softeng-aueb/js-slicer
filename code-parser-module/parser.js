@@ -22,6 +22,9 @@ class Parser {
 let func = Parser.parse([
     "(a, b) => {",
     "let x = a+b;",
+    "if(x>0){ ",
+    " return x+1; ",
+    "}",
     "  return x;",
     "}"
 ]);

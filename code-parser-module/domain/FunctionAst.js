@@ -57,6 +57,8 @@ class FunctionAst {
                 return AstObjectTypesParser.variableDeclarationsParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
                 return AstObjectTypesParser.returnStatementParser(statement);
+            } else if (statement.type === AST_OBJECT_TYPES.IF_STATEMENT) {
+                return AstObjectTypesParser.ifStatementParser(statement);
             }
         });
     }

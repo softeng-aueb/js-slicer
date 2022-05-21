@@ -6,6 +6,9 @@ const AST_OBJECT_TYPES = {
     IDENTIFIER:"Identifier",
     EXPRESSION_STATEMENT:"ExpressionStatement",
     ARROW_FUNCTION_EXPRESSION:"ArrowFunctionExpression",
+    IF_STATEMENT: "IfStatement",
+    BLOCK_STATEMENT : "BlockStatement",
+    LITERAL:"Literal"
 
 }
 
