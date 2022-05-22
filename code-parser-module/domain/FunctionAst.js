@@ -52,13 +52,15 @@ class FunctionAst {
 
     getFunctionBody() {
         const bodyStatements = this.codeParsedObj && this.codeParsedObj.body && this.codeParsedObj.body.body || [];
-        return bodyStatements.map(statement => {
+        return bodyStatements.flatMap(statement => {
             if (statement.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION) {
                 return AstObjectTypesParser.variableDeclarationsParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
                 return AstObjectTypesParser.returnStatementParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.IF_STATEMENT) {
-                return AstObjectTypesParser.ifStatementParser(statement);
+                let conditionalsArr = AstObjectTypesParser.ifStatementParser(statement,[]);
+                if(statement.alternate) conditionalsArr.concat(AstObjectTypesParser.ifStatementParser(statement.alternate,[]));
+                return conditionalsArr;
             }
         });
     }

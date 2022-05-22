@@ -24,7 +24,10 @@ let func = Parser.parse([
     "let x = a+b;",
     "if(x>0){ ",
     " return x+1; ",
-    "}",
+    "}else if(x === 0) { ",
+    " return x-1 ",
+    "}else{",
     "  return x;",
+    "}",
     "}"
 ]);
