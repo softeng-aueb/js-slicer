@@ -22,12 +22,22 @@ class Parser {
 let func = Parser.parse([
     "(a, b) => {",
     "let x = a+b;",
-    "if(x>0){ ",
-    " return x+1; ",
-    "}else if(x === 0) { ",
-    " return x-1 ",
-    "}else{",
-    "  return x;",
-    "}",
+    "while (y>0){ ",
+    " y=y+1",
+    "} ",
+    " return x",
     "}"
 ]);
+
+// let func = Parser.parse([
+//     "(a, b) => {",
+//     "let x = a+b;",
+//     "if(x>0){ ",
+//     " return x+1; ",
+//     "}else if(x === 0) { ",
+//     " return x-1 ",
+//     "}else{",
+//     "  return x;",
+//     "}",
+//     "}"
+// ]);

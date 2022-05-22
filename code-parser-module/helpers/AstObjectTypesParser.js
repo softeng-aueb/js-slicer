@@ -7,6 +7,8 @@ const VariableDeclaration = require("../domain/VariableDeclaration");
 const ReturnStatement = require("../domain/ReturnStatement");
 const ConditionalStatement = require("../domain/ConditionalStatement");
 const Literal = require("../domain/Literal");
+const LoopStatement = require("../domain/LoopStatement");
+const AssignmentStatement = require("../domain/AssignmentStatement");
 
 class AstObjectTypesParser {
 
@@ -46,7 +48,9 @@ class AstObjectTypesParser {
         if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.IDENTIFIER) {
             left = this.identifierParser(binaryExpressionAstObj.left)
         }else if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.LITERAL){
-            right = this.literalParser(binaryExpressionAstObj.left);
+            left = this.literalParser(binaryExpressionAstObj.left);
+        }else if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
+            left = this.binaryExpressionParser(binaryExpressionAstObj.left);
         }
 
         //TODO:Add more cases
@@ -54,9 +58,41 @@ class AstObjectTypesParser {
             right = this.identifierParser(binaryExpressionAstObj.right);
         }else if (binaryExpressionAstObj.right && binaryExpressionAstObj.right.type === AST_OBJECT_TYPES.LITERAL){
             right = this.literalParser(binaryExpressionAstObj.right);
+        }else if (binaryExpressionAstObj.right && binaryExpressionAstObj.right.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
+            right = this.binaryExpressionParser(binaryExpressionAstObj.right);
         }
 
         return new BinaryExpression(left, right, operator)
+
+    }
+
+    static assignmentExpression(assignmentExpressionAstObj) {
+        if (!assignmentExpressionAstObj || assignmentExpressionAstObj.type !== AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION} object.`)
+        }
+        let operator = assignmentExpressionAstObj.operator
+        let left;
+        let right;
+
+        //TODO:Add more cases
+        if (assignmentExpressionAstObj.left && assignmentExpressionAstObj.left.type === AST_OBJECT_TYPES.IDENTIFIER) {
+            left = this.identifierParser(assignmentExpressionAstObj.left)
+        }else if (assignmentExpressionAstObj.left && assignmentExpressionAstObj.left.type === AST_OBJECT_TYPES.LITERAL){
+            left = this.literalParser(assignmentExpressionAstObj.left);
+        }else if (assignmentExpressionAstObj.left && assignmentExpressionAstObj.left.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
+            left = this.binaryExpressionParser(assignmentExpressionAstObj.left);
+        }
+
+        //TODO:Add more cases
+        if (assignmentExpressionAstObj.right && assignmentExpressionAstObj.right.type === AST_OBJECT_TYPES.IDENTIFIER) {
+            right = this.identifierParser(assignmentExpressionAstObj.right);
+        }else if (assignmentExpressionAstObj.right && assignmentExpressionAstObj.right.type === AST_OBJECT_TYPES.LITERAL){
+            right = this.literalParser(assignmentExpressionAstObj.right);
+        }else if (assignmentExpressionAstObj.right && assignmentExpressionAstObj.right.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
+            right = this.binaryExpressionParser(assignmentExpressionAstObj.right);
+        }
+
+        return new AssignmentStatement(left, right, operator)
 
     }
 
@@ -103,6 +139,14 @@ class AstObjectTypesParser {
                 let conditionalsArr = this.ifStatementParser(statement,[]);
                 if(statement.alternate) conditionalsArr.concat(this.ifStatementParser(statement.alternate,[]));
                 return conditionalsArr;
+            }else if (statement.type === AST_OBJECT_TYPES.FOR_STATEMENT || statement.type === AST_OBJECT_TYPES.WHILE_STATEMENT) {
+                return this.loopStatementParser(statement);
+            } else if (statement.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT
+                && statement.expression
+                && statement.expression.type
+                && statement.expression.type === AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION) {
+
+                return this.assignmentExpression(statement.expression);
             }
         });
     }
@@ -135,6 +179,25 @@ class AstObjectTypesParser {
         }
 
         return conditionalArr;
+    }
+
+    static loopStatementParser(loopStatementAstObj) {
+        if (!loopStatementAstObj || (loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_STATEMENT && loopStatementAstObj.type !== AST_OBJECT_TYPES.WHILE_STATEMENT)) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.FOR_STATEMENT} or  ${AST_OBJECT_TYPES.WHILE_STATEMENT} object.`)
+        }
+
+        let condition;
+        let body;
+
+        //TODO:Add more cases;
+        if(loopStatementAstObj.test && loopStatementAstObj.test.type && loopStatementAstObj.test.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
+            condition = this.binaryExpressionParser(loopStatementAstObj.test);
+        }
+
+        if(loopStatementAstObj.body && loopStatementAstObj.body.type && loopStatementAstObj.body.type === AST_OBJECT_TYPES.BLOCK_STATEMENT){
+            body = this.blockStatementParser(loopStatementAstObj.body);
+        }
+       return new LoopStatement(loopStatementAstObj.type,condition,body)
     }
 }
 

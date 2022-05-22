@@ -8,7 +8,10 @@ const AST_OBJECT_TYPES = {
     ARROW_FUNCTION_EXPRESSION:"ArrowFunctionExpression",
     IF_STATEMENT: "IfStatement",
     BLOCK_STATEMENT : "BlockStatement",
-    LITERAL:"Literal"
+    LITERAL:"Literal",
+    FOR_STATEMENT:"ForStatement",
+    WHILE_STATEMENT:"WhileStatement",
+    ASSIGNMENT_EXPRESSION : "AssignmentExpression"
 
 }
 

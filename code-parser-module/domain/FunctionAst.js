@@ -61,6 +61,14 @@ class FunctionAst {
                 let conditionalsArr = AstObjectTypesParser.ifStatementParser(statement,[]);
                 if(statement.alternate) conditionalsArr.concat(AstObjectTypesParser.ifStatementParser(statement.alternate,[]));
                 return conditionalsArr;
+            } else if (statement.type === AST_OBJECT_TYPES.FOR_STATEMENT || statement.type === AST_OBJECT_TYPES.WHILE_STATEMENT) {
+                return AstObjectTypesParser.loopStatementParser(statement);
+            }else if (statement.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT
+                && statement.expression
+                && statement.expression.type
+                && statement.expression.type === AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION) {
+
+                return AstObjectTypesParser.assignmentExpression(statement.expression);
             }
         });
     }
