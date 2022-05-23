@@ -58,9 +58,7 @@ class FunctionAst {
             } else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
                 return AstObjectTypesParser.returnStatementParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.IF_STATEMENT) {
-                let conditionalsArr = AstObjectTypesParser.ifStatementParser(statement,[]);
-                if(statement.alternate) conditionalsArr.concat(AstObjectTypesParser.ifStatementParser(statement.alternate,[]));
-                return conditionalsArr;
+                return AstObjectTypesParser.ifStatementParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.FOR_STATEMENT || statement.type === AST_OBJECT_TYPES.WHILE_STATEMENT) {
                 return AstObjectTypesParser.loopStatementParser(statement);
             }else if (statement.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT

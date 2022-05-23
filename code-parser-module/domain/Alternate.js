@@ -1,16 +1,7 @@
-class ConditionalStatement {
+class Alternate {
     constructor(condition,body,alternates) {
         this._condition = condition;
         this._body = body;
-        this._alternates = alternates;
-    }
-
-    get alternates() {
-        return this._alternates;
-    }
-
-    set alternates(value) {
-        this._alternates = value;
     }
 
     get condition() {
@@ -32,4 +23,4 @@ class ConditionalStatement {
 
 
 }
-module.exports = ConditionalStatement;
+module.exports = Alternate;
