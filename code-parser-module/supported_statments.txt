@@ -18,6 +18,18 @@ let a = func(a,b,d(c))
 
 
 -------------VARIABLE ASSIGNMENTS---------------------------------
-let a=1;
-a=2
+a = 1;
+b = a;
+b = a+1;
+b = a+1+func(5);
+b = a+1+func(f(a,5));
+c = a+c
+d = a+b*c
+a,b = a+b-c
+a = b&&c
+a = (a && b) ? a: b
+a = (a && b) ? a: (b&&c) ? b: c
+a = func(a)
+a = func(a,b)
+a = func(a,b,d(c))
 ------------------------------------------------------------------

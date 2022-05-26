@@ -55,7 +55,9 @@ class FunctionAst {
         return bodyStatements.flatMap(statement => {
             if (statement.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION) {
                 return AstObjectTypesParser.variableDeclarationsParser(statement);
-            } else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
+            } else if (statement.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT) {
+                return AstObjectTypesParser.expressionStatementParser(statement);
+            }else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
                 return AstObjectTypesParser.returnStatementParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.IF_STATEMENT) {
                 return AstObjectTypesParser.conditionalStatementParser(statement);

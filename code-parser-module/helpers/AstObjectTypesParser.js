@@ -34,7 +34,18 @@ class AstObjectTypesParser {
             return this.literalParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.CALL_EXPRESSION){
             return this.callExpressionParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION){
+            return this.assignmentExpressionParser(expressionAstObj)
         }
+    }
+
+
+
+    static expressionStatementParser(expressionStatementAstObj) {
+        if (!expressionStatementAstObj || expressionStatementAstObj.type !== AST_OBJECT_TYPES.EXPRESSION_STATEMENT) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.EXPRESSION_STATEMENT} object.`)
+        }
+        return this.expressionParser(expressionStatementAstObj.expression)
     }
 
     static variableDeclarationsParser(variableDeclarationAstObj) {
@@ -92,31 +103,13 @@ class AstObjectTypesParser {
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-    static assignmentExpression(assignmentExpressionAstObj) {
+    static assignmentExpressionParser(assignmentExpressionAstObj) {
         if (!assignmentExpressionAstObj || assignmentExpressionAstObj.type !== AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION} object.`)
         }
         let operator = assignmentExpressionAstObj.operator
-        let left;
-        let right;
-
-        //TODO:Add more cases
-        if (assignmentExpressionAstObj.left && assignmentExpressionAstObj.left.type === AST_OBJECT_TYPES.IDENTIFIER) {
-            left = this.identifierParser(assignmentExpressionAstObj.left)
-        }else if (assignmentExpressionAstObj.left && assignmentExpressionAstObj.left.type === AST_OBJECT_TYPES.LITERAL){
-            left = this.literalParser(assignmentExpressionAstObj.left);
-        }else if (assignmentExpressionAstObj.left && assignmentExpressionAstObj.left.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
-            left = this.binaryExpressionParser(assignmentExpressionAstObj.left);
-        }
-
-        //TODO:Add more cases
-        if (assignmentExpressionAstObj.right && assignmentExpressionAstObj.right.type === AST_OBJECT_TYPES.IDENTIFIER) {
-            right = this.identifierParser(assignmentExpressionAstObj.right);
-        }else if (assignmentExpressionAstObj.right && assignmentExpressionAstObj.right.type === AST_OBJECT_TYPES.LITERAL){
-            right = this.literalParser(assignmentExpressionAstObj.right);
-        }else if (assignmentExpressionAstObj.right && assignmentExpressionAstObj.right.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
-            right = this.binaryExpressionParser(assignmentExpressionAstObj.right);
-        }
+        let left =  this.expressionParser(assignmentExpressionAstObj.left);
+        let right = this.expressionParser(assignmentExpressionAstObj.right);
 
         return new AssignmentStatement(left, right, operator)
 

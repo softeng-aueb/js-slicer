@@ -44,6 +44,19 @@ class Parser {
 
 let func = Parser.parse([
     "() => {",
-    "let b = a+1+func(f(a,5)); ",
+    "a = 1;\n" ,
+    "b = a;\n" ,
+    "b = a+1;\n" ,
+    "b = a+1+func(5);\n" ,
+    "b = a+1+func(f(a,5));\n" ,
+    "c = a+c\n" ,
+    "d = a+b*c\n" ,
+    "a = a+b-c\n" ,
+    "a = b&&c\n" ,
+    "a = (a && b) ? a: b\n" ,
+    "a = (a && b) ? a: (b&&c) ? b: c\n" ,
+    "a = func(a)\n" ,
+    "a = func(a,b)\n" ,
+    "a = func(a,b,d(c)) ",
     "}"
 ]);
