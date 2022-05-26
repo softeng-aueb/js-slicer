@@ -111,6 +111,8 @@ class AstObjectTypesParser {
             left = this.literalParser(binaryExpressionAstObj.left);
         }else if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
             left = this.binaryExpressionParser(binaryExpressionAstObj.left);
+        }else if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.CALL_EXPRESSION){
+            left = this.callExpressionParser(binaryExpressionAstObj.left);
         }
 
         //TODO:Add more cases
@@ -120,6 +122,8 @@ class AstObjectTypesParser {
             right = this.literalParser(binaryExpressionAstObj.right);
         }else if (binaryExpressionAstObj.right && binaryExpressionAstObj.right.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
             right = this.binaryExpressionParser(binaryExpressionAstObj.right);
+        }else if (binaryExpressionAstObj.right && binaryExpressionAstObj.right.type === AST_OBJECT_TYPES.CALL_EXPRESSION){
+            right = this.callExpressionParser(binaryExpressionAstObj.right);
         }
 
         return new BinaryExpression(left, right, operator)
