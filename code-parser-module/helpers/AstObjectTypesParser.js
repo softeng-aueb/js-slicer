@@ -71,26 +71,8 @@ class AstObjectTypesParser {
             throw new Error(`Not a ${AST_OBJECT_TYPES.LOGICAL_EXPRESSION} object.`)
         }
         let operator = logicalExpressionAstObj.operator
-        let left;
-        let right;
-
-        //TODO:Add more cases
-        if (logicalExpressionAstObj.left && logicalExpressionAstObj.left.type === AST_OBJECT_TYPES.IDENTIFIER) {
-            left = this.identifierParser(logicalExpressionAstObj.left)
-        }else if (logicalExpressionAstObj.left && logicalExpressionAstObj.left.type === AST_OBJECT_TYPES.LITERAL){
-            left = this.literalParser(logicalExpressionAstObj.left);
-        }else if (logicalExpressionAstObj.left && logicalExpressionAstObj.left.type === AST_OBJECT_TYPES.LOGICAL_EXPRESSION){
-            left = this.logicalExpressionParser(logicalExpressionAstObj.left);
-        }
-
-        //TODO:Add more cases
-        if (logicalExpressionAstObj.right && logicalExpressionAstObj.right.type === AST_OBJECT_TYPES.IDENTIFIER) {
-            right = this.identifierParser(logicalExpressionAstObj.right);
-        }else if (logicalExpressionAstObj.right && logicalExpressionAstObj.right.type === AST_OBJECT_TYPES.LITERAL){
-            right = this.literalParser(logicalExpressionAstObj.right);
-        }else if (logicalExpressionAstObj.right && logicalExpressionAstObj.right.type === AST_OBJECT_TYPES.LOGICAL_EXPRESSION){
-            right = this.logicalExpressionParser(logicalExpressionAstObj.right);
-        }
+        let left =  this.expressionParser(logicalExpressionAstObj.left);
+        let right = this.expressionParser(logicalExpressionAstObj.right);
 
         return new LogicalExpression(left, right, operator)
 
@@ -101,35 +83,15 @@ class AstObjectTypesParser {
             throw new Error(`Not a ${AST_OBJECT_TYPES.BINARY_EXPRESSION} object.`)
         }
         let operator = binaryExpressionAstObj.operator
-        let left;
-        let right;
-
-        //TODO:Add more cases
-        if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.IDENTIFIER) {
-            left = this.identifierParser(binaryExpressionAstObj.left)
-        }else if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.LITERAL){
-            left = this.literalParser(binaryExpressionAstObj.left);
-        }else if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
-            left = this.binaryExpressionParser(binaryExpressionAstObj.left);
-        }else if (binaryExpressionAstObj.left && binaryExpressionAstObj.left.type === AST_OBJECT_TYPES.CALL_EXPRESSION){
-            left = this.callExpressionParser(binaryExpressionAstObj.left);
-        }
-
-        //TODO:Add more cases
-        if (binaryExpressionAstObj.right && binaryExpressionAstObj.right.type === AST_OBJECT_TYPES.IDENTIFIER) {
-            right = this.identifierParser(binaryExpressionAstObj.right);
-        }else if (binaryExpressionAstObj.right && binaryExpressionAstObj.right.type === AST_OBJECT_TYPES.LITERAL){
-            right = this.literalParser(binaryExpressionAstObj.right);
-        }else if (binaryExpressionAstObj.right && binaryExpressionAstObj.right.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
-            right = this.binaryExpressionParser(binaryExpressionAstObj.right);
-        }else if (binaryExpressionAstObj.right && binaryExpressionAstObj.right.type === AST_OBJECT_TYPES.CALL_EXPRESSION){
-            right = this.callExpressionParser(binaryExpressionAstObj.right);
-        }
+        let left =  this.expressionParser(binaryExpressionAstObj.left);
+        let right = this.expressionParser(binaryExpressionAstObj.right);
 
         return new BinaryExpression(left, right, operator)
-
     }
 
+
+
+///////////////////////////////////////////////////////////////////////////////////
     static assignmentExpression(assignmentExpressionAstObj) {
         if (!assignmentExpressionAstObj || assignmentExpressionAstObj.type !== AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION} object.`)

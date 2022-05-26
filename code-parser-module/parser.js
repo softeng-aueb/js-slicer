@@ -44,6 +44,6 @@ class Parser {
 
 let func = Parser.parse([
     "() => {",
-    "let b = a+1+func(5); ",
+    "let b = a+1+func(f(a,5)); ",
     "}"
 ]);
