@@ -10,31 +10,90 @@ const Literal = require("../domain/Literal");
 const LoopStatement = require("../domain/LoopStatement");
 const AssignmentStatement = require("../domain/AssignmentStatement");
 const Alternate = require("../domain/Alternate");
+const _ = require("lodash");
+const LogicalExpression = require("../domain/LogicalExpression");
+const FunctionObj = require("../domain/FunctionObj");
 
 class AstObjectTypesParser {
+
+    static expressionParser(expressionAstObj) {
+        if(!expressionAstObj){
+            throw new Error("Missing required param.")
+        }
+
+        //TODO: Add more cases
+        if (expressionAstObj.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
+            return  this.binaryExpressionParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION){
+            return this.conditionalStatementParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.LOGICAL_EXPRESSION){
+            return this.logicalExpressionParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.IDENTIFIER){
+            return this.identifierParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.LITERAL){
+            return this.literalParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.CALL_EXPRESSION){
+            return this.callExpressionParser(expressionAstObj)
+        }
+    }
 
     static variableDeclarationsParser(variableDeclarationAstObj) {
         if (!variableDeclarationAstObj || variableDeclarationAstObj.type !== AST_OBJECT_TYPES.VARIABLE_DECLARATION) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.VARIABLE_DECLARATION} object.`)
         }
 
-        let kind = variableDeclarationAstObj.kind || VAR_TYPES.LET;
-        let varName = variableDeclarationAstObj.declarations
-            && variableDeclarationAstObj.declarations[0]
-            && variableDeclarationAstObj.declarations[0].id
-            && variableDeclarationAstObj.declarations[0].id.name
-        let value;
+        let kind = variableDeclarationAstObj.kind;
 
-        //TODO: Add more cases
-        if (variableDeclarationAstObj.declarations
-            && variableDeclarationAstObj.declarations[0]
-            && variableDeclarationAstObj.declarations[0].init
-            && variableDeclarationAstObj.declarations[0].init.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
+        let varNames = _.map(variableDeclarationAstObj.declarations, function (value){
+           return value.id && value.id.name;
+        });
 
-            value = this.binaryExpressionParser(variableDeclarationAstObj.declarations[0].init)
+        let value = this.expressionParser(variableDeclarationAstObj.declarations.find(val => val.init).init);
+
+        return new VariableDeclaration(kind, varNames, value)
+    }
+
+    static callExpressionParser(callExpressionAstObj) {
+        if (!callExpressionAstObj || callExpressionAstObj.type !== AST_OBJECT_TYPES.CALL_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.CALL_EXPRESSION} object.`)
         }
 
-        return new VariableDeclaration(kind, varName, value)
+        let callee = this.expressionParser(callExpressionAstObj.callee);
+        let args = callExpressionAstObj.arguments.map(arg => {
+            return this.expressionParser(arg);
+        });
+        return new FunctionObj(callee, args)
+
+    }
+
+    static logicalExpressionParser(logicalExpressionAstObj) {
+        if (!logicalExpressionAstObj || logicalExpressionAstObj.type !== AST_OBJECT_TYPES.LOGICAL_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.LOGICAL_EXPRESSION} object.`)
+        }
+        let operator = logicalExpressionAstObj.operator
+        let left;
+        let right;
+
+        //TODO:Add more cases
+        if (logicalExpressionAstObj.left && logicalExpressionAstObj.left.type === AST_OBJECT_TYPES.IDENTIFIER) {
+            left = this.identifierParser(logicalExpressionAstObj.left)
+        }else if (logicalExpressionAstObj.left && logicalExpressionAstObj.left.type === AST_OBJECT_TYPES.LITERAL){
+            left = this.literalParser(logicalExpressionAstObj.left);
+        }else if (logicalExpressionAstObj.left && logicalExpressionAstObj.left.type === AST_OBJECT_TYPES.LOGICAL_EXPRESSION){
+            left = this.logicalExpressionParser(logicalExpressionAstObj.left);
+        }
+
+        //TODO:Add more cases
+        if (logicalExpressionAstObj.right && logicalExpressionAstObj.right.type === AST_OBJECT_TYPES.IDENTIFIER) {
+            right = this.identifierParser(logicalExpressionAstObj.right);
+        }else if (logicalExpressionAstObj.right && logicalExpressionAstObj.right.type === AST_OBJECT_TYPES.LITERAL){
+            right = this.literalParser(logicalExpressionAstObj.right);
+        }else if (logicalExpressionAstObj.right && logicalExpressionAstObj.right.type === AST_OBJECT_TYPES.LOGICAL_EXPRESSION){
+            right = this.logicalExpressionParser(logicalExpressionAstObj.right);
+        }
+
+        return new LogicalExpression(left, right, operator)
+
     }
 
     static binaryExpressionParser(binaryExpressionAstObj) {
@@ -137,7 +196,7 @@ class AstObjectTypesParser {
             } else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
                 return this.returnStatementParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.IF_STATEMENT) {
-                return this.ifStatementParser(statement);
+                return this.conditionalStatementParser(statement);
             }else if (statement.type === AST_OBJECT_TYPES.FOR_STATEMENT || statement.type === AST_OBJECT_TYPES.WHILE_STATEMENT) {
                 return this.loopStatementParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT
@@ -150,28 +209,19 @@ class AstObjectTypesParser {
         });
     }
 
-    static ifStatementParser(ifStatementObj) {
-        if (!ifStatementObj || (ifStatementObj.type !== AST_OBJECT_TYPES.IF_STATEMENT && ifStatementObj.type !== AST_OBJECT_TYPES.BLOCK_STATEMENT)) {
-            throw new Error(`Not a ${AST_OBJECT_TYPES.IF_STATEMENT} or  ${AST_OBJECT_TYPES.BLOCK_STATEMENT} object.`)
+    static conditionalStatementParser(conditionalStatementObj) {
+        if (!conditionalStatementObj || (conditionalStatementObj.type !== AST_OBJECT_TYPES.IF_STATEMENT
+            && conditionalStatementObj.type !== AST_OBJECT_TYPES.BLOCK_STATEMENT
+            && conditionalStatementObj.type !== AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION)) {
+
+            throw new Error(`Not a ${AST_OBJECT_TYPES.IF_STATEMENT} or  ${AST_OBJECT_TYPES.BLOCK_STATEMENT} or  ${AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION} object.`)
         }
 
-        let condition;
-        let body;
-        let alternates;
-        //TODO:Add more cases;
-        if(ifStatementObj.test && ifStatementObj.test.type && ifStatementObj.test.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
-            condition = this.binaryExpressionParser(ifStatementObj.test);
-        }
+        let condition = this.expressionParser(conditionalStatementObj.test);
+        let then = this.expressionParser(conditionalStatementObj.consequent);
+        let alternates = this.expressionParser(conditionalStatementObj.alternate);
 
-        if(ifStatementObj.consequent && ifStatementObj.consequent.type && ifStatementObj.consequent.type === AST_OBJECT_TYPES.BLOCK_STATEMENT){
-            body = this.blockStatementParser(ifStatementObj.consequent);
-        }
-
-        if(ifStatementObj.alternate){
-            alternates = this.alternateStatementParser(ifStatementObj.alternate,[]);
-        }
-
-        return new ConditionalStatement(condition, body,alternates);
+        return new ConditionalStatement(condition, then, alternates);
     }
 
     static alternateStatementParser(alternateStatementObj,alternatesArr) {

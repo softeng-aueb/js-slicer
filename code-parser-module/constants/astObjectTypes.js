@@ -11,7 +11,10 @@ const AST_OBJECT_TYPES = {
     LITERAL:"Literal",
     FOR_STATEMENT:"ForStatement",
     WHILE_STATEMENT:"WhileStatement",
-    ASSIGNMENT_EXPRESSION : "AssignmentExpression"
+    ASSIGNMENT_EXPRESSION : "AssignmentExpression",
+    CONDITIONAL_EXPRESSION : "ConditionalExpression",
+    LOGICAL_EXPRESSION : "LogicalExpression",
+    CALL_EXPRESSION : "CallExpression"
 
 }
 

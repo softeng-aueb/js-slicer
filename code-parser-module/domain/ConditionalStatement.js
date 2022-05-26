@@ -1,7 +1,7 @@
 class ConditionalStatement {
-    constructor(condition,body,alternates) {
+    constructor(condition,then,alternates) {
         this._condition = condition;
-        this._body = body;
+        this._then = then;
         this._alternates = alternates;
     }
 
@@ -22,11 +22,11 @@ class ConditionalStatement {
     }
 
     get body() {
-        return this._body;
+        return this._then;
     }
 
     set body(value) {
-        this._body = value;
+        this._then = value;
     }
 
 

@@ -1,8 +1,8 @@
 class VariableDeclaration {
 
-    constructor(type,name,value) {
+    constructor(type,names,value) {
         this._type = type;
-        this._name = name;
+        this._names = names;
         this._value = value;
     }
 
@@ -15,12 +15,12 @@ class VariableDeclaration {
         this._type = value;
     }
 
-    get name() {
-        return this._name;
+    get names() {
+        return this._names;
     }
 
-    set name(value) {
-        this._name = value;
+    set names(value) {
+        this._names = value;
     }
 
     get value() {
