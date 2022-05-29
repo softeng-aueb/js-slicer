@@ -19,9 +19,13 @@ class Parser {
 
 }
 
+module.exports = Parser;
+
 let func = Parser.parse([
     "(a, b) => {",
-    "let x = a+b;",
+    "fun()",
+    "let x = a+b; ",
+    "x=a+b; ",
     "while (y>0){ ",
     " y=y+1",
     "} ",

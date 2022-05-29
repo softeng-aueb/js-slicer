@@ -12,7 +12,7 @@ const AssignmentStatement = require("../domain/AssignmentStatement");
 const Alternate = require("../domain/Alternate");
 const _ = require("lodash");
 const LogicalExpression = require("../domain/LogicalExpression");
-const FunctionObj = require("../domain/FunctionObj");
+const FunctionCall = require("../domain/FunctionCall");
 
 class AstObjectTypesParser {
 
@@ -81,7 +81,7 @@ class AstObjectTypesParser {
         let args = callExpressionAstObj.arguments.map(arg => {
             return this.expressionParser(arg);
         });
-        return new FunctionObj(callee, args)
+        return new FunctionCall(callee, args)
 
     }
 
@@ -110,7 +110,6 @@ class AstObjectTypesParser {
 
 
 
-///////////////////////////////////////////////////////////////////////////////////
     static assignmentExpressionParser(assignmentExpressionAstObj) {
         if (!assignmentExpressionAstObj || assignmentExpressionAstObj.type !== AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION} object.`)
