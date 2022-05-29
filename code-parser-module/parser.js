@@ -24,6 +24,7 @@ module.exports = Parser;
 let func = Parser.parse([
     "(a, b) => {",
     "fun()",
+    "let ff = {a:1,b:{c:1}}; ",
     "let x = a+b; ",
     "x=a+b; ",
     "while (y>0){ ",

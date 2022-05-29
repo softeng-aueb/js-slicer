@@ -14,7 +14,8 @@ const AST_OBJECT_TYPES = {
     ASSIGNMENT_EXPRESSION : "AssignmentExpression",
     CONDITIONAL_EXPRESSION : "ConditionalExpression",
     LOGICAL_EXPRESSION : "LogicalExpression",
-    CALL_EXPRESSION : "CallExpression"
+    CALL_EXPRESSION : "CallExpression",
+    OBJECT_EXPRESSION:"ObjectExpression"
 
 }
 

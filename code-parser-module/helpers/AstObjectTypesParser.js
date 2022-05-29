@@ -13,6 +13,8 @@ const Alternate = require("../domain/Alternate");
 const _ = require("lodash");
 const LogicalExpression = require("../domain/LogicalExpression");
 const FunctionCall = require("../domain/FunctionCall");
+const ObjectExpression = require("../domain/ObjectExpression");
+const ObjectProperty = require("../domain/ObjectProperty");
 
 class AstObjectTypesParser {
 
@@ -44,6 +46,8 @@ class AstObjectTypesParser {
             return this.ifStatementParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.RETURN_STATEMENT){
             return this.returnStatementParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.OBJECT_EXPRESSION){
+            return this.objectExpressionParser(expressionAstObj)
         }
     }
 
@@ -84,6 +88,19 @@ class AstObjectTypesParser {
         return new FunctionCall(callee, args)
 
     }
+    static objectExpressionParser(objectExpressionAstObj) {
+        if (!objectExpressionAstObj || objectExpressionAstObj.type !== AST_OBJECT_TYPES.OBJECT_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.OBJECT_EXPRESSION} object.`)
+        }
+
+        let properties = objectExpressionAstObj.properties.map(prop => {
+            return new ObjectProperty(this.expressionParser(prop.key), this.expressionParser(prop.value))
+        });
+
+        return new ObjectExpression(properties)
+
+    }
+
 
     static logicalExpressionParser(logicalExpressionAstObj) {
         if (!logicalExpressionAstObj || logicalExpressionAstObj.type !== AST_OBJECT_TYPES.LOGICAL_EXPRESSION) {
