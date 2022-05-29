@@ -36,6 +36,14 @@ class AstObjectTypesParser {
             return this.callExpressionParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION){
             return this.assignmentExpressionParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT){
+            return this.expressionStatementParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.BLOCK_STATEMENT){
+            return this.blockStatementParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.IF_STATEMENT){
+            return this.ifStatementParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.RETURN_STATEMENT){
+            return this.returnStatementParser(expressionAstObj)
         }
     }
 
@@ -135,14 +143,8 @@ class AstObjectTypesParser {
         if (!returnStatementAstObj || returnStatementAstObj.type !== AST_OBJECT_TYPES.RETURN_STATEMENT) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.RETURN_STATEMENT} object.`)
         }
-        let argument;
-        if (returnStatementAstObj.argument && returnStatementAstObj.argument.type === AST_OBJECT_TYPES.IDENTIFIER) {
-            argument = this.identifierParser(returnStatementAstObj.argument)
-        }else if(returnStatementAstObj.argument && returnStatementAstObj.argument.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
-            argument = this.binaryExpressionParser(returnStatementAstObj.argument)
-        }
+        let argument = this.expressionParser(returnStatementAstObj.argument);
         return new ReturnStatement(argument)
-
     }
 
     static blockStatementParser(blockStatementAstObj) {
@@ -150,30 +152,14 @@ class AstObjectTypesParser {
             throw new Error(`Not a ${AST_OBJECT_TYPES.BLOCK_STATEMENT} object.`)
         }
         return blockStatementAstObj.body.flatMap(statement => {
-            if (statement.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION) {
-                return this.variableDeclarationsParser(statement);
-            } else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
-                return this.returnStatementParser(statement);
-            } else if (statement.type === AST_OBJECT_TYPES.IF_STATEMENT) {
-                return this.conditionalStatementParser(statement);
-            }else if (statement.type === AST_OBJECT_TYPES.FOR_STATEMENT || statement.type === AST_OBJECT_TYPES.WHILE_STATEMENT) {
-                return this.loopStatementParser(statement);
-            } else if (statement.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT
-                && statement.expression
-                && statement.expression.type
-                && statement.expression.type === AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION) {
-
-                return this.assignmentExpression(statement.expression);
-            }
+            return this.expressionParser(statement);
         });
     }
 
     static conditionalStatementParser(conditionalStatementObj) {
-        if (!conditionalStatementObj || (conditionalStatementObj.type !== AST_OBJECT_TYPES.IF_STATEMENT
-            && conditionalStatementObj.type !== AST_OBJECT_TYPES.BLOCK_STATEMENT
-            && conditionalStatementObj.type !== AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION)) {
+        if (!conditionalStatementObj || (conditionalStatementObj.type !== AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION)) {
 
-            throw new Error(`Not a ${AST_OBJECT_TYPES.IF_STATEMENT} or  ${AST_OBJECT_TYPES.BLOCK_STATEMENT} or  ${AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION} object.`)
+            throw new Error(`Not a ${AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION} object.`)
         }
 
         let condition = this.expressionParser(conditionalStatementObj.test);
@@ -183,34 +169,22 @@ class AstObjectTypesParser {
         return new ConditionalStatement(condition, then, alternates);
     }
 
-    static alternateStatementParser(alternateStatementObj,alternatesArr) {
-        if (!alternateStatementObj || (alternateStatementObj.type !== AST_OBJECT_TYPES.IF_STATEMENT && alternateStatementObj.type !== AST_OBJECT_TYPES.BLOCK_STATEMENT)) {
-            throw new Error(`Not a ${AST_OBJECT_TYPES.IF_STATEMENT} or  ${AST_OBJECT_TYPES.BLOCK_STATEMENT} object.`)
+    static ifStatementParser(ifStatementObj) {
+        if (!ifStatementObj || (ifStatementObj.type !== AST_OBJECT_TYPES.IF_STATEMENT)) {
+
+            throw new Error(`Not a ${AST_OBJECT_TYPES.IF_STATEMENT} object.`)
         }
 
-        let condition;
-        let body;
+        let condition = this.expressionParser(ifStatementObj.test);
 
-        //TODO:Add more cases;
-        if(alternateStatementObj.test && alternateStatementObj.test.type && alternateStatementObj.test.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
-            condition = this.binaryExpressionParser(alternateStatementObj.test);
-        }
 
-        if(alternateStatementObj.consequent && alternateStatementObj.consequent.type && alternateStatementObj.consequent.type === AST_OBJECT_TYPES.BLOCK_STATEMENT){
-            body = this.blockStatementParser(alternateStatementObj.consequent);
-        }
+        let then = ifStatementObj.consequent.body.map(e => {
+            return this.expressionParser(e);
+        });
 
-        alternatesArr.push(new Alternate(condition, body))
+        let alternates = (ifStatementObj.alternate) ?this.expressionParser(ifStatementObj.alternate) : null;
 
-        if(alternateStatementObj.alternate && alternateStatementObj.alternate.type && alternateStatementObj.alternate.type === AST_OBJECT_TYPES.IF_STATEMENT){
-            alternatesArr.concat(this.alternateStatementParser(alternateStatementObj.alternate, alternatesArr))
-        }else if(alternateStatementObj.alternate && alternateStatementObj.alternate.type && alternateStatementObj.alternate.type === AST_OBJECT_TYPES.BLOCK_STATEMENT){
-            condition = GENERAL.ELSE
-            body = this.blockStatementParser(alternateStatementObj.alternate);
-            alternatesArr.push(new Alternate(condition, body))
-        }
-
-        return alternatesArr;
+        return new ConditionalStatement(condition, then, alternates);
     }
 
     static loopStatementParser(loopStatementAstObj) {
@@ -218,17 +192,9 @@ class AstObjectTypesParser {
             throw new Error(`Not a ${AST_OBJECT_TYPES.FOR_STATEMENT} or  ${AST_OBJECT_TYPES.WHILE_STATEMENT} object.`)
         }
 
-        let condition;
-        let body;
+        let condition = this.expressionParser(loopStatementAstObj.test);
+        let body =  this.expressionParser(loopStatementAstObj.body);
 
-        //TODO:Add more cases;
-        if(loopStatementAstObj.test && loopStatementAstObj.test.type && loopStatementAstObj.test.type === AST_OBJECT_TYPES.BINARY_EXPRESSION){
-            condition = this.binaryExpressionParser(loopStatementAstObj.test);
-        }
-
-        if(loopStatementAstObj.body && loopStatementAstObj.body.type && loopStatementAstObj.body.type === AST_OBJECT_TYPES.BLOCK_STATEMENT){
-            body = this.blockStatementParser(loopStatementAstObj.body);
-        }
        return new LoopStatement(loopStatementAstObj.type,condition,body)
     }
 }

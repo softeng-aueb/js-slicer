@@ -60,7 +60,7 @@ class FunctionAst {
             }else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
                 return AstObjectTypesParser.returnStatementParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.IF_STATEMENT) {
-                return AstObjectTypesParser.conditionalStatementParser(statement);
+                return AstObjectTypesParser.ifStatementParser(statement);
             } else if (statement.type === AST_OBJECT_TYPES.FOR_STATEMENT || statement.type === AST_OBJECT_TYPES.WHILE_STATEMENT) {
                 return AstObjectTypesParser.loopStatementParser(statement);
             }else if (statement.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT
