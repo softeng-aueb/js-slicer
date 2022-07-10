@@ -1,6 +1,7 @@
 const recast = require("recast");
 const FunctionAst = require("./domain/FunctionAst");
 const FunctionObj = require("./domain/FunctionObj");
+const FunctionBody = require("./domain/FunctionBody");
 class Parser {
 
     static parse (functionString){
