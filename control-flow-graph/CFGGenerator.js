@@ -36,7 +36,7 @@ module.exports = CFGGenerator;
 
 let func = Parser.parse([
     "(a, b) => {",
-    "if (y>0){ ",
+    "if (y>0 && y>1){ ",
     " y=y+1",
     "}else if (y== 0){" +
     " y=y+2;" +

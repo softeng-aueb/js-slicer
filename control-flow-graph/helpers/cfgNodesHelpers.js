@@ -1,7 +1,7 @@
 const ConditionalStatement = require("../../code-parser-module/domain/ConditionalStatement");
-const LoopStatement = require("../../code-parser-module/domain/LoopStatement");
+const LogicalExpression = require("../../code-parser-module/domain/LogicalExpression");
+const BinaryExpression = require("../../code-parser-module/domain/BinaryExpression");
 const _ = require("lodash");
-const FunctionBody = require("../../code-parser-module/domain/FunctionBody");
 let CFGEdge = require("../domain/CFGEdge")
 const CFGNode = require("../domain/CFGNode");
 
@@ -32,14 +32,14 @@ const getBlockNodeEdges = (blockStatementsArr,currStatement, currNodeId, conditi
     return new CFGEdge(currNodeId, currNodeId + 1)
 };
 
-const getConditionalNodeEdges = (conditionalStatement, currentNodeId) => {
-    if (_.isUndefined(conditionalStatement) || _.isUndefined(currentNodeId)) {
+const getConditionalNodeEdges = (condition, conditionalStatement, currentNodeId, initialNodeId) => {
+    if (_.isUndefined(conditionalStatement) || _.isUndefined(currentNodeId) || _.isUndefined(condition) || _.isUndefined(initialNodeId)) {
         throw new Error(`Missing required param.`)
     }
     let edges = [];
-    edges.push(new CFGEdge(currentNodeId, currentNodeId + 1));
+    edges.push(new CFGEdge(currentNodeId, initialNodeId + getCFGConditionNodesNumber(condition,0)));
 
-    edges.push(new CFGEdge(currentNodeId, currentNodeId + getNodesBetweenConditions(conditionalStatement,0) + 1));
+    edges.push(new CFGEdge(currentNodeId, initialNodeId + getNodesBetweenConditions(conditionalStatement,getCFGConditionNodesNumber(condition,0))));
     return edges
 };
 
@@ -75,11 +75,61 @@ const getNodesBetweenConditions = (conditionalStatement,numberOfNodes) => {
     return numberOfNodes;
 };
 
+const getCFGConditionNodesNumber = (condition,num) => {
+    if (condition instanceof BinaryExpression) {
+       num = num + 1;
+    }
+    if (condition instanceof LogicalExpression) {
+        if (condition._left instanceof BinaryExpression) {
+           num = num + 1;
+        } else {
+            return getCFGConditionNodesNumber(condition._left, num)
+        }
+
+        if (condition._right instanceof BinaryExpression) {
+            num = num + 1;
+        } else {
+            return getCFGConditionNodesNumber(condition._right, num)
+        }
+    }
+    return num;
+};
+
+const getConditionsCFGNodes = (currentNodeId, condition, conditionalStatement, nodes) => {
+    let initialNodeId = (currentNodeId === 0) ? currentNodeId + 1 : currentNodeId;
+    if (condition instanceof BinaryExpression) {
+        currentNodeId += 1;
+        let conditionNode = new CFGNode(currentNodeId, null, condition, getConditionalNodeEdges(condition, conditionalStatement, currentNodeId,initialNodeId));
+        nodes.push(conditionNode)
+    }
+
+    if (condition instanceof LogicalExpression) {
+        if (condition._left instanceof BinaryExpression) {
+            currentNodeId += 1;
+            let conditionNode = new CFGNode(currentNodeId, null, condition._left, getConditionalNodeEdges(condition, conditionalStatement, currentNodeId,initialNodeId));
+            nodes.push(conditionNode)
+        } else {
+            return getConditionsCFGNodes(initialNodeId, condition._left, conditionalStatement, nodes)
+        }
+
+        if (condition._right instanceof BinaryExpression) {
+            currentNodeId += 1;
+            let conditionNode = new CFGNode(currentNodeId, null, condition._right, getConditionalNodeEdges(condition, conditionalStatement, currentNodeId,initialNodeId));
+            nodes.push(conditionNode)
+        } else {
+            return getConditionsCFGNodes(initialNodeId, condition._right, conditionalStatement, nodes)
+        }
+
+    }
+
+    return nodes;
+};
+
 const getConditionalStatementCFGNodes = (functionStatements,statement, counterId, nodes) => {
     if(statement.condition){
-        counterId +=1;
-        let conditionNode = new CFGNode(counterId, null, statement.condition, getConditionalNodeEdges(statement,counterId));
-        nodes.push(conditionNode)
+        let  conditionCFGNodes = getConditionsCFGNodes(counterId,statement.condition,statement,[])
+        nodes = nodes.concat(conditionCFGNodes);
+        counterId +=conditionCFGNodes.length;
     }
 
     if (statement._then instanceof ConditionalStatement) {
@@ -89,7 +139,6 @@ const getConditionalStatementCFGNodes = (functionStatements,statement, counterId
         for (let i in statement._then){
             let then = statement._then[i];
             if (then instanceof ConditionalStatement) {
-                //counterId +=1;
                 return getConditionalStatementCFGNodes(functionStatements,then,counterId,nodes)
             } else {
                 counterId +=1;
@@ -100,14 +149,12 @@ const getConditionalStatementCFGNodes = (functionStatements,statement, counterId
     if (statement._alternates instanceof ConditionalStatement) {
         return getConditionalStatementCFGNodes(functionStatements,statement._alternates, counterId, nodes)
     }else{
-        //else case
         counterId +=1;
         nodes = nodes.concat(statement._alternates.map(st => new CFGNode (counterId,"else",st,new CFGEdge(counterId, counterId + 1))));
 
         for (let j in statement._alternates){
             let alternate = statement._alternates[j];
             if (alternate instanceof ConditionalStatement) {
-                //counterId +=1;
                 return getConditionalStatementCFGNodes(functionStatements,alternate,counterId,nodes)
             } else {
                 counterId +=1;
