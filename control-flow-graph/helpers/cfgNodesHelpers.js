@@ -1,5 +1,6 @@
 const ConditionalStatement = require("../../code-parser-module/domain/ConditionalStatement");
 const LogicalExpression = require("../../code-parser-module/domain/LogicalExpression");
+const LoopStatement = require("../../code-parser-module/domain/LoopStatement");
 const BinaryExpression = require("../../code-parser-module/domain/BinaryExpression");
 const _ = require("lodash");
 let CFGEdge = require("../domain/CFGEdge")
@@ -52,9 +53,14 @@ const getNextCFGNodeId = (statementsArr,conditionalStatement) => {
     if (!foundCurrentStatement) return;
 
     let currentStatementIndex = _.findIndex(statementsArr, (st) => _.isEqual(st, foundCurrentStatement));
-    if(currentStatementIndex <= statementsArr.length - 2){
+    if(currentStatementIndex <= statementsArr.length - 2) {
         let currentStatementId = currentStatementIndex + 1;
-        let conditionalInnerStatements = conditionalStatement.getListOfInnerStatements([]);
+        let conditionalInnerStatements;
+        if (conditionalStatement instanceof LoopStatement) {
+            conditionalInnerStatements = getListOfLoopInnerStatements([],conditionalStatement);
+        } else if (conditionalStatement instanceof ConditionalStatement){
+            conditionalInnerStatements = getListOfConditionalInnerStatements([], conditionalStatement);
+        }
         let conditionalInnerStatementsNum = conditionalInnerStatements.length;
 
         nextCFGNodeID = currentStatementId + conditionalInnerStatementsNum;
@@ -168,7 +174,84 @@ const getConditionalStatementCFGNodes = (functionStatements,statement, counterId
     };
 };
 
+const getLoopStatementCFGNodes = (functionStatements,statement, counterId, nodes) => {
+    if (statement.condition) {
+        let loopCFGNodes = getConditionsCFGNodes(counterId, statement.condition, statement, [])
+        nodes = nodes.concat(loopCFGNodes);
+        counterId += loopCFGNodes.length;
+    }
+
+    if (statement._body instanceof LoopStatement) {
+        return getConditionalStatementCFGNodes(functionStatements, statement._body, counterId, nodes)
+    }else if(statement._body instanceof LoopStatement){
+        return getLoopStatementCFGNodes(functionStatements, statement._body, counterId, nodes)
+    }else{
+        for (let i in statement._body) {
+            let body = statement._body[i];
+            if (body instanceof ConditionalStatement) {
+                return getConditionalStatementCFGNodes(functionStatements, body, counterId, nodes)
+            }else if(body instanceof LoopStatement){
+                return getLoopStatementCFGNodes(functionStatements, body, counterId, nodes)
+            }else {
+                counterId +=1;
+                nodes.push(new CFGNode (counterId,null,body,getBlockNodeEdges(statement._body,body,counterId,statement,functionStatements)));
+            }
+        }
+    }
+    return {
+        loopCFGNodes :nodes,
+        counter: counterId
+    };
+};
+
+const getListOfLoopInnerStatements = (statements,lStatement) => {
+    statements.push(lStatement._condition)
+    if (lStatement._body instanceof ConditionalStatement || lStatement._body instanceof LoopStatement) {
+        lStatement._body.getListOfInnerStatements(statements)
+    }else{
+        for (let i in lStatement._body){
+            let statement = lStatement._body[i];
+            if (statement instanceof ConditionalStatement || statement instanceof LoopStatement) {
+                statement.getListOfInnerStatements(statements)
+            } else {
+                statements = statements.concat(statement);
+            }
+        }
+    }
+    return statements;
+}
+
+const getListOfConditionalInnerStatements = (statements,cStatement) =>{
+    statements.push(cStatement._condition)
+    if (cStatement._then instanceof ConditionalStatement || cStatement._then instanceof LoopStatement) {
+        cStatement._then.getListOfInnerStatements(statements)
+    }else{
+        for (let i in cStatement._then){
+            let statement = cStatement._then[i];
+            if (statement instanceof ConditionalStatement || statement instanceof LoopStatement) {
+                statement.getListOfInnerStatements(statements)
+            } else {
+                statements = statements.concat(statement);
+            }
+        }
+    }
+    if (cStatement._alternates instanceof ConditionalStatement || cStatement._alternates instanceof LoopStatement) {
+        cStatement._alternates.getListOfInnerStatements(statements)
+    }else{
+        for (let i in cStatement._alternates){
+            let statement = cStatement._alternates[i];
+            if (statement instanceof ConditionalStatement || statement instanceof ConditionalStatement) {
+                statement.getListOfInnerStatements(statements)
+            } else {
+                statements = statements.concat(statement);
+            }
+        }
+    }
+    return statements;
+}
+
 module.exports = {
     getNodeEdges,
-    getConditionalStatementCFGNodes
+    getConditionalStatementCFGNodes,
+    getLoopStatementCFGNodes
 }

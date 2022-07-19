@@ -2,7 +2,7 @@ const FunctionObj = require("../code-parser-module/domain/FunctionObj");
 const AST_OBJECT_TYPES = require("../code-parser-module/constants/astObjectTypes");
 const BlockNode = require("./domain/CFGNode");
 const ConditionalStatement = require("../code-parser-module/domain/ConditionalStatement");
-const {getNodeEdges, getConditionalStatementCFGNodes} = require("./helpers/cfgNodesHelpers")
+const {getNodeEdges, getConditionalStatementCFGNodes,getLoopStatementCFGNodes} = require("./helpers/cfgNodesHelpers")
 const Parser = require("../code-parser-module/Parser");
 const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 const CFGNode = require("./domain/CFGNode");
@@ -21,7 +21,9 @@ class CFGGenerator {
                counterId = counter;
                return  conditionalCFGNodes;
            } else if(st instanceof LoopStatement){
-
+               const {loopCFGNodes, counter} = getLoopStatementCFGNodes(functionObj.body,st,counterId,[]);
+               counterId = counter;
+               return  loopCFGNodes;
            } else{
                counterId++;
                return new CFGNode (counterId,null,st,getNodeEdges(functionObj.body,st,counterId))
@@ -33,19 +35,27 @@ class CFGGenerator {
 module.exports = CFGGenerator;
 
 
-
 let func = Parser.parse([
     "(a, b) => {",
-    "if (y>0 && y>1){ ",
+    "while (y>0 && y>1){ ",
     " y=y+1",
-    "}else if (y== 0){" +
-    " y=y+2;" +
-    "}else{ ",
-    " y=y/2; ",
-    "}",
+    "}" ,
     " return x",
     "}"
 ]);
+
+// let func = Parser.parse([
+//     "(a, b) => {",
+//     "if (y>0 && y>1){ ",
+//     " y=y+1",
+//     "}else if (y== 0){" +
+//     " y=y+2;" +
+//     "}else{ ",
+//     " y=y/2; ",
+//     "}",
+//     " return x",
+//     "}"
+// ]);
 // let func = Parser.parse([
 //     "(a, b) => {",
 //     "fun()",
