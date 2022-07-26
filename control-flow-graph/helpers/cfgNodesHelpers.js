@@ -38,13 +38,13 @@ const getConditionalNodeEdges = (functionStatements, condition, conditionalState
         throw new Error(`Missing required param.`)
     }
     let edges = [];
-    edges.push(new CFGEdge(currentNodeId, initialNodeId + getCFGConditionNodesNumber(condition,0)));
+    edges.push(new CFGEdge(currentNodeId, initialNodeId + getCFGConditionNodesNumber(condition,0), true));
 
     let hasNextStatement = getNextCFGNodeId(functionStatements,conditionalStatement);
     if(!hasNextStatement){
-        edges.push(new CFGEdge(currentNodeId));
+        edges.push(new CFGEdge(currentNodeId, undefined, false));
     }else{
-        edges.push(new CFGEdge(currentNodeId, initialNodeId + getNodesBetweenConditions(conditionalStatement,getCFGConditionNodesNumber(condition,0)) + 1));
+        edges.push(new CFGEdge(currentNodeId, initialNodeId + getNodesBetweenConditions(conditionalStatement,getCFGConditionNodesNumber(condition,0)) + 1, false));
     }
     return edges
 };
@@ -161,7 +161,7 @@ const getConditionalStatementCFGNodes = (functionStatements,statement, counterId
         return getConditionalStatementCFGNodes(functionStatements,statement._alternates, counterId, nodes)
     }else{
         counterId +=1;
-        nodes = nodes.concat(statement._alternates.map(st => new CFGNode (counterId,"else",st,new CFGEdge(counterId, counterId + 1))));
+        nodes = nodes.concat(statement._alternates.map(st => new CFGNode (counterId,"else",st,new CFGEdge(counterId, counterId + 1, true))));
 
         for (let j in statement._alternates){
             let alternate = statement._alternates[j];
