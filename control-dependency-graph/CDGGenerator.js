@@ -13,8 +13,6 @@ class CDGGenerator {
 
         //Create and push initial node
         let entryNode = new CDGNode(CDGNodeName.ENTRY);
-        cdg.push();
-
         cfg.forEach(cfgNode => {
             let entryNodeEdges = [];
             if(!cfgNode.isDependantNode(cfg)){
