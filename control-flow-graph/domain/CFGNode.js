@@ -39,5 +39,13 @@ class CFGNode {
     set edges(value) {
         this._edges = value;
     }
+
+    isConditionalNode () {
+        return Array.isArray(this._edges) && this._edges.length > 1;
+    }
+
+    isDependantNode (cfg) {
+        return cfg.find(node => Array.isArray(node._edges) && node._edges.find(edge => edge._condition === true && edge._id === this._id));
+    }
 }
 module.exports = CFGNode;
