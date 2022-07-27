@@ -1,6 +1,9 @@
 const CDGNode = require("./domain/CDGNode");
 const CDGEdge = require("./domain/CDGEdge");
 const CDGNodeName = require("./constants/CDGNodeNames");
+const Parser = require("../code-parser-module/Parser");
+const CFGGenerator = require("../control-flow-graph/CFGGenerator");
+const {getCDGNodeEdges,getCDGEntryNodeEdges} = require("./helpers/cdgNodesHelper");
 
 class CDGGenerator {
 
@@ -9,17 +12,26 @@ class CDGGenerator {
             throw new Error(`Missing required param.`)
         }
 
-        let cdg = [];
+        let cdg = [new CDGNode(CDGNodeName.ENTRY,null,getCDGEntryNodeEdges(cfg))];
 
         //Create and push initial node
-        let entryNode = new CDGNode(CDGNodeName.ENTRY);
-        cfg.forEach(cfgNode => {
-            let entryNodeEdges = [];
-            if(!cfgNode.isDependantNode(cfg)){
-                entryNodeEdges.push(new CDGEdge(CDGNodeName.ENTRY, cfgNode._id))
-            }
-        })
-
-
+       return cdg.concat(cfg.map(cfgNode => {
+            return new CDGNode(cfgNode._id,cfgNode._statement,getCDGNodeEdges(cfg, cfgNode._id));
+        }));
     }
 }
+
+module.exports = CDGGenerator;
+
+let func = Parser.parse([
+    "(a, b) => {",
+    "while (y>0 && y>1){ ",
+    " y=y+1",
+    "}" ,
+    " return x",
+    "}"
+]);
+
+
+let y = CDGGenerator.generateCDG(CFGGenerator.generateCfg(func));
+console.log(y);

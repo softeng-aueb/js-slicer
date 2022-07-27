@@ -45,7 +45,7 @@ class CFGNode {
     }
 
     isDependantNode (cfg) {
-        return cfg.find(node => Array.isArray(node._edges) && node._edges.find(edge => edge._condition === true && edge._id === this._id));
+        return cfg.find(node => Array.isArray(node._edges) && node._edges.find(edge => edge._condition === true && edge._target === this._id));
     }
 }
 module.exports = CFGNode;

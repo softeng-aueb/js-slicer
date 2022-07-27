@@ -15,7 +15,7 @@ class CFGGenerator {
             throw new Error(`Missing required param.`)
         }
 
-       let nodes = functionObj.body.flatMap(st => {
+       let nodes =  functionObj.body.flatMap(st => {
            if(st instanceof ConditionalStatement){
                const {conditionalCFGNodes, counter} = getConditionalStatementCFGNodes(functionObj.body,st,counterId,[]);
                counterId = counter;
@@ -29,7 +29,8 @@ class CFGGenerator {
                return new CFGNode (counterId,null,st,getNodeEdges(functionObj.body,st,counterId))
            }
        });
-        console.log(nodes)
+
+        return nodes;
     }
 }
 module.exports = CFGGenerator;
