@@ -1,11 +1,10 @@
 const FunctionObj = require("../code-parser-module/domain/FunctionObj");
-const AST_OBJECT_TYPES = require("../code-parser-module/constants/astObjectTypes");
-const BlockNode = require("./domain/CFGNode");
 const ConditionalStatement = require("../code-parser-module/domain/ConditionalStatement");
 const {getNodeEdges, getConditionalStatementCFGNodes,getLoopStatementCFGNodes} = require("./helpers/cfgNodesHelpers")
 const Parser = require("../code-parser-module/Parser");
 const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 const CFGNode = require("./domain/CFGNode");
+const CFG = require("./domain/CFG");
 
 class CFGGenerator {
 
@@ -29,7 +28,8 @@ class CFGGenerator {
                return new CFGNode (counterId,null,st,getNodeEdges(functionObj.body,st,counterId))
            }
        });
-        console.log(nodes)
+
+        return new CFG(nodes);
     }
 }
 module.exports = CFGGenerator;
