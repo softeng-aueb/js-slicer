@@ -17,23 +17,28 @@ class CFG {
     }
 
     getForwardDominanceTree (){
-        let fdtNodes = this._nodes.reverse().map(node =>{
+        let reversedNodes = this._nodes.slice().reverse();
+        let fdtNodes = reversedNodes.map(node =>{
             return new FDTNode(node.id,null,node._statement,this.getFDTNodeEdges(node));
         });
         return new FDT(fdtNodes);
     }
 
     getFDTNodeEdges(cfgNode){
-        return this._nodes.filter(node => {
+        let cfgNodes = this._nodes.filter(node => {
             if(Array.isArray(node._edges)){
-                if(node._edges.find(edge =>  edge._target === cfgNode.id)){
-                    return new FDTEdge(cfgNode.id,node.id);
-                }
+                return node._edges.find(edge =>  edge._target === cfgNode.id);
             }
-            if(node._edges._target === cfgNode.id){
-                return new FDTEdge(cfgNode.id,node.id);
-            }
+            return node._edges._target === cfgNode.id;
         });
+
+        return cfgNodes.map(node =>   new FDTEdge(cfgNode.id,node.id));
+    }
+
+    getAllEdges(){
+        return this._nodes.flatMap(node => {
+            return node._edges;
+        })
     }
 }
 module.exports = CFG;
