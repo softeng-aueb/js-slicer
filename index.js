@@ -14,7 +14,7 @@ class JsSlicer{
             //Parse the given func
             let parsedFunc = Parser.parse(func);
 
-            //Genrate the control flow graph
+            //Generate the control flow graph
             let cfg = CFGGenerator.generateCfg(parsedFunc);
 
             //Generate the forward dependence graph
