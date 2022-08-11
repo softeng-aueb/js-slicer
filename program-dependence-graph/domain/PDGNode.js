@@ -1,6 +1,8 @@
-class DDGNode {
-    constructor(id, statement, edges) {
+class PDGNode {
+
+    constructor(id,executionCondition,statement,edges) {
         this._id = id;
+        this._executionCondition = executionCondition
         this._statement = statement;
         this._edges = edges;
     }
@@ -12,6 +14,14 @@ class DDGNode {
 
     set id(value) {
         this._id = value;
+    }
+
+    get executionCondition() {
+        return this._executionCondition;
+    }
+
+    set executionCondition(value) {
+        this._executionCondition = value;
     }
 
     get statement() {
@@ -30,5 +40,4 @@ class DDGNode {
         this._edges = value;
     }
 }
-
-module.exports = DDGNode;
+module.exports = PDGNode;

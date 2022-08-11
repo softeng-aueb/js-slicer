@@ -3,6 +3,7 @@ const CFGGenerator = require("./control-flow-graph/CFGGenerator");
 const FDTGenerator = require("./forward-dominance-tree/FDTGenerator");
 const CDGGenerator = require("./control-dependency-graph/CDGGenerator");
 const DDGGenerator = require("./data-dependence-graph/DDGGenerator");
+const PDGGenerator = require("./program-dependence-graph/PDGGenerator");
 
 class JsSlicer{
     static slice(func){
@@ -24,6 +25,9 @@ class JsSlicer{
 
             //Generate the data dependence graph
             let ddg = DDGGenerator.generateDDG(cfg);
+
+            //Generate the program dependence graph
+            return PDGGenerator.generatePDG(cfg,ddg);
         }catch (e){
             console.log(e);
         }
@@ -41,8 +45,8 @@ let func = [
     "}"
 ];
 
-JsSlicer.slice(func)
-
+let result = JsSlicer.slice(func)
+console.log()
 // let func = Parser.parse([
 //     "(a, b) => {",
 //     "if (y>0 && y>1){ ",

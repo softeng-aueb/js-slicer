@@ -1,4 +1,4 @@
-class DDG {
+class PDG {
 
     constructor(nodes) {
         this._nodes = nodes;
@@ -12,9 +12,5 @@ class DDG {
         this._nodes = value;
     }
 
-    getNodeById (nodeId){
-        return this._nodes.find(node => node._id === nodeId);
-    }
-
 }
-module.exports = DDG;
+module.exports = PDG;
