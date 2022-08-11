@@ -61,6 +61,11 @@ const getAllPathsUtil = (u,d,isVisited,localPathList) => {
 
 
 const getCFGPaths = (cfg) =>{
+    v = null;
+    adjList = null;
+    pathTopology = null;
+    pathsArray = [];
+
     Graph(cfg._nodes.length);
     let graphEdges = cfg.getAllEdges();
     graphEdges.forEach(edge => {
@@ -81,8 +86,5 @@ const getCFGPaths = (cfg) =>{
 
 }
 module.exports = {
-    Graph,
-    addEdge,
-    getAllPaths,
     getCFGPaths
 }

@@ -13,7 +13,6 @@ class CDGGenerator {
             throw new Error(`Missing required param.`)
         }
         let pathsArray = getCFGPaths(cfg)
-        console.log()
         let cdg = [new CDGNode(CDGNodeNames.ENTRY,null,[])];
 
         cfg._nodes.forEach(node => {

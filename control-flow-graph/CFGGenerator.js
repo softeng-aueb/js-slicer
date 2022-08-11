@@ -24,9 +24,11 @@ class CFGGenerator {
                return  loopCFGNodes;
            } else{
                // counterId++;
-               return new CFGNode (counterId,null,st,getNodeEdges(functionObj.body,st,counterId))
+               let cfgNode = new CFGNode (counterId,null,st,getNodeEdges(functionObj.body,st,counterId))
+               counterId+=1;
+               return  cfgNode;
            }
-           counterId++;
+
        });
 
         return new CFG(nodes);

@@ -2,6 +2,7 @@ const Parser = require("./code-parser-module/Parser");
 const CFGGenerator = require("./control-flow-graph/CFGGenerator");
 const FDTGenerator = require("./forward-dominance-tree/FDTGenerator");
 const CDGGenerator = require("./control-dependency-graph/CDGGenerator");
+const DDGGenerator = require("./data-dependence-graph/DDGGenerator");
 
 class JsSlicer{
     static slice(func){
@@ -9,10 +10,20 @@ class JsSlicer{
             if(!func){
                 throw new Error("Missing required params.")
             }
+            //Parse the given func
             let parsedFunc = Parser.parse(func);
+
+            //Genrate the control flow graph
             let cfg = CFGGenerator.generateCfg(parsedFunc);
+
+            //Generate the forward dependence graph
             let fdt = FDTGenerator.generateFDT(cfg);
-            let cdg = CDGGenerator.generateCDG(cfg,fdt)
+
+            //Generate control dependency graph from control flow graph and control dependence graph
+            let cdg = CDGGenerator.generateCDG(cfg,fdt);
+
+            //Generate the data dependence graph
+            let ddg = DDGGenerator.generateDDG(cfg);
         }catch (e){
             console.log(e);
         }
@@ -22,10 +33,12 @@ module.exports = JsSlicer;
 
 let func = [
     "(a, b) => {",
-    "while (y>0 && y>1){ ",
+    " let z= a+b+1+func(x+1,y*1)",
+    " z = 1",
+    "while (y+1>0 && y>1){ ",
     " y=y+1",
     "}" ,
-    " return x",
+    " return x + func(z,y,a)",
     "}"
 ];
 
