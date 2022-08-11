@@ -33,8 +33,7 @@ module.exports = JsSlicer;
 
 let func = [
     "(a, b) => {",
-    " let z= a+b+1+func(x+1,y*1)",
-    " z = 1",
+    " let y= a+b",
     "while (y+1>0 && y>1){ ",
     " y=y+1",
     "}" ,

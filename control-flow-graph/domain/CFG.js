@@ -5,7 +5,7 @@ const {getCFGPaths} = require("../../utils/graphUtils");
 const AssignmentStatement = require("../../code-parser-module/domain/AssignmentStatement");
 const VariableDeclaration = require("../../code-parser-module/domain/VariableDeclaration");
 const DDGEdge = require("../../data-dependence-graph/domain/DDGEdge");
-
+const _ = require("lodash")
 class CFG {
 
     constructor(nodes) {
@@ -50,15 +50,19 @@ class CFG {
     }
 
     getNodeById(id){
-        return this._nodes.find(node => node._id);
+        return this._nodes.find(node => node._id === id);
     }
 
     getDataDependencyEdgesForNode(fromNode){
         let ddgEdges = [];
         this.getAllCFGPaths().filter(topology => topology._source === fromNode._id).forEach(topology =>{
            topology._paths.forEach(path => {
-               this.getVariableDependency(fromNode,topology._target,path).forEach(vd => {
-                   ddgEdges.push(new DDGEdge(fromNode._id, topology._target._id, vd))
+               this.getVariableDependency(fromNode,this.getNodeById(topology._target),path).forEach(vd => {
+
+                   //Add DDGEdge if it does not exist already
+                   if(!ddgEdges.some(edge => edge._source === fromNode._id && edge._target === topology._target && vd === edge._dependantVariable)){
+                       ddgEdges.push(new DDGEdge(fromNode._id, topology._target, vd))
+                   }
                })
            })
         });
@@ -74,11 +78,11 @@ class CFG {
         let destNodeDeclaredVar = (toNode._statement instanceof AssignmentStatement || toNode._statement instanceof VariableDeclaration)
             ? toNode._statement.getDefinedVariable() : undefined;
 
-        let allVars = sourceNodeUsedVars.concat(destNodeUsedVars);
+        let allVars = _.uniq(sourceNodeUsedVars.concat(destNodeUsedVars));
         if(sourceNodeDeclaredVar) allVars.push(sourceNodeDeclaredVar);
         if(destNodeDeclaredVar) allVars.push(destNodeDeclaredVar);
 
-        let remainingNodes = path.filter(node => node._id !== fromNode._id &&  node._id !== toNode._id).map(node => this.getNodeById(node._id));
+        let remainingNodes = path.filter(nodeId => nodeId !== fromNode._id &&  nodeId !== toNode._id).map(nodeId => this.getNodeById(nodeId));
 
         let variableDependencyList = []
         for(let i in allVars){

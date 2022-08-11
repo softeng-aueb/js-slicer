@@ -10,7 +10,7 @@ class DDGGenerator {
         }
         let ddgNodes = [];
         cfg._nodes.forEach(node => {
-            ddgNodes.push(new DDGNode(node._id, node._statement, cfg.getDataDependencyEdgesForNode(node._id)));
+            ddgNodes.push(new DDGNode(node._id, node._statement, cfg.getDataDependencyEdgesForNode(node)));
         })
 
         return new DDG(ddgNodes);
