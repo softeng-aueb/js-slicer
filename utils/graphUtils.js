@@ -1,90 +1,81 @@
 const PathTopology = require("./PathTopology");
 
-let  v;
-let adjList;
-let pathTopology;
-let pathsArray = [];
-const Graph = (vertices) => {
-    v = vertices;
-    initAdjList();
-}
 
-const initAdjList = () => {
-    adjList = new Array(v);
+class Graph {
+    constructor(vertices) {
+        this._v = vertices;
+        this._adjList = this.initAdjList();
+        this._pathTopology;
+        this._pathsArray = [];
+    }
 
-    for (let i = 0; i < v; i++) {
-        adjList[i] = [];
+    initAdjList = () => {
+        let adjList = new Array(this._v);
+
+        for (let i = 0; i < this._v; i++) {
+            adjList[i] = [];
+        }
+        return adjList;
+    }
+
+    addEdge = (u,v) => {
+        this._adjList[u].push(v);
+    }
+
+    getAllPaths = (s,d) => {
+        let isVisited = new Array(this._v);
+        this._pathTopology = new PathTopology(s,d,[]);
+        for(let i=0;i<this._v;i++)
+            isVisited[i]=false;
+        let pathList = [];
+
+        pathList.push(s);
+
+        return this.getAllPathsUtil(s, d, isVisited, pathList);
+    }
+
+    getAllPathsUtil = (u,d,isVisited,localPathList) => {
+        if (u == (d)) {
+            let foundPath = localPathList.slice();
+            this._pathTopology.addPath(foundPath);
+            return;
+        }
+
+        isVisited[u] = true;
+
+        for (let i=0;i< this._adjList[u].length;i++) {
+            if (!isVisited[ this._adjList[u][i]]) {
+
+                localPathList.push( this._adjList[u][i]);
+                this.getAllPathsUtil( this._adjList[u][i], d,
+                    isVisited, localPathList);
+
+                localPathList.splice(localPathList.indexOf
+                ( this._adjList[u][i]),1);
+            }
+        }
+        isVisited[u] = false;
+    }
+
+    getCFGPaths = (cfg) =>{
+
+        let graphEdges = cfg.getAllEdges();
+        graphEdges.forEach(edge => {
+            if(edge._target){
+                this.addEdge(edge._source, edge._target);
+            }
+        })
+
+        graphEdges.forEach(edge => {
+            if(edge._target){
+                this.getAllPaths(edge._source, edge._target);
+                this._pathsArray.push(this._pathTopology)
+            }
+        })
+
+        return this._pathsArray;
+
     }
 }
 
-const addEdge = (u,v) => {
-    adjList[u].push(v);
-}
-
-const getAllPaths = (s,d) => {
-    let isVisited = new Array(v);
-    pathTopology = new PathTopology(s,d,[]);
-    for(let i=0;i<v;i++)
-        isVisited[i]=false;
-    let pathList = [];
-
-    pathList.push(s);
-
-    return getAllPathsUtil(s, d, isVisited, pathList);
-}
-
-
-const getAllPathsUtil = (u,d,isVisited,localPathList) => {
-    if (u == (d)) {
-        let foundPath = localPathList.slice();
-        pathTopology.addPath(foundPath);
-        return;
-        // pathTopology = pathTopology._paths.concat(localPathList);
-        // return pathTopology;
-    }
-
-    isVisited[u] = true;
-
-    for (let i=0;i< adjList[u].length;i++) {
-        if (!isVisited[adjList[u][i]]) {
-
-            localPathList.push(adjList[u][i]);
-            getAllPathsUtil(adjList[u][i], d,
-                isVisited, localPathList);
-
-            localPathList.splice(localPathList.indexOf
-            (adjList[u][i]),1);
-        }
-    }
-    isVisited[u] = false;
-}
-
-
-const getCFGPaths = (cfg) =>{
-    v = null;
-    adjList = null;
-    pathTopology = null;
-    pathsArray = [];
-
-    Graph(cfg._nodes.length);
-    let graphEdges = cfg.getAllEdges();
-    graphEdges.forEach(edge => {
-        if(edge._target){
-            addEdge(edge._source, edge._target);
-        }
-    })
-
-    let nodePairsPaths = [];
-    graphEdges.forEach(edge => {
-        if(edge._target){
-            getAllPaths(edge._source, edge._target);
-            pathsArray.push(pathTopology)
-        }
-    })
-
-    return pathsArray;
-
-}
-module.exports = {
-    getCFGPaths
-}
+module.exports = Graph

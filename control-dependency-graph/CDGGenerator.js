@@ -1,7 +1,7 @@
 const FDT = require("../forward-dominance-tree/domain/FDT");
 const CFG = require("../control-flow-graph/domain/CFG");
 const CDGNode = require("./domain/CDGNode");
-const {getCFGPaths} = require("../utils/graphUtils");
+const Graph = require("../utils/graphUtils");
 const CDGNodeNames = require("./constants/CDGNodeNames");
 const CDGEdge = require("./domain/CDGEdge");
 const CDG = require("./domain/CDG");
@@ -12,7 +12,7 @@ class CDGGenerator {
         if(!cfg || !fdt || !cfg instanceof CFG || !fdt instanceof FDT){
             throw new Error(`Missing required param.`)
         }
-        let pathsArray = getCFGPaths(cfg)
+        let pathsArray = new Graph(cfg._nodes.length).getCFGPaths(cfg)
         let cdg = [new CDGNode(CDGNodeNames.ENTRY,null,[])];
 
         cfg._nodes.forEach(node => {

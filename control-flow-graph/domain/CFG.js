@@ -1,7 +1,7 @@
 const FDTNode = require("../../forward-dominance-tree/domain/FDTNode");
 const FDTEdge = require("../../forward-dominance-tree/domain/FDTEdge");
 const FDT = require("../../forward-dominance-tree/domain/FDT");
-const {getCFGPaths} = require("../../utils/graphUtils");
+const Graph = require("../../utils/graphUtils");
 const AssignmentStatement = require("../../code-parser-module/domain/AssignmentStatement");
 const VariableDeclaration = require("../../code-parser-module/domain/VariableDeclaration");
 const DDGEdge = require("../../data-dependence-graph/domain/DDGEdge");
@@ -43,7 +43,7 @@ class CFG {
     }
 
     getAllCFGPaths(){
-        return getCFGPaths(this);
+        return new Graph(this._nodes.length).getCFGPaths(this)
     }
 
     getNodeById(id){
