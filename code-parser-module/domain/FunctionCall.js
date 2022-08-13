@@ -26,23 +26,19 @@ class FunctionCall {
     }
 
     getUsedVariableNames(){
-        return this.findAllUsedVariableNamesRecursively([]);
-    }
-
-    findAllUsedVariableNamesRecursively(varArray){
-
+        let varArray = [];
         for(let i in this._args){
             let arg = this._args[i];
 
             if (arg instanceof Identifier) {
                 varArray.push(arg._name);
             }else if(!(arg instanceof Identifier) && !(arg instanceof Literal)){
-                varArray =arg.findAllUsedVariableNamesRecursively(varArray);
+                varArray = varArray.concat(arg.getUsedVariableNames());
             }
 
         }
-        return varArray;
-    }
+        return varArray;    }
+
 
 }
 

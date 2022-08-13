@@ -16,15 +16,11 @@ class ObjectExpression{
     }
 
     getUsedVariableNames(){
-        return this.findAllUsedVariableNamesRecursively([]);
-    }
-
-    findAllUsedVariableNamesRecursively(varArray){
+        let varArray = [];
         for(let i in this._properties){
             varArray = varArray.concat(this._properties[i].getUsedVariableNames());
         }
-        return varArray;
+        return varArray;    }
 
-    }
 }
 module.exports = ObjectExpression;

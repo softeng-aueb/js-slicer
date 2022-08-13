@@ -34,18 +34,16 @@ class AssignmentStatement{
     }
 
     getUsedVariableNames(){
-      return this.findAllUsedVariableNamesRecursively([]);
-    }
-
-    findAllUsedVariableNamesRecursively(varArray){
-       //We use only the right part of the assignment as the left is not a variable use but an assignment.
+        let varArray = [];
+        //We use only the right part of the assignment as the left is not a variable use but an assignment.
         if(this._right instanceof Identifier){
             varArray.push(this._right._name);
         }else if(!(this._right instanceof Identifier) && !(this._right instanceof Literal)){
-            varArray=this._right.findAllUsedVariableNamesRecursively(varArray);
+            varArray = varArray.concat(this._right.getUsedVariableNames());
         }
         return varArray;
     }
+
 
     getDefinedVariable(){
         return this._left._name;
