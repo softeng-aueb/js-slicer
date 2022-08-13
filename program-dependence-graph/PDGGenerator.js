@@ -11,7 +11,7 @@ class PDGGenerator{
 
         return cfg._nodes.map(node =>{
             let ddgNode = ddg.getNodeById(node._id);
-            let pdgNodeEdges = (Array.isArray(node._edges)) ? node._edges.concat(ddgNode._edges) :  [node._edges].concat(ddgNode._edges)
+            let pdgNodeEdges =  node._edges.concat(ddgNode._edges);
             return new PDGNode (node._id,null,node._statement,pdgNodeEdges);
         })
     }

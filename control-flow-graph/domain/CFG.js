@@ -30,10 +30,7 @@ class CFG {
 
     getFDTNodeEdges(cfgNode){
         let cfgNodes = this._nodes.filter(node => {
-            if(Array.isArray(node._edges)){
-                return node._edges.find(edge =>  edge._target === cfgNode.id);
-            }
-            return node._edges._target === cfgNode.id;
+            return node._edges.find(edge =>  edge._target === cfgNode.id);
         });
 
         return cfgNodes.map(node =>   new FDTEdge(cfgNode.id,node.id));

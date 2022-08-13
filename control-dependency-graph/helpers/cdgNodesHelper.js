@@ -6,22 +6,17 @@ const getCDGNodeEdges = (cfg, cfgNodeId) => {
     let cfgNode = cfg.find(node => node._id === cfgNodeId);
     if(!cfgNode) return;
 
-    if(cfgNode._edges instanceof CFGEdge){
-        return new CDGEdge(cfgNode._edges._source,cfgNode._edges._target);
-    }else if(Array.isArray(cfgNode._edges)){
-        let edges = [];
-        cfgNode._edges.forEach(edge =>{
-            if(edge._condition === true){
-                edges.push(new CDGEdge(edge._source,edge._target))
-            }
+    let edges = [];
+    cfgNode._edges.forEach(edge =>{
+        if(edge._condition === true){
+            edges.push(new CDGEdge(edge._source,edge._target))
+        }
 
-            if(cfg.find(node => node._id === edge._target && node._executionCondition === "else")){
-                edges.push(new CDGEdge(edge._source,edge._target))
-            }
-        })
-        return edges;
-    }
-    return cfgNode._edges;
+        if(cfg.find(node => node._id === edge._target && node._executionCondition === "else")){
+            edges.push(new CDGEdge(edge._source,edge._target))
+        }
+    })
+    return edges;
 };
 
 const getCDGEntryNodeEdges = (cfg) => {

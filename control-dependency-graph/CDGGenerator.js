@@ -18,6 +18,7 @@ class CDGGenerator {
         cfg._nodes.forEach(node => {
             let dominantNodeId = fdt.getImmediateDominantId(node._id);
             if(!dominantNodeId) {
+                cdg.push(new CDGNode(node._id,null,[]))
                 cdg[0]._edges.push(new CDGEdge(CDGNodeNames.ENTRY, node._id));
             }else{
                 let nodeTopology = pathsArray.filter(topology => topology._source === node._id);

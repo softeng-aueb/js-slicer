@@ -15,8 +15,8 @@ const getNodeEdges = (statementsArr,currStatement, currNodeId) => {
 
     let hasNextStatement = (_.findIndex(statementsArr, (st) => _.isEqual(st, foundCurrentStatement)) !== -1
         && _.findIndex(statementsArr, (st) => _.isEqual(st, foundCurrentStatement)) <= statementsArr.length - 2);
-    if (!hasNextStatement ) return new CFGEdge(currNodeId);
-    return new CFGEdge(currNodeId, currNodeId + 1)
+    if (!hasNextStatement ) return [];
+    return [new CFGEdge(currNodeId, currNodeId + 1)];
 };
 
 const getBlockNodeEdges = (blockStatementsArr,currStatement, currNodeId, conditionalStatement,statementsArr) => {
@@ -26,12 +26,36 @@ const getBlockNodeEdges = (blockStatementsArr,currStatement, currNodeId, conditi
     let foundCurrentStatement = blockStatementsArr.find(st => _.isEqual(st, currStatement))
     if (!foundCurrentStatement) return;
 
+    let isBlocksLastStatement = (_.findIndex(blockStatementsArr, (st) => _.isEqual(st, foundCurrentStatement)) !== -1
+        && _.findIndex(blockStatementsArr, (st) => _.isEqual(st, foundCurrentStatement)) === blockStatementsArr.length - 1)
+
     let hasNextStatement = (_.findIndex(blockStatementsArr, (st) => _.isEqual(st, foundCurrentStatement)) !== -1
         && _.findIndex(blockStatementsArr, (st) => _.isEqual(st, foundCurrentStatement)) <= blockStatementsArr.length - 2)
         ||  getNextCFGNodeId(statementsArr,conditionalStatement);
-    if (!hasNextStatement) return new CFGEdge(currNodeId, getNextCFGNodeId(statementsArr,conditionalStatement));
-    return new CFGEdge(currNodeId, currNodeId + 1)
+
+    let edges = [];
+    if((conditionalStatement instanceof LoopStatement) && isBlocksLastStatement){
+        let nodeIds = getLoopStatementNodeIds(conditionalStatement,blockStatementsArr,currNodeId);
+        nodeIds.forEach(nodeId => edges.push(new CFGEdge(currNodeId, nodeId)));
+    }
+    if (hasNextStatement) {
+        edges.push(new CFGEdge(currNodeId, getNextCFGNodeId(statementsArr,conditionalStatement)));
+        return edges;
+    }
+    //return [new CFGEdge(currNodeId, currNodeId + 1)];
 };
+
+const getLoopStatementNodeIds = (conditionalStatement,blockStatmentsArr,currentNodeId) =>{
+    let cfgConditionNodesNumber = getCFGConditionNodesNumber(conditionalStatement._condition,0)
+    let lastConditionalNodeId =  currentNodeId - blockStatmentsArr.length;
+    let initialConditionalNodeId = lastConditionalNodeId - cfgConditionNodesNumber +1;
+    let nodeIds = [];
+    for (let i = initialConditionalNodeId; i<initialConditionalNodeId + cfgConditionNodesNumber; i++){
+        nodeIds.push(i)
+    }
+
+    return nodeIds
+}
 
 const getConditionalNodeEdges = (functionStatements, condition, conditionalStatement, currentNodeId, initialNodeId) => {
     if (_.isUndefined(conditionalStatement) || _.isUndefined(currentNodeId) || _.isUndefined(condition) || _.isUndefined(initialNodeId)) {
@@ -41,9 +65,7 @@ const getConditionalNodeEdges = (functionStatements, condition, conditionalState
     edges.push(new CFGEdge(currentNodeId, initialNodeId + getCFGConditionNodesNumber(condition,0), true));
 
     let hasNextStatement = getNextCFGNodeId(functionStatements,conditionalStatement);
-    if(!hasNextStatement){
-        edges.push(new CFGEdge(currentNodeId, undefined, false));
-    }else{
+    if(hasNextStatement){
         edges.push(new CFGEdge(currentNodeId, initialNodeId + getNodesBetweenConditions(conditionalStatement,getCFGConditionNodesNumber(condition,0)) + 1, false));
     }
     return edges
