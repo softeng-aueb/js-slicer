@@ -4,6 +4,7 @@ const {getNodeEdges, getConditionalStatementCFGNodes,getLoopStatementCFGNodes} =
 const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 const CFGNode = require("./domain/CFGNode");
 const CFG = require("./domain/CFG");
+const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
 
 class CFGGenerator {
 
@@ -22,7 +23,12 @@ class CFGGenerator {
                const {loopCFGNodes, counter} = getLoopStatementCFGNodes(functionObj.body,st,counterId,[]);
                counterId = counter;
                return  loopCFGNodes;
-           } else{
+           } else if(st instanceof ReturnStatement){
+               // counterId++;
+               let cfgNode = new CFGNode (counterId,null,st,[])
+               counterId+=1;
+               return  cfgNode;
+           }else{
                // counterId++;
                let cfgNode = new CFGNode (counterId,null,st,getNodeEdges(functionObj.body,st,counterId))
                counterId+=1;
