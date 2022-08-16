@@ -1,17 +1,17 @@
 class CDGNode{
-    constructor(nodeId, statement, edges) {
-        this._nodeId = nodeId;
+    constructor(id, statement, edges) {
+        this._id = id;
         this._statement = statement;
         this._edges = edges;
     }
 
 
-    get nodeId() {
-        return this._nodeId;
+    get id() {
+        return this._id;
     }
 
-    set nodeId(value) {
-        this._nodeId = value;
+    set id(value) {
+        this._id = value;
     }
 
     get statement() {
