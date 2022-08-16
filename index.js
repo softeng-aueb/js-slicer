@@ -27,7 +27,7 @@ class JsSlicer{
             let ddg = DDGGenerator.generateDDG(cfg);
 
             //Generate the program dependence graph
-            return PDGGenerator.generatePDG(cfg,ddg);
+            return PDGGenerator.generatePDG(cdg,ddg);
         }catch (e){
             console.log(e);
         }
