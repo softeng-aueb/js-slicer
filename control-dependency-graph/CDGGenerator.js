@@ -5,6 +5,7 @@ const Graph = require("../utils/graphUtils");
 const CDGNodeNames = require("./constants/CDGNodeNames");
 const CDGEdge = require("./domain/CDGEdge");
 const CDG = require("./domain/CDG");
+const _ = require("lodash")
 
 class CDGGenerator {
 
@@ -19,16 +20,25 @@ class CDGGenerator {
             let dominantNodeId = fdt.getImmediateDominantId(node._id);
             if(!dominantNodeId) {
                 cdg.push(new CDGNode(node._id,node._statement,[]))
-                cdg[0]._edges.push(new CDGEdge(CDGNodeNames.ENTRY, node._id));
+                let newEdge = new CDGEdge(CDGNodeNames.ENTRY, node._id)
+                if(!cdg[0]._edges.some(edge => _.isEqual(edge,newEdge))){
+                    cdg[0]._edges.push(newEdge);
+                }
             }else{
                 let nodeTopology = pathsArray.filter(topology => topology._source === node._id);
 
                 let cdgNodeEdges = []
                 nodeTopology.forEach(topology => {
                     if(!topology._paths.find(path => path.includes(dominantNodeId))){
-                        cdgNodeEdges.push(new CDGEdge(topology._source, topology._target))
+                        let newEdge = new CDGEdge(topology._source, topology._target);
+                        if(!cdgNodeEdges.some(edge => _.isEqual(edge,newEdge))){
+                            cdgNodeEdges.push(newEdge);
+                        }
                     }else{
-                        cdg[0]._edges.push(new CDGEdge(CDGNodeNames.ENTRY, topology._target));
+                        let newEdge = new CDGEdge(CDGNodeNames.ENTRY, topology._target)
+                        if(!cdg[0]._edges.some(edge => _.isEqual(edge,newEdge))){
+                            cdg[0]._edges.push(newEdge);
+                        }
                     }
                 });
                 cdg.push(new CDGNode(node._id,node._statement,cdgNodeEdges))
