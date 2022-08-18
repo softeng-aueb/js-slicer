@@ -5,6 +5,7 @@ const BinaryExpression = require("../../code-parser-module/domain/BinaryExpressi
 const _ = require("lodash");
 let CFGEdge = require("../domain/CFGEdge")
 const CFGNode = require("../domain/CFGNode");
+const ReturnStatement = require("../../code-parser-module/domain/ReturnStatement");
 
 const getNodeEdges = (statementsArr,currStatement, currNodeId) => {
     if (_.isUndefined(statementsArr) || _.isUndefined(currStatement) || _.isUndefined(currNodeId)) {
@@ -34,6 +35,10 @@ const getBlockNodeEdges = (blockStatementsArr,currStatement, currNodeId, conditi
         ||  getNextCFGNodeId(statementsArr,conditionalStatement);
 
     let edges = [];
+
+    if(foundCurrentStatement instanceof ReturnStatement) return []
+
+
     if((conditionalStatement instanceof LoopStatement) && isBlocksLastStatement){
         let nodeIds = getLoopStatementNodeIds(conditionalStatement,blockStatementsArr,currNodeId);
         nodeIds.forEach(nodeId => edges.push(new CFGEdge(currNodeId, nodeId)));
@@ -66,7 +71,7 @@ const getConditionalNodeEdges = (functionStatements, condition, conditionalState
 
     let hasNextStatement = getNextCFGNodeId(functionStatements,conditionalStatement);
     if(hasNextStatement){
-        edges.push(new CFGEdge(currentNodeId, initialNodeId + getNodesBetweenConditions(conditionalStatement,getCFGConditionNodesNumber(condition,0)) + 1, false));
+        edges.push(new CFGEdge(currentNodeId, initialNodeId + getNodesBetweenConditions(conditionalStatement,getCFGConditionNodesNumber(condition,0)), false));
     }
     return edges
 };
@@ -183,23 +188,26 @@ const getConditionalStatementCFGNodes = (functionStatements,statement, counterId
             }
         }
     }
-    if (statement._alternates instanceof ConditionalStatement) {
-        return getConditionalStatementCFGNodes(functionStatements,statement._alternates, counterId, nodes)
-    }else{
-        //counterId +=1;
-        nodes = nodes.concat(statement._alternates.map(st => new CFGNode (counterId,"else",st,new CFGEdge(counterId, counterId + 1, true))));
-        counterId +=1;
-        for (let j in statement._alternates){
-            let alternate = statement._alternates[j];
-            if (alternate instanceof ConditionalStatement) {
-                return getConditionalStatementCFGNodes(functionStatements,alternate,counterId,nodes)
-            } else {
-                // counterId +=1;
-                nodes.push(new CFGNode (counterId,null,alternate,getBlockNodeEdges(statement._alternates,alternate,counterId,statement,functionStatements)));
-                counterId++;
+    if(statement._alternates){
+        if (statement._alternates instanceof ConditionalStatement) {
+            return getConditionalStatementCFGNodes(functionStatements,statement._alternates, counterId, nodes)
+        }else{
+            //counterId +=1;
+            nodes = nodes.concat(statement._alternates.map(st => new CFGNode (counterId,"else",st,new CFGEdge(counterId, counterId + 1, true))));
+            counterId +=1;
+            for (let j in statement._alternates){
+                let alternate = statement._alternates[j];
+                if (alternate instanceof ConditionalStatement) {
+                    return getConditionalStatementCFGNodes(functionStatements,alternate,counterId,nodes)
+                } else {
+                    // counterId +=1;
+                    nodes.push(new CFGNode (counterId,null,alternate,getBlockNodeEdges(statement._alternates,alternate,counterId,statement,functionStatements)));
+                    counterId++;
+                }
             }
         }
     }
+
     return {
         conditionalCFGNodes :nodes,
         counter: counterId
