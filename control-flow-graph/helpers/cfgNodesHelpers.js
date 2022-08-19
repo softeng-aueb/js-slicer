@@ -86,7 +86,6 @@ const getNextCFGNodeId = (statementsArr,conditionalStatement) => {
 
     let currentStatementIndex = _.findIndex(statementsArr, (st) => _.isEqual(st, foundCurrentStatement));
     if(currentStatementIndex <= statementsArr.length - 2) {
-        let currentStatementId = currentStatementIndex + 1;
         let conditionalInnerStatements;
         if (conditionalStatement instanceof LoopStatement) {
             conditionalInnerStatements = getListOfLoopInnerStatements([],conditionalStatement);
@@ -95,7 +94,7 @@ const getNextCFGNodeId = (statementsArr,conditionalStatement) => {
         }
         let conditionalInnerStatementsNum = conditionalInnerStatements.length;
 
-        nextCFGNodeID = currentStatementId + conditionalInnerStatementsNum;
+        nextCFGNodeID = currentStatementIndex + conditionalInnerStatementsNum;
     }
     return nextCFGNodeID
 };
