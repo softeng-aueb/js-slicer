@@ -1,3 +1,4 @@
+const CDGNodeNames = require("../../control-dependency-graph/constants/CDGNodeNames");
 const FDTNode = require("../../forward-dominance-tree/domain/FDTNode");
 const FDTEdge = require("../../forward-dominance-tree/domain/FDTEdge");
 const FDT = require("../../forward-dominance-tree/domain/FDT");
@@ -21,19 +22,57 @@ class CFG {
     }
 
     getForwardDominanceTree (){
-        let reversedNodes = this._nodes.slice().reverse();
-        let fdtNodes = reversedNodes.map(node =>{
+        let fdtNodes = this._nodes.map(node =>{
             return new FDTNode(node.id,null,node._statement,this.getFDTNodeEdges(node));
         });
         return new FDT(fdtNodes);
     }
 
-    getFDTNodeEdges(cfgNode){
-        let cfgNodes = this._nodes.filter(node => {
-            return node._edges.find(edge =>  edge._target === cfgNode.id);
-        });
+    getNodesImmediateDominators(){
+        let immediateDomMap = {};
+        this._nodes.forEach(node =>{
+            let nodeDominants = [];
+            let remainingCFGNodes = this._nodes.filter(rNode =>rNode._id !== node._id);
+            remainingCFGNodes.forEach(rNode => {
+                //Y forward dominates X if all paths from X include Y
+                let nodeTopology = this.getAllCFGPaths().filter(topology => topology._source === node._id);
+                let allNodePathsFromX = nodeTopology.flatMap(t => t._paths);
 
-        return cfgNodes.map(node =>   new FDTEdge(cfgNode.id,node.id));
+                if(rNode.dominatesNode(allNodePathsFromX,node)){
+                    nodeDominants.push(rNode);
+                }
+            })
+
+            let immediateNodeDominator = nodeDominants.find(nd =>{
+                let restDominants = nodeDominants.filter(elem => elem._id !== nd._id);
+                return restDominants.every(rd => {
+                    let nodeTopology = this.getAllCFGPaths().filter(topology => topology._source === rd._id);
+                    let allNodePathsFromX = nodeTopology.flatMap(t => t._paths);
+
+                    return rd.dominatesNode(allNodePathsFromX,nd)
+                })
+            })
+
+            immediateDomMap[node._id] = (immediateNodeDominator) ? immediateNodeDominator._id : CDGNodeNames.ENTRY;
+
+        })
+
+        return immediateDomMap
+    }
+    getFDTNodeEdges(cfgNode){
+        let dominatorsMap = this.getNodesImmediateDominators();
+
+        let fdtEdges = []
+        for (const key in dominatorsMap) {
+            if (dominatorsMap[key] === cfgNode._id) {
+                fdtEdges.push( new FDTEdge(cfgNode.id,parseInt(key)));
+            }
+        }
+        // let cfgNodes = this._nodes.filter(node => {
+        //     return node._edges.find(edge =>  edge._target === cfgNode.id);
+        // });
+
+        return fdtEdges;//cfgNodes.map(node =>   new FDTEdge(cfgNode.id,node.id));
     }
 
     getAllEdges(){

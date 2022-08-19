@@ -43,5 +43,16 @@ class CFGNode {
     isDependantNode (cfg) {
         return cfg.find(node =>  node._edges.find(edge => edge._condition === true && edge._target === this._id));
     }
+
+    dominatesNode(paths,node){
+        if(this._id === node._id){
+            return true;
+        }
+        if(this._id !== node._id && paths.every(path => path.includes(this._id))){
+            return true;
+        }
+        return false;
+
+    }
 }
 module.exports = CFGNode;

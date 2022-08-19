@@ -36,14 +36,39 @@ class JsSlicer{
 module.exports = JsSlicer;
 
 let func = [
-    "(a, b) => {",
-    " let y= a+b",
-    "while (y+1>0 && y>1){ ",
-    " y=y+1",
-    "}" ,
-    " return x + func(z,y,a)",
+    "function isOdd (num){\n" +
+    "  if(num % 2 !== 0){\n" +
+    "    return true;\n" +
+    "  }\n" +
+    "  return false;\n" +
     "}"
-];
+]
+// let func = [
+//     "function isOdd (num){\n" +
+//     "  if(num % 2 !== 0){\n" +
+//     "    num = num +1;\n" +
+//     "  }\n" +
+//     "  return false;\n" +
+//     "}"
+// ]
+
+// let func = [
+//     "function test (){\n" +
+//     "  let y=1;\n" +
+//     "  let x= 2;\n" +
+//     "  return x+y;\n" +
+//     "\n" +
+//     "}"
+// ]
+// let func = [
+//     "(a, b) => {",
+//     " let y= a+b",
+//     "while (y+1>0 && y>1){ ",
+//     " y=y+1",
+//     "}" ,
+//     " return x + func(z,y,a)",
+//     "}"
+// ];
 
 let result = JsSlicer.slice(func)
 console.log()

@@ -16,34 +16,32 @@ class CDGGenerator {
         let pathsArray = new Graph(cfg._nodes.length).getCFGPaths(cfg)
         let cdg = [new CDGNode(CDGNodeNames.ENTRY,null,[])];
 
-        cfg._nodes.forEach(node => {
-            let dominantNodeId = fdt.getImmediateDominantId(node._id);
-            if(!dominantNodeId) {
-                cdg.push(new CDGNode(node._id,node._statement,[]))
-                let newEdge = new CDGEdge(CDGNodeNames.ENTRY, node._id)
-                if(!cdg[0]._edges.some(edge => _.isEqual(edge,newEdge))){
-                    cdg[0]._edges.push(newEdge);
-                }
-            }else{
-                let nodeTopology = pathsArray.filter(topology => topology._source === node._id);
 
-                let cdgNodeEdges = []
+        cfg._nodes.forEach(node => {
+            let cdgNodeEdges = [];
+            let dominantNodeId = fdt.getImmediateDominantId(node._id);
+            if (_.isUndefined(dominantNodeId)) dominantNodeId = CDGNodeNames.ENTRY
+            let remainingNodes = cfg._nodes.filter(rNode => rNode._id !== node._id);
+            remainingNodes.forEach(rNode => {
+                let nodeTopology = pathsArray.filter(topology => topology._source === node._id && topology._target === rNode._id);
                 nodeTopology.forEach(topology => {
-                    if(!topology._paths.find(path => path.includes(dominantNodeId))){
+                    if (!topology._paths.find(path => path.includes(dominantNodeId))) {
                         let newEdge = new CDGEdge(topology._source, topology._target);
-                        if(!cdgNodeEdges.some(edge => _.isEqual(edge,newEdge))){
+                        if (!cdgNodeEdges.some(edge => _.isEqual(edge, newEdge))) {
                             cdgNodeEdges.push(newEdge);
-                        }
-                    }else{
-                        let newEdge = new CDGEdge(CDGNodeNames.ENTRY, topology._target)
-                        if(!cdg[0]._edges.some(edge => _.isEqual(edge,newEdge))){
-                            cdg[0]._edges.push(newEdge);
                         }
                     }
                 });
-                cdg.push(new CDGNode(node._id,node._statement,cdgNodeEdges))
-            }
+            })
+            cdg.push(new CDGNode(node._id, node._statement, cdgNodeEdges))
         });
+
+       let cdgEdges = cdg.flatMap(cdgNode =>  cdgNode._edges);
+       cfg._nodes.forEach(cfgNode => {
+           if(!cdgEdges.some(edge => edge._target === cfgNode._id)){
+               cdg[0]._edges.push( new CDGEdge(CDGNodeNames.ENTRY, cfgNode._id))
+           }
+       })
 
         return new CDG(cdg);
     }
