@@ -1,5 +1,5 @@
 const PathTopology = require("./PathTopology");
-
+const _ = require("lodash")
 
 class Graph {
     constructor(vertices) {
@@ -66,13 +66,15 @@ class Graph {
             }
         })
 
-        graphEdges.forEach(edge => {
-            if(edge._target){
-                this.getAllPaths(edge._source, edge._target);
-                this._pathsArray.push(this._pathTopology)
-            }
+        cfg._nodes.forEach(node1 => {
+            cfg._nodes.filter(node2 => !_.isEqual(node1,node2)).forEach(node2 => {
+                this.getAllPaths(node1._id, node2._id);
+                let pathTopology  = this._pathTopology;
+                if(pathTopology && pathTopology._paths && pathTopology._paths.length){
+                    this._pathsArray.push(this._pathTopology)
+                }
+            })
         })
-
         return this._pathsArray;
 
     }
