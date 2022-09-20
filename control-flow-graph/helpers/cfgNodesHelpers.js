@@ -43,6 +43,8 @@ const getBlockNodeEdges = (blockStatementsArr,currStatement, currNodeId, conditi
         let nodeIds = getLoopStatementNodeIds(conditionalStatement,blockStatementsArr,currNodeId);
         nodeIds.forEach(nodeId => edges.push(new CFGEdge(currNodeId, nodeId)));
         return edges;
+    }else if((conditionalStatement instanceof LoopStatement) && !isBlocksLastStatement){
+        return getNodeEdges(blockStatementsArr,currStatement,currNodeId)
     }
     if (hasNextStatement) {
         edges.push(new CFGEdge(currNodeId, getNextCFGNodeId(statementsArr,conditionalStatement)));
