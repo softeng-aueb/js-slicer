@@ -15,7 +15,8 @@ const AST_OBJECT_TYPES = {
     CONDITIONAL_EXPRESSION : "ConditionalExpression",
     LOGICAL_EXPRESSION : "LogicalExpression",
     CALL_EXPRESSION : "CallExpression",
-    OBJECT_EXPRESSION:"ObjectExpression"
+    OBJECT_EXPRESSION:"ObjectExpression",
+    MEMBER_EXPRESSION:"MemberExpression"
 
 }
 

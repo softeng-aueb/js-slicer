@@ -35,14 +35,54 @@ class JsSlicer{
 }
 module.exports = JsSlicer;
 
-let func = [
-    "function isOdd (num){\n" +
-    "  if(num % 2 !== 0){\n" +
-    "    return true;\n" +
-    "  }\n" +
-    "  return false;\n" +
+let func = Parser.parse([
+    "(a, b) => {",
+    "if (y>0 && y>1){ ",
+    " y=y+1",
+    "}else if (y== 0){" +
+    " y=y+2;" +
+    "}else{ ",
+    " y=y/2; ",
+    "}",
+    " return x",
     "}"
-]
+]);
+// let func = [
+//    "function findNumberType (number){\n" +
+//    "  if(number % 2 === 0){\n" +
+//    "    console.log(\"Number is even\")\n" +
+//    "  }else{\n" +
+//    "    console.log(\"Number is odd\")\n" +
+//    "  } \n" +
+//    "}"
+// ]
+
+
+// let func = [
+// "function getSum (array){\n" +
+// "  let sum= 0;\n" +
+// "\n" +
+// "  for(let i=0; i< array.length;i++){\n" +
+// "    sum = sum + array[i]\n" +
+// "  }\n" +
+// "\n" +
+// "  return sum;\n" +
+// "}"
+// ]
+
+// let func = [
+// "function getMax (array){\n" +
+// "  let max= array[0];\n" +
+// "\n" +
+// "  for(let i=0; i< array.length;i++){\n" +
+// "    if(max < array[i]){\n" +
+// "      max = array[i];\n" +
+// "    }\n" +
+// "  }\n" +
+// "\n" +
+// "  return max;\n" +
+// "}"
+// ]
 // let func = [
 //     "function isOdd (num){\n" +
 //     "  if(num % 2 !== 0){\n" +
@@ -72,18 +112,7 @@ let func = [
 
 let result = JsSlicer.slice(func)
 console.log()
-// let func = Parser.parse([
-//     "(a, b) => {",
-//     "if (y>0 && y>1){ ",
-//     " y=y+1",
-//     "}else if (y== 0){" +
-//     " y=y+2;" +
-//     "}else{ ",
-//     " y=y/2; ",
-//     "}",
-//     " return x",
-//     "}"
-// ]);
+
 // let func = Parser.parse([
 //     "(a, b) => {",
 //     "fun()",

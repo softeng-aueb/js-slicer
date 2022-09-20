@@ -1,5 +1,6 @@
 const CFGNode = require("../../control-flow-graph/domain/CFGNode");
 const CFGEdge = require("../../control-flow-graph/domain/CFGEdge");
+const LoopStatement = require("./LoopStatement");
 
 class ConditionalStatement{
     constructor(condition,then,alternates) {

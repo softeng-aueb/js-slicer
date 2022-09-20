@@ -15,6 +15,7 @@ const LogicalExpression = require("../domain/LogicalExpression");
 const FunctionCall = require("../domain/FunctionCall");
 const ObjectExpression = require("../domain/ObjectExpression");
 const ObjectProperty = require("../domain/ObjectProperty");
+const MemberExpression = require("../domain/MemberExpression");
 
 class AstObjectTypesParser {
 
@@ -48,11 +49,22 @@ class AstObjectTypesParser {
             return this.returnStatementParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.OBJECT_EXPRESSION){
             return this.objectExpressionParser(expressionAstObj)
+        }else if(expressionAstObj.type === AST_OBJECT_TYPES.MEMBER_EXPRESSION){
+            return this.memberExpressionParser(expressionAstObj)
         }
     }
 
 
+    static memberExpressionParser(memberExpressionAstObj){
+        if (!memberExpressionAstObj || memberExpressionAstObj.type !== AST_OBJECT_TYPES.MEMBER_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.MEMBER_EXPRESSION} object.`)
+        }
 
+        let object = this.expressionParser(memberExpressionAstObj.object);
+        let property = this.expressionParser(memberExpressionAstObj.property);
+
+        return new MemberExpression(object,property);
+    }
     static expressionStatementParser(expressionStatementAstObj) {
         if (!expressionStatementAstObj || expressionStatementAstObj.type !== AST_OBJECT_TYPES.EXPRESSION_STATEMENT) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.EXPRESSION_STATEMENT} object.`)
