@@ -45,7 +45,7 @@ class VariableDeclaration {
     }
 
     getDefinedVariable(){
-        return this._names._name;
+        return this._names;
     }
 
 

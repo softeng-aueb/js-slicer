@@ -115,8 +115,8 @@ class CFG {
             ? toNode._statement.getDefinedVariable() : undefined;
 
         let allVars = _.uniq(sourceNodeUsedVars.concat(destNodeUsedVars));
-        if(sourceNodeDeclaredVar) allVars.push(sourceNodeDeclaredVar);
-        if(destNodeDeclaredVar) allVars.push(destNodeDeclaredVar);
+        if(sourceNodeDeclaredVar) allVars.concat(sourceNodeDeclaredVar);
+        if(destNodeDeclaredVar) allVars.concat(destNodeDeclaredVar);
 
         let remainingNodes = path.filter(nodeId => nodeId !== fromNode._id &&  nodeId !== toNode._id).map(nodeId => this.getNodeById(nodeId));
 
@@ -142,9 +142,9 @@ class CFG {
                         * */
             if(!hasInterveningDefinition
                 && (
-                    (sourceNodeDeclaredVar && sourceNodeDeclaredVar === variable && destNodeUsedVars.includes(variable))
-                    || (sourceNodeUsedVars.includes(variable) && destNodeDeclaredVar && destNodeDeclaredVar === variable)
-                    || (sourceNodeDeclaredVar && sourceNodeDeclaredVar === variable && destNodeDeclaredVar && destNodeDeclaredVar === variable))){
+                    (sourceNodeDeclaredVar && sourceNodeDeclaredVar.includes( variable) && destNodeUsedVars.includes(variable))
+                    || (sourceNodeUsedVars.includes(variable) && destNodeDeclaredVar && destNodeDeclaredVar.includes(variable))
+                    || (sourceNodeDeclaredVar &&sourceNodeDeclaredVar.includes( variable) && destNodeDeclaredVar && destNodeDeclaredVar.includes(variable)))){
 
                 variableDependencyList.push(variable);
 
