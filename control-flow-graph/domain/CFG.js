@@ -92,20 +92,27 @@ class CFG {
     getDataDependencyEdgesForNode(fromNode){
         let ddgEdges = [];
         this.getAllCFGPaths().filter(topology => topology._source === fromNode._id).forEach(topology =>{
-           topology._paths.forEach(path => {
-               this.getVariableDependency(fromNode,this.getNodeById(topology._target),path).forEach(vd => {
+            this.getVariableDependency(fromNode,this.getNodeById(topology._target),topology._paths).forEach(vd => {
 
-                   //Add DDGEdge if it does not exist already
-                   if(!ddgEdges.some(edge => edge._source === fromNode._id && edge._target === topology._target && vd === edge._dependantVariable)){
-                       ddgEdges.push(new DDGEdge(fromNode._id, topology._target, vd))
-                   }
-               })
-           })
+                //Add DDGEdge if it does not exist already
+                if(!ddgEdges.some(edge => edge._source === fromNode._id && edge._target === topology._target && vd === edge._dependantVariable)){
+                    ddgEdges.push(new DDGEdge(fromNode._id, topology._target, vd))
+                }
+            })
+            // topology._paths.forEach(path => {
+            //     this.getVariableDependency(fromNode,this.getNodeById(topology._target),path).forEach(vd => {
+            //
+            //         //Add DDGEdge if it does not exist already
+            //         if(!ddgEdges.some(edge => edge._source === fromNode._id && edge._target === topology._target && vd === edge._dependantVariable)){
+            //             ddgEdges.push(new DDGEdge(fromNode._id, topology._target, vd))
+            //         }
+            //     })
+            // })
         });
         return ddgEdges;
     }
 
-    getVariableDependency(fromNode,toNode,path){
+    getVariableDependency(fromNode,toNode,paths){
         let sourceNodeUsedVars = fromNode._statement.getUsedVariableNames();
         let destNodeUsedVars = toNode._statement.getUsedVariableNames();
 
@@ -115,40 +122,40 @@ class CFG {
             ? toNode._statement.getDefinedVariable() : undefined;
 
         let allVars = _.uniq(sourceNodeUsedVars.concat(destNodeUsedVars));
-        if(sourceNodeDeclaredVar) allVars.concat(sourceNodeDeclaredVar);
-        if(destNodeDeclaredVar) allVars.concat(destNodeDeclaredVar);
-
-        let remainingNodes = path.filter(nodeId => nodeId !== fromNode._id &&  nodeId !== toNode._id).map(nodeId => this.getNodeById(nodeId));
+        if(sourceNodeDeclaredVar) allVars = allVars.concat(sourceNodeDeclaredVar);
+        if(destNodeDeclaredVar) allVars = allVars.concat(destNodeDeclaredVar);
 
         let variableDependencyList = []
+        /*
+            //     * Formal Definition
+            //     – Let X and Y be nodes in a CFG. There is a data
+            //     dependence from X to Y with respect to a
+            //     variable v iff there is a non-null path p from X
+            //     to Y with no intervening definition of v and
+            //     either:
+            //     • X contains a definition of v and Y a use of v;
+            //     • X contains a use of v and Y a definition of v; or
+            //     • X contains a definition of v and Y a definition of v.
+            //                 * */
         for(let i in allVars){
             let variable = allVars[i];
-            let hasInterveningDefinition = remainingNodes.some(rNode => {
-                let rNodeDeclaredVar = (rNode._statement instanceof AssignmentStatement || rNode._statement instanceof VariableDeclaration)
-                    ? rNode._statement.getDefinedVariable() : undefined;
-                return rNodeDeclaredVar === variable
-            })
+            let nodesAreDataDependent = paths.some(path =>{
+                let remainingNodes = path.filter(nodeId => nodeId !== fromNode._id &&  nodeId !== toNode._id).map(nodeId => this.getNodeById(nodeId));
+                let hasInterveningDefinition = remainingNodes.some(rNode => {
+                    let rNodeDeclaredVar = (rNode._statement instanceof AssignmentStatement || rNode._statement instanceof VariableDeclaration)
+                        ? rNode._statement.getDefinedVariable() : undefined;
+                    return rNodeDeclaredVar && rNodeDeclaredVar.includes(variable)
+                })
 
-            /*
-            * Formal Definition
-            – Let X and Y be nodes in a CFG. There is a data
-            dependence from X to Y with respect to a
-            variable v iff there is a non-null path p from X
-            to Y with no intervening definition of v and
-            either:
-            • X contains a definition of v and Y a use of v;
-            • X contains a use of v and Y a definition of v; or
-            • X contains a definition of v and Y a definition of v.
-                        * */
-            if(!hasInterveningDefinition
-                && (
-                    (sourceNodeDeclaredVar && sourceNodeDeclaredVar.includes( variable) && destNodeUsedVars.includes(variable))
-                    || (sourceNodeUsedVars.includes(variable) && destNodeDeclaredVar && destNodeDeclaredVar.includes(variable))
-                    || (sourceNodeDeclaredVar &&sourceNodeDeclaredVar.includes( variable) && destNodeDeclaredVar && destNodeDeclaredVar.includes(variable)))){
+                return (!hasInterveningDefinition
+                    && (
+                        (sourceNodeDeclaredVar && sourceNodeDeclaredVar.includes( variable) && destNodeUsedVars.includes(variable))
+                        || (sourceNodeUsedVars.includes(variable) && destNodeDeclaredVar && destNodeDeclaredVar.includes(variable))
+                        || (sourceNodeDeclaredVar &&sourceNodeDeclaredVar.includes( variable) && destNodeDeclaredVar && destNodeDeclaredVar.includes(variable))));
 
-                variableDependencyList.push(variable);
+            });
+            if(nodesAreDataDependent) variableDependencyList.push(variable);
 
-            }
         }
 
         return (variableDependencyList.length) ? variableDependencyList : [];
