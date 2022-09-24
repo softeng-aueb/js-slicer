@@ -5,22 +5,23 @@ const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 const CFGNode = require("./domain/CFGNode");
 const CFG = require("./domain/CFG");
 const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
+const CFGEdge = require("./domain/CFGEdge");
 
 class CFGGenerator {
 
     static generateCfg(functionObj){
-        let counterId = 0;
+        let counterId = 1;
         if(!functionObj && !functionObj instanceof FunctionObj){
             throw new Error(`Missing required param.`)
         }
 
        let nodes = functionObj.body.flatMap(st => {
            if(st instanceof ConditionalStatement){
-               const {conditionalCFGNodes, counter} = getConditionalStatementCFGNodes(functionObj.body,st,counterId,[]);
+               const {conditionalCFGNodes, counter} = getConditionalStatementCFGNodes(functionObj.body,st,counterId,[],st);
                counterId = counter;
                return  conditionalCFGNodes;
            } else if(st instanceof LoopStatement){
-               const {loopCFGNodes, counter} = getLoopStatementCFGNodes(functionObj.body,st,counterId,[]);
+               const {loopCFGNodes, counter} = getLoopStatementCFGNodes(functionObj.body,st,counterId,[], st);
                counterId = counter;
                return  loopCFGNodes;
            } else if(st instanceof ReturnStatement){
@@ -37,6 +38,7 @@ class CFGGenerator {
 
        });
 
+        nodes.unshift(new CFGNode (0,null,"ENTRY",[new CFGEdge(0,1)]));
         return new CFG(nodes);
     }
 }

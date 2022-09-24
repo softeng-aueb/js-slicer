@@ -1,3 +1,4 @@
+const ConditionalStatement = require("./ConditionalStatement");
 
 class LoopStatement {
     constructor(type,condition,body) {
@@ -38,7 +39,7 @@ class LoopStatement {
         }else{
             for (let i in this._body){
                 let statement = this._body[i];
-                if (statement instanceof ConditionalStatement || statement instanceof LoopStatement) {
+                if ((statement instanceof ConditionalStatement) || (statement instanceof LoopStatement)) {
                     statement.getListOfInnerStatements(statements)
                 } else {
                     statements = statements.concat(statement);

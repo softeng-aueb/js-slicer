@@ -9,7 +9,7 @@ class DDGGenerator {
             throw new Error(`Missing required param.`)
         }
         let ddgNodes = [];
-        cfg._nodes.forEach(node => {
+        cfg._nodes.filter(n => n._statement !== "ENTRY").forEach(node => {
             ddgNodes.push(new DDGNode(node._id, node._statement, cfg.getDataDependencyEdgesForNode(node)));
         })
 

@@ -10,7 +10,7 @@ class PDGGenerator{
         }
 
         return cdg._nodes.map(node =>{
-            if(node._id === CDGNodeNames.ENTRY){
+            if(node._statement === CDGNodeNames.ENTRY){
                 return new PDGNode (node._id,null,node._statement,node._edges);
             }
             let ddgNode = ddg.getNodeById(node._id);

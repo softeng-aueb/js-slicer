@@ -35,18 +35,39 @@ class JsSlicer{
 }
 module.exports = JsSlicer;
 
-let func = Parser.parse([
-    "(a, b) => {",
-    "if (y>0 && y>1){ ",
-    " y=y+1",
-    "}else if (y== 0){" +
-    " y=y+2;" +
-    "}else{ ",
-    " y=y/2; ",
-    "}",
-    " return x",
-    "}"
-]);
+
+// let func = [
+//     "function isOdd (num){\n" +
+//     "  if(num % 2 !== 0){\n" +
+//     "    return true;\n" +
+//     "  }\n" +
+//     "  return false;\n" +
+//     "}"
+// ]
+// //No3
+// let func = [
+//     "(a, b) => {",
+//     " let y= a+b",
+//     "while (y<5){ ",
+//     " y=y+1",
+//     "}" ,
+//     " return y",
+//     "}"
+// ];
+
+//No2
+// let func =([
+//     "(y) => {",
+//     "if (y>0){ ", //1
+//     " y=y+1", //2
+//     "}else if (y== 0){" + //3
+//     " y=y+2;" +//4
+//     "}else{ ",//
+//     " y=y/2; ",//5
+//     "}",
+//     " return y",//6
+//     "}"
+//  ]);
 // let func = [
 //    "function findNumberType (number){\n" +
 //    "  if(number % 2 === 0){\n" +
@@ -57,18 +78,20 @@ let func = Parser.parse([
 //    "}"
 // ]
 
+// //No3
 
-// let func = [
-// "function getSum (array){\n" +
-// "  let sum= 0;\n" +
-// "\n" +
-// "  for(let i=0; i< array.length;i++){\n" +
-// "    sum = sum + array[i]\n" +
-// "  }\n" +
-// "\n" +
-// "  return sum;\n" +
-// "}"
-// ]
+let func = [
+"function getSum (array){\n" +
+"  let sum= 0;\n" +
+"  let i = 0;\n" +
+"  while(i< array.length){\n" +
+"    sum = sum + array[i];\n" +
+"    i=i+1;\n" +
+"  }\n" +
+"\n" +
+"  return sum;\n" +
+"}"
+]
 
 // let func = [
 // "function getMax (array){\n" +

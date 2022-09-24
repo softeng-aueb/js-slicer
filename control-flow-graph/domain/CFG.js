@@ -53,7 +53,7 @@ class CFG {
                 })
             })
 
-            immediateDomMap[node._id] = (immediateNodeDominator) ? immediateNodeDominator._id : CDGNodeNames.ENTRY;
+            immediateDomMap[node._id] = (immediateNodeDominator) ? immediateNodeDominator._id : 0;
 
         })
 
