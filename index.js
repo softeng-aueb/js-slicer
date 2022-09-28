@@ -4,6 +4,9 @@ const FDTGenerator = require("./forward-dominance-tree/FDTGenerator");
 const CDGGenerator = require("./control-dependency-graph/CDGGenerator");
 const DDGGenerator = require("./data-dependence-graph/DDGGenerator");
 const PDGGenerator = require("./program-dependence-graph/PDGGenerator");
+const fs = require('fs');
+const DDGEdge = require("./data-dependence-graph/domain/DDGEdge");
+const CDGEdge = require("./control-dependency-graph/domain/CDGEdge");
 
 class JsSlicer{
     static slice(func){
@@ -35,106 +38,156 @@ class JsSlicer{
 }
 module.exports = JsSlicer;
 
+let func1 = `function isOdd (num){
+  if(num % 2 !== 0){
+    return true;
+  }
+  return false;
+}`
 
-// let func = [
-//     "function isOdd (num){\n" +
-//     "  if(num % 2 !== 0){\n" +
-//     "    return true;\n" +
-//     "  }\n" +
-//     "  return false;\n" +
-//     "}"
-// ]
-// //No3
-// let func = [
-//     "(a, b) => {",
-//     " let y= a+b",
-//     "while (y<5){ ",
-//     " y=y+1",
-//     "}" ,
-//     " return y",
-//     "}"
-// ];
+let func2 = `(a, b) => {
+  let y= a+b
+  while (y<5){
+    y=y+1
+  }
+  return y
+}`
 
-//No2
-// let func =([
-//     "(y) => {",
-//     "if (y>0){ ", //1
-//     " y=y+1", //2
-//     "}else if (y== 0){" + //3
-//     " y=y+2;" +//4
-//     "}else{ ",//
-//     " y=y/2; ",//5
-//     "}",
-//     " return y",//6
-//     "}"
-//  ]);
-// let func = [
-//    "function findNumberType (number){\n" +
-//    "  if(number % 2 === 0){\n" +
-//    "    console.log(\"Number is even\")\n" +
-//    "  }else{\n" +
-//    "    console.log(\"Number is odd\")\n" +
-//    "  } \n" +
-//    "}"
-// ]
+let func3 =`(y) => {
+  if (y>0){
+    y=y+1
+  }else if (y== 0){
+    y=y+2;
+  }else{
+    y=y/2;
+  }
+  return y;
+}`;
 
-// //No3
+let func4 = `function findNumberType (number){
+  if(number % 2 === 0){
+    console.log("Number is even")
+  }else{
+    console.log("Number is odd")
+  }
+}`;
 
-let func = [
-"function getSum (array){\n" +
-"  let sum= 0;\n" +
-"  let i = 0;\n" +
-"  while(i< array.length){\n" +
-"    sum = sum + array[i];\n" +
-"    i=i+1;\n" +
-"  }\n" +
-"\n" +
-"  return sum;\n" +
-"}"
-]
+let func5 = `function getSum (array){
+  let sum= 0;
+  let i = 0;
+  while(i< array.length){
+    sum = sum + array[i];
+    i=i+1;
+  }
+  return sum;
+}`;
 
-// let func = [
-// "function getMax (array){\n" +
-// "  let max= array[0];\n" +
-// "\n" +
-// "  for(let i=0; i< array.length;i++){\n" +
-// "    if(max < array[i]){\n" +
-// "      max = array[i];\n" +
-// "    }\n" +
-// "  }\n" +
-// "\n" +
-// "  return max;\n" +
-// "}"
-// ]
-// let func = [
-//     "function isOdd (num){\n" +
-//     "  if(num % 2 !== 0){\n" +
-//     "    num = num +1;\n" +
-//     "  }\n" +
-//     "  return false;\n" +
-//     "}"
-// ]
+let func6 = `function getMax (array){
+  let max= array[0];
+  for(let i=0; i< array.length;i++){
+    if(max < array[i]){
+      max = array[i];
+    }
+  }
+  return max;
+}`;
 
-// let func = [
-//     "function test (){\n" +
-//     "  let y=1;\n" +
-//     "  let x= 2;\n" +
-//     "  return x+y;\n" +
-//     "\n" +
-//     "}"
-// ]
-// let func = [
-//     "(a, b) => {",
-//     " let y= a+b",
-//     "while (y+1>0 && y>1){ ",
-//     " y=y+1",
-//     "}" ,
-//     " return x + func(z,y,a)",
-//     "}"
-// ];
+let func7 = `function isOdd (num){
+  if(num % 2 !== 0){
+    num = num +1;
+  }
+  return false;
+}`;
 
-let result = JsSlicer.slice(func)
-console.log()
+
+let func8 = `function test (){
+  let y=1;
+  let x= 2;
+  return x+y;
+}`;
+
+let func9 = `(a, b) => {
+  let y= a+b
+  while (y+1>0 && y>1){
+    y=y+1
+  }
+  return x + func(z,y,a)
+}`;
+
+// func4, func7 not working at all
+let result = JsSlicer.slice(func9.split("\n"))
+console.log(result)
+exportToDot(result, 'func9')    
+
+
+processExamples()
+
+/*
+Outputs .dot files to ./output directory.
+Use Graphviz Interactive Preview (VS COde plugin) to preview the files
+*/
+function processExamples(){
+    
+    let examples = [func1, func2, func3, func5, func6, func8, func9]
+    let filenames = ['func1', 'func2', 'func3', 'func5', 'func6', 'func8', 'func9']
+    for(let i = 0; i < examples.length; i++){
+        let result = JsSlicer.slice(examples[i].split("\n"))
+        exportToDot(result, filenames[i])    
+    }    
+}
+
+function exportToDot(pdg, filename){
+    let dot = writeToDot(pdg)
+    fs.writeFileSync(`./output/${filename}.dot`, dot)
+}
+
+function writeToDot(pdg){
+    let digraph = `digraph G {
+        rankdir=TB;
+        ranksep="0.2 equally";
+        fontname="sans-serif";
+        rotate="0";
+        orientation="portrait";
+        landscape="true";
+        penwidth="0.1";
+        edge [comment="Wildcard edge", 
+              fontname="sans-serif", 
+              fontsize=10, 
+              colorscheme="blues3", 
+              color=2, 
+              fontcolor=3];
+        node [fontname="serif", 
+              fontsize=13, 
+              fillcolor="1", 
+              colorscheme="blues4", 
+              color="2", 
+              fontcolor="4", 
+              style="filled"];`
+
+    for(node of pdg){
+        digraph += `\t"${node._id}";\n`
+    }
+    for(node of pdg){
+        for(edge of node._edges){
+            digraph += `\t"${edge._source}" -> "${edge._target}"`
+            let properties = []
+            if (edge._condition){
+                properties.push(`label="${edge._condition}"`)
+            }
+            if (edge instanceof DDGEdge){
+                properties.push(`style="dashed"`)
+                properties.push(`color="1"`)
+                properties.push(`label="${edge._dependantVariable}"`)
+            } else if (edge instanceof CDGEdge){
+                //properties.push(``)
+                //console.log(edge)
+            }
+            digraph += `[${properties.join(", ")}];\n`;
+        }
+    }
+    digraph +="}"
+    return digraph;
+}
 
 // let func = Parser.parse([
 //     "(a, b) => {",

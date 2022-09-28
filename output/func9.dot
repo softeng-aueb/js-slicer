@@ -1,0 +1,40 @@
+digraph G {
+        rankdir=TB;
+        ranksep="0.2 equally";
+        fontname="sans-serif";
+        rotate="0";
+        orientation="portrait";
+        landscape="true";
+        penwidth="0.1";
+        edge [comment="Wildcard edge", 
+              fontname="sans-serif", 
+              fontsize=10, 
+              colorscheme="blues3", 
+              color=2, 
+              fontcolor=3];
+        node [fontname="serif", 
+              fontsize=13, 
+              fillcolor="1", 
+              colorscheme="blues4", 
+              color="2", 
+              fontcolor="4", 
+              style="filled"];	"0";
+	"1";
+	"2";
+	"3";
+	"4";
+	"5";
+	"0" -> "1"[];
+	"0" -> "2"[];
+	"0" -> "3"[];
+	"0" -> "4"[];
+	"0" -> "5"[];
+	"1" -> "2"[style="dashed", color="1", label="y"];
+	"1" -> "4"[style="dashed", color="1", label="y"];
+	"1" -> "5"[style="dashed", color="1", label="y"];
+	"2" -> "4"[style="dashed", color="1", label="y"];
+	"3" -> "4"[style="dashed", color="1", label="y"];
+	"4" -> "2"[style="dashed", color="1", label="y"];
+	"4" -> "3"[style="dashed", color="1", label="y"];
+	"4" -> "5"[style="dashed", color="1", label="y"];
+}
