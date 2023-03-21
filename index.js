@@ -7,34 +7,53 @@ const PDGGenerator = require("./program-dependence-graph/PDGGenerator");
 const fs = require('fs');
 const DDGEdge = require("./data-dependence-graph/domain/DDGEdge");
 const CDGEdge = require("./control-dependency-graph/domain/CDGEdge");
+const { generateCfg } = require("./control-flow-graph/CFGGenerator");
 
-class JsSlicer{
-    static slice(func){
-        try {
-            if(!func){
-                throw new Error("Missing required params.")
-            }
-            //Parse the given func
-            let parsedFunc = Parser.parse(func);
+class JsSlicer {
 
-            //Generate the control flow graph
-            let cfg = CFGGenerator.generateCfg(parsedFunc);
+  static cfg(func) {
+    try {
+      if (!func) {
+        throw new Error("Missing required params.")
+      }
+      //Parse the given func
+      let parsedFunc = Parser.parse(func);
 
-            //Generate the forward dependence graph
-            let fdt = FDTGenerator.generateFDT(cfg);
+      //Generate the control flow graph
+      let cfg = CFGGenerator.generateCfg(parsedFunc);
 
-            //Generate control dependency graph from control flow graph and control dependence graph
-            let cdg = CDGGenerator.generateCDG(cfg,fdt);
-
-            //Generate the data dependence graph
-            let ddg = DDGGenerator.generateDDG(cfg);
-
-            //Generate the program dependence graph
-            return PDGGenerator.generatePDG(cdg,ddg);
-        }catch (e){
-            console.log(e);
-        }
+      return cfg;
+    } catch (e) {
+      console.log(e);
     }
+  }
+
+  static slice(func) {
+    try {
+      if (!func) {
+        throw new Error("Missing required params.")
+      }
+      //Parse the given func
+      let parsedFunc = Parser.parse(func);
+
+      //Generate the control flow graph
+      let cfg = CFGGenerator.generateCfg(parsedFunc);
+
+      //Generate the forward dependence graph
+      let fdt = FDTGenerator.generateFDT(cfg);
+
+      //Generate control dependency graph from control flow graph and control dependence graph
+      let cdg = CDGGenerator.generateCDG(cfg, fdt);
+
+      //Generate the data dependence graph
+      let ddg = DDGGenerator.generateDDG(cfg);
+
+      //Generate the program dependence graph
+      return PDGGenerator.generatePDG(cdg, ddg);
+    } catch (e) {
+      console.log(e);
+    }
+  }
 }
 module.exports = JsSlicer;
 
@@ -53,7 +72,7 @@ let func2 = `(a, b) => {
   return y
 }`
 
-let func3 =`(y) => {
+let func3 = `(y) => {
   if (y>0){
     y=y+1
   }else if (y== 0){
@@ -115,34 +134,70 @@ let func9 = `(a, b) => {
 }`;
 
 // func4, func7 not working at all
-let result = JsSlicer.slice(func9.split("\n"))
-console.log(result)
-exportToDot(result, 'func9')    
+// let result = JsSlicer.slice(func9.split("\n"))
+// console.log(result)
+// exportPDGToDot(result, 'func9')
 
 
-processExamples()
+//generatePDG()
+generateCFG()
 
 /*
 Outputs .dot files to ./output directory.
 Use Graphviz Interactive Preview (VS COde plugin) to preview the files
 */
-function processExamples(){
-    
-    let examples = [func1, func2, func3, func5, func6, func8, func9]
-    let filenames = ['func1', 'func2', 'func3', 'func5', 'func6', 'func8', 'func9']
-    for(let i = 0; i < examples.length; i++){
-        let result = JsSlicer.slice(examples[i].split("\n"))
-        exportToDot(result, filenames[i])    
-    }    
+function generateCFG() {
+
+  let examples = [
+    /*func1, 
+    func2, */
+    func3/*, 
+    func5, 
+    func6, 
+    func8, 
+    func9*/]
+  let filenames = [
+    /*'func1', 
+    'func2', */
+    'func3'/*, 
+    'func5', 
+    'func6', 
+    'func8', 
+  'func9'*/]
+  for (let i = 0; i < examples.length; i++) {
+    let result = JsSlicer.cfg(examples[i].split("\n"))
+    exportCFGToDot(result, filenames[i])
+  }
 }
 
-function exportToDot(pdg, filename){
-    let dot = writeToDot(pdg)
-    fs.writeFileSync(`./output/${filename}.dot`, dot)
+
+/*
+Outputs .dot files to ./output directory.
+Use Graphviz Interactive Preview (VS COde plugin) to preview the files
+*/
+function generatePDG() {
+
+  let examples = [func1, func2, func3, func5, func6, func8, func9]
+  let filenames = ['func1', 'func2', 'func3', 'func5', 'func6', 'func8', 'func9']
+  for (let i = 0; i < examples.length; i++) {
+    let result = JsSlicer.slice(examples[i].split("\n"))
+    exportPDGToDot(result, filenames[i])
+  }
 }
 
-function writeToDot(pdg){
-    let digraph = `digraph G {
+
+function exportPDGToDot(pdg, filename) {
+  let dot = writePDGToDot(pdg)
+  fs.writeFileSync(`./output/${filename}.dot`, dot)
+}
+
+function exportCFGToDot(pdg, filename) {
+  let dot = writeCFGToDot(pdg)
+  fs.writeFileSync(`./output/cfg-${filename}.dot`, dot)
+}
+
+function writeCFGToDot(cfg) {
+  let digraph = `digraph G {
         rankdir=TB;
         ranksep="0.2 equally";
         fontname="sans-serif";
@@ -164,29 +219,70 @@ function writeToDot(pdg){
               fontcolor="4", 
               style="filled"];`
 
-    for(node of pdg){
-        digraph += `\t"${node._id}";\n`
+  for (node of cfg.nodes) {
+    digraph += `\t"${node._id}";\n`
+  }
+  for (node of cfg.nodes) {
+    for (edge of node.edges) {
+      digraph += `\t"${edge.source}" -> "${edge.target}"`
+      let properties = []
+      if (edge.condition) {
+        properties.push(`label="${edge.condition}"`)
+      }
+      digraph += `[${properties.join(", ")}];\n`;
     }
-    for(node of pdg){
-        for(edge of node._edges){
-            digraph += `\t"${edge._source}" -> "${edge._target}"`
-            let properties = []
-            if (edge._condition){
-                properties.push(`label="${edge._condition}"`)
-            }
-            if (edge instanceof DDGEdge){
-                properties.push(`style="dashed"`)
-                properties.push(`color="1"`)
-                properties.push(`label="${edge._dependantVariable}"`)
-            } else if (edge instanceof CDGEdge){
-                //properties.push(``)
-                //console.log(edge)
-            }
-            digraph += `[${properties.join(", ")}];\n`;
-        }
+  }
+  digraph += "}"
+  return digraph;
+}
+
+
+function writePDGToDot(pdg) {
+  let digraph = `digraph G {
+        rankdir=TB;
+        ranksep="0.2 equally";
+        fontname="sans-serif";
+        rotate="0";
+        orientation="portrait";
+        landscape="true";
+        penwidth="0.1";
+        edge [comment="Wildcard edge", 
+              fontname="sans-serif", 
+              fontsize=10, 
+              colorscheme="blues3", 
+              color=2, 
+              fontcolor=3];
+        node [fontname="serif", 
+              fontsize=13, 
+              fillcolor="1", 
+              colorscheme="blues4", 
+              color="2", 
+              fontcolor="4", 
+              style="filled"];`
+
+  for (node of pdg) {
+    digraph += `\t"${node._id}";\n`
+  }
+  for (node of pdg) {
+    for (edge of node._edges) {
+      digraph += `\t"${edge._source}" -> "${edge._target}"`
+      let properties = []
+      if (edge._condition) {
+        properties.push(`label="${edge._condition}"`)
+      }
+      if (edge instanceof DDGEdge) {
+        properties.push(`style="dashed"`)
+        properties.push(`color="1"`)
+        properties.push(`label="${edge._dependantVariable}"`)
+      } else if (edge instanceof CDGEdge) {
+        //properties.push(``)
+        //console.log(edge)
+      }
+      digraph += `[${properties.join(", ")}];\n`;
     }
-    digraph +="}"
-    return digraph;
+  }
+  digraph += "}"
+  return digraph;
 }
 
 // let func = Parser.parse([

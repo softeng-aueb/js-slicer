@@ -216,7 +216,9 @@ class AstObjectTypesParser {
     }
 
     static loopStatementParser(loopStatementAstObj) {
-        if (!loopStatementAstObj || (loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_STATEMENT && loopStatementAstObj.type !== AST_OBJECT_TYPES.WHILE_STATEMENT)) {
+        if (!loopStatementAstObj || 
+            (loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_STATEMENT 
+                && loopStatementAstObj.type !== AST_OBJECT_TYPES.WHILE_STATEMENT)) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.FOR_STATEMENT} or  ${AST_OBJECT_TYPES.WHILE_STATEMENT} object.`)
         }
 
