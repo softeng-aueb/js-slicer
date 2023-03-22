@@ -15,6 +15,11 @@ it('should parse for statements', () => {
     let functionObj = parse(code)
     let forStmt = functionObj.body[1]
     expect(forStmt.type).toBe('ForStatement')
+    expect(forStmt.init.names[0]).toBe('i')
+    expect(forStmt.updateVar).toBe('i')
+
+    //console.log(forStmt.update)
+    expect(forStmt.constructor.name).toBe('ForStatement');
     expect(forStmt.condition.constructor.name).toBe('BinaryExpression')
 
 

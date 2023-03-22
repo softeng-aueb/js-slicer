@@ -16,6 +16,8 @@ const FunctionCall = require("../domain/FunctionCall");
 const ObjectExpression = require("../domain/ObjectExpression");
 const ObjectProperty = require("../domain/ObjectProperty");
 const MemberExpression = require("../domain/MemberExpression");
+const ForStatement = require("../domain/ForStatement");
+const UpdateExpression = require("../domain/UpdateExpression");
 
 class AstObjectTypesParser {
 
@@ -39,7 +41,9 @@ class AstObjectTypesParser {
             return this.callExpressionParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION){
             return this.assignmentExpressionParser(expressionAstObj)
-        }else if(expressionAstObj.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT){
+        } else if (expressionAstObj.type ===AST_OBJECT_TYPES.UPDATE_EXPRESSION){
+            return this.updateExpressionParser(expressionAstObj)
+        } else if(expressionAstObj.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT){
             return this.expressionStatementParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.BLOCK_STATEMENT){
             return this.blockStatementParser(expressionAstObj)
@@ -148,7 +152,17 @@ class AstObjectTypesParser {
         let right = this.expressionParser(assignmentExpressionAstObj.right);
 
         return new AssignmentStatement(left, right, operator)
+    }
 
+    static updateExpressionParser(updateExpressionAstObj) {
+        if (!updateExpressionAstObj || updateExpressionAstObj.type !== AST_OBJECT_TYPES.UPDATE_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.UPDATE_EXPRESSION} object.`)
+        }
+        let operator = updateExpressionAstObj.operator
+        let argument =  this.expressionParser(updateExpressionAstObj.argument);
+        let prefix = updateExpressionAstObj.prefix;
+
+        return new UpdateExpression(argument, prefix, operator)
     }
 
     static identifierParser(identifierAstObj) {
@@ -222,8 +236,17 @@ class AstObjectTypesParser {
             throw new Error(`Not a ${AST_OBJECT_TYPES.FOR_STATEMENT} or  ${AST_OBJECT_TYPES.WHILE_STATEMENT} object.`)
         }
 
+
         let condition = this.expressionParser(loopStatementAstObj.test);
         let body =  this.expressionParser(loopStatementAstObj.body);
+
+        if (loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_STATEMENT){
+            //console.log(loopStatementAstObj)
+            let init = this.variableDeclarationsParser(loopStatementAstObj.init)
+            let update = this.expressionParser(loopStatementAstObj.update);
+            //console.log(update)
+            return new ForStatement(loopStatementAstObj.type, condition, body, init, update);
+        }
 
        return new LoopStatement(loopStatementAstObj.type,condition,body)
     }
