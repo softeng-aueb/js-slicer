@@ -1,12 +1,26 @@
+const CFGEdge = require("./CFGEdge");
+
 class CFGNode {
 
-    constructor(id,executionCondition,statement,edges) {
+    constructor(id,executionCondition,statement,edges, parent) {
         this._id = id;
         this._executionCondition = executionCondition
         this._statement = statement;
         this._edges = edges;
+        this._parent = parent;
     }
 
+
+    addOutgoingEdge(targetNode, condition){
+        console.log(`Adding edge to ${targetNode.id}`)
+        let edge = new CFGEdge(this.id, targetNode.id, condition, 
+            this, targetNode);
+        this.edges.push(edge)
+    }
+
+    get parent(){
+        return this._parent;
+    }
 
     get id() {
         return this._id;

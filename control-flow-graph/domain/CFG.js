@@ -10,7 +10,25 @@ const _ = require("lodash")
 class CFG {
 
     constructor(nodes) {
-        this._nodes = nodes;
+        if (nodes){
+            this._nodes = nodes;
+        } else {
+            this._nodes = []
+        }
+        
+    }
+
+    print(){
+        let lines = []
+        for(let node of this.nodes){
+            let targets = node.edges.map(e => e.targetNode.id)
+            lines.push(`Node: ${node.id} -> ${targets.join(", ")}`)
+        }
+        console.log(lines.join("\n"))
+    }
+
+    addNode(node){
+        this.nodes.push(node);
     }
 
     get nodes() {

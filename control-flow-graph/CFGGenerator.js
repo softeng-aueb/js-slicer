@@ -6,8 +6,11 @@ const CFGNode = require("./domain/CFGNode");
 const CFG = require("./domain/CFG");
 const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
 const CFGEdge = require("./domain/CFGEdge");
+const CFGVisitor = require("./CFGVisitor");
 
 class CFGGenerator {
+
+
 
     static generateCfg(functionObj){
         let counterId = 1;
@@ -40,6 +43,18 @@ class CFGGenerator {
 
         nodes.unshift(new CFGNode (0,null,"ENTRY",[new CFGEdge(0,1)]));
         return new CFG(nodes);
+    }
+
+    static generateCfg2(functionObj){
+
+        let visitor = new CFGVisitor();
+        let statements = functionObj.body;
+        for(let stmt of statements){
+            console.log(stmt.constructor.name)
+            stmt.accept(visitor)
+        }
+        return visitor.cfg
+
     }
 }
 module.exports = CFGGenerator;
