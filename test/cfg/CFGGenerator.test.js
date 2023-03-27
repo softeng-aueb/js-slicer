@@ -3,6 +3,25 @@ const Parser = require('../../code-parser-module/Parser.js');
 const FUNCTION_TYPES = require('../../code-parser-module/constants/functionTypes')
 const CFGGenerator = require('../../control-flow-graph/CFGGenerator')
 
+it('should generate cfg for nested if statements', () => {
+    let code = `
+    function foo(){
+        let ar = [1, 2, 3]
+        let a = 1
+        if (a > 1){
+            var b = 2
+            console.log(a)    
+            if (b < 1){
+                console.log(b)
+            }
+        }
+        return a + b
+    }`
+    let functionObj = parse(code)
+    let cfg = CFGGenerator.generateCfg2(functionObj)
+    cfg.print()
+})
+
 it('should generate cfg for if then else', () => {
     let code = `
     function foo(){
@@ -23,6 +42,19 @@ it('should generate cfg for if then else', () => {
     expect(cfg.hasEdge(3, 6)).toBe(true)
     expect(cfg.hasEdge(4, 5)).toBe(true)
     expect(cfg.hasEdge(5, 6)).toBe(true)
+
+    let ifNode = cfg.getNodeById(3)
+    expect(ifNode.hasStatementType('ConditionalStatement')).toBe(true)
+    expect(ifNode.hasEdgeTo(6)).toBe(true)
+    expect(ifNode.hasEdgeTo(4)).toBe(true)
+
+    let lastNodeInBlock = cfg.getNodeById(5)
+    //console.log(lastNodeInBlock.edges)// empty
+    expect(lastNodeInBlock.hasStatementType('FunctionCall')).toBe(true)
+    expect(lastNodeInBlock.hasEdgeTo(6)).toBe(true)
+    
+    cfg.print()
+    
 
 })
 

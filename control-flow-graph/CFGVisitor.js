@@ -38,22 +38,22 @@ class CFGVisitor {
             let parent = this._parentStack.pop()
             parent.addOutgoingEdge(node, null)
             this._parentStack.push(node);
-            console.log(stmt)
+            //console.log(stmt)
+            // parent and condition are not assigned
             this.visitBlockStatement(stmt.then, parent, true)
+            // need also to keep as parent the last statement
             this._parentStack.push(node);
-            // etc
         }
     }
 
     visitSequentialStatement(stmt){
         let node = new CFGNode(this._id++, null, stmt, [], null)
         this.cfg.addNode(node)
-        if (this._parentStack.length > 0){
+        while(this._parentStack.length > 0){
             let parent = this._parentStack.pop()
             parent.addOutgoingEdge(node, null)
             node.parent =  parent
         }
-        
         this._parentStack.push(node);
     }
 
