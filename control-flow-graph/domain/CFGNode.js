@@ -10,9 +10,20 @@ class CFGNode {
         this._parent = parent;
     }
 
+    hasStatementType(typeStr){
+        return this.statement.constructor.name === typeStr;
+    }
+
+    hasEdgeTo(targetNodeId){
+        let result = this.edges.filter(e => e.target === targetNodeId);
+        if (result && result.length > 0){
+            return true
+        }
+        return false
+    }
 
     addOutgoingEdge(targetNode, condition){
-        console.log(`Adding edge to ${targetNode.id}`)
+        //console.log(`Adding edge to ${targetNode.id}`)
         let edge = new CFGEdge(this.id, targetNode.id, condition, 
             this, targetNode);
         this.edges.push(edge)
@@ -20,6 +31,10 @@ class CFGNode {
 
     get parent(){
         return this._parent;
+    }
+
+    set parent(value){
+        this._parent = value
     }
 
     get id() {

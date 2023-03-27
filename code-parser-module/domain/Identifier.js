@@ -10,5 +10,9 @@ class Identifier{
     set name(value) {
         this._name = value;
     }
+
+    accept(visitor){
+        
+    }
 }
 module.exports = Identifier;

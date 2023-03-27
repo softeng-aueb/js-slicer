@@ -27,6 +27,23 @@ class CFG {
         console.log(lines.join("\n"))
     }
 
+    hasEdge(from, to){
+        let fromNode = this.getNodeById(from)
+        if (!fromNode){
+            return false
+        }
+        return fromNode.hasEdgeTo(to)
+    }
+
+    getNodeById(id){
+        let result = this.nodes.filter(n => n.id === id)
+        if (result){
+            return result[0]
+        } else {
+            return null
+        }
+    }
+
     addNode(node){
         this.nodes.push(node);
     }

@@ -18,6 +18,7 @@ const ObjectProperty = require("../domain/ObjectProperty");
 const MemberExpression = require("../domain/MemberExpression");
 const ForStatement = require("../domain/ForStatement");
 const UpdateExpression = require("../domain/UpdateExpression");
+const ArrayExpression = require("../domain/ArrayExpression");
 
 class AstObjectTypesParser {
 
@@ -27,7 +28,12 @@ class AstObjectTypesParser {
         }
 
         //TODO: Add more cases
-        if (expressionAstObj.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
+        if (expressionAstObj.type === AST_OBJECT_TYPES.ARRAY_EXPRESSION){
+            return this.arrayExpressionParser(expressionAstObj)
+        }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION){
+            return this.variableDeclarationsParser(expressionAstObj)
+        }else if (expressionAstObj.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
             return  this.binaryExpressionParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION){
             return this.conditionalStatementParser(expressionAstObj)
@@ -56,6 +62,9 @@ class AstObjectTypesParser {
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.MEMBER_EXPRESSION){
             return this.memberExpressionParser(expressionAstObj)
         }
+
+        console.log(expressionAstObj)
+        throw new Error('Unrecognized expression')
     }
 
 
@@ -198,12 +207,22 @@ class AstObjectTypesParser {
         });
     }
 
+    static arrayExpressionParser(arrayExpressionAstObj) {
+        if (!arrayExpressionAstObj || arrayExpressionAstObj.type !== AST_OBJECT_TYPES.ARRAY_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.ARRAY_EXPRESSION} object.`)
+        }
+        let elements = arrayExpressionAstObj.elements.flatMap(statement => {
+            return this.expressionParser(statement);
+        });
+        let arrayExpression = new ArrayExpression(elements)
+        return arrayExpression;
+    }
+
     static conditionalStatementParser(conditionalStatementObj) {
         if (!conditionalStatementObj || (conditionalStatementObj.type !== AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION)) {
 
             throw new Error(`Not a ${AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION} object.`)
         }
-
         let condition = this.expressionParser(conditionalStatementObj.test);
         let then = this.expressionParser(conditionalStatementObj.consequent);
         let alternates = this.expressionParser(conditionalStatementObj.alternate);
@@ -216,10 +235,7 @@ class AstObjectTypesParser {
 
             throw new Error(`Not a ${AST_OBJECT_TYPES.IF_STATEMENT} object.`)
         }
-
         let condition = this.expressionParser(ifStatementObj.test);
-
-
         let then = ifStatementObj.consequent.body.map(e => {
             return this.expressionParser(e);
         });

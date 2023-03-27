@@ -3,21 +3,57 @@ const Parser = require('../../code-parser-module/Parser.js');
 const FUNCTION_TYPES = require('../../code-parser-module/constants/functionTypes')
 const CFGGenerator = require('../../control-flow-graph/CFGGenerator')
 
-
-it('should generate cfg for sequential statements', () => {
+it('should generate cfg for if then else', () => {
     let code = `
     function foo(){
         let ar = [1, 2, 3]
         let a = 1
+        if (a > 1){
+            var b = 2
+            console.log(a)    
+        }
+        return a + b
+    }`
+    let functionObj = parse(code)
+    let cfg = CFGGenerator.generateCfg2(functionObj)
+    expect(cfg.nodes.length).toBe(6)
+    expect(cfg.hasEdge(1, 2)).toBe(true)
+    expect(cfg.hasEdge(2, 3)).toBe(true)
+    expect(cfg.hasEdge(3, 4)).toBe(true)
+    expect(cfg.hasEdge(3, 6)).toBe(true)
+    expect(cfg.hasEdge(4, 5)).toBe(true)
+    expect(cfg.hasEdge(5, 6)).toBe(true)
+
+})
+
+it('should generate cfg for sequential statements', () => {
+    let code = `
+    function foo(){
+        let i = 0
+        let ar = [1, i++, 3]
+        let a = 1
         let b = 2
+        console.log(a)
+        return a + b
     }
     `
     let functionObj = parse(code)
     let cfg = CFGGenerator.generateCfg2(functionObj)
+    expect(cfg.nodes.length).toBe(7)
+    expect(cfg.getNodeById(2).hasStatementType('UpdateExpression')).toBe(true)
+    expect(cfg.hasEdge(1, 2)).toBe(true)
+    expect(cfg.hasEdge(2, 3)).toBe(true)
+    expect(cfg.hasEdge(3, 4)).toBe(true)
+    expect(cfg.hasEdge(4, 5)).toBe(true)
+    expect(cfg.hasEdge(5, 6)).toBe(true)
+    expect(cfg.hasEdge(6, 7)).toBe(true)
     cfg.print()
     //console.log(cfg)
-
 })
+
+
+
+
 
 /*
 it('should parse for statements', () => {

@@ -50,7 +50,7 @@ class CFGGenerator {
         let visitor = new CFGVisitor();
         let statements = functionObj.body;
         for(let stmt of statements){
-            console.log(stmt.constructor.name)
+            //console.log(stmt.constructor.name)
             stmt.accept(visitor)
         }
         return visitor.cfg

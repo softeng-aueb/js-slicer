@@ -1,4 +1,5 @@
 const AST_OBJECT_TYPES = {
+    ARRAY_EXPRESSION: "ArrayExpression",
     FUNCTION_DECLARATION: "FunctionDeclaration",
     VARIABLE_DECLARATION: "VariableDeclaration",
     RETURN_STATEMENT:"ReturnStatement",

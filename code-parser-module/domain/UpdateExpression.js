@@ -49,6 +49,10 @@ class UpdateExpression{
     getDefinedVariable(){
         return this._argument._name;
     }
+
+    accept(visitor){
+        visitor.visitUpdateExpression(this)
+    }
 }
 
 module.exports = UpdateExpression;
