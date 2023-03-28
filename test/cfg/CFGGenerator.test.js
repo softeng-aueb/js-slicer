@@ -3,6 +3,10 @@ const Parser = require('../../code-parser-module/Parser.js');
 const FUNCTION_TYPES = require('../../code-parser-module/constants/functionTypes')
 const CFGGenerator = require('../../control-flow-graph/CFGGenerator')
 
+function expectHasEdge(cfg, source, target){
+    expect(cfg.hasEdge(source, target)).toBe(true)
+}
+
 it('should generate cfg for nested if statements', () => {
     let code = `
     function foo(){
@@ -19,8 +23,17 @@ it('should generate cfg for nested if statements', () => {
     }`
     let functionObj = parse(code)
     let cfg = CFGGenerator.generateCfg2(functionObj)
+    expect(cfg.nodes.length).toBe(8)
+    expectHasEdge(cfg, 3, 4)
+    expectHasEdge(cfg, 5, 6)
+    expectHasEdge(cfg, 6, 7)
+    expectHasEdge(cfg, 7, 8)
+    expectHasEdge(cfg, 3, 8)
+    expectHasEdge(cfg, 6, 8)
+    
     cfg.print()
 })
+
 
 it('should generate cfg for if then else', () => {
     let code = `
@@ -29,31 +42,25 @@ it('should generate cfg for if then else', () => {
         let a = 1
         if (a > 1){
             var b = 2
+            a = b + a
             console.log(a)    
+        } else {
+            var c = ar[0] + a
+            a = a + c
+            console.log(c)
         }
         return a + b
     }`
     let functionObj = parse(code)
     let cfg = CFGGenerator.generateCfg2(functionObj)
-    expect(cfg.nodes.length).toBe(6)
-    expect(cfg.hasEdge(1, 2)).toBe(true)
-    expect(cfg.hasEdge(2, 3)).toBe(true)
-    expect(cfg.hasEdge(3, 4)).toBe(true)
-    expect(cfg.hasEdge(3, 6)).toBe(true)
-    expect(cfg.hasEdge(4, 5)).toBe(true)
-    expect(cfg.hasEdge(5, 6)).toBe(true)
-
-    let ifNode = cfg.getNodeById(3)
-    expect(ifNode.hasStatementType('ConditionalStatement')).toBe(true)
-    expect(ifNode.hasEdgeTo(6)).toBe(true)
-    expect(ifNode.hasEdgeTo(4)).toBe(true)
-
-    let lastNodeInBlock = cfg.getNodeById(5)
-    //console.log(lastNodeInBlock.edges)// empty
-    expect(lastNodeInBlock.hasStatementType('FunctionCall')).toBe(true)
-    expect(lastNodeInBlock.hasEdgeTo(6)).toBe(true)
-    
     cfg.print()
+    expect(cfg.nodes.length).toBe(10)
+    expectHasEdge(cfg, 3, 4)
+    expectHasEdge(cfg, 3, 7)
+    expectHasEdge(cfg, 6, 10)
+    expectHasEdge(cfg, 9, 10)
+
+    
     
 
 })

@@ -52,6 +52,9 @@ class BinaryExpression{
         return varArray;
     }
 
+    accept(visitor){
+        visitor.visitBinaryExpression(this)
+    }
 }
 
 module.exports = BinaryExpression;
