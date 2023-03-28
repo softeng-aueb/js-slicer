@@ -29,7 +29,6 @@ class CFGVisitor {
         //this._parentStack.push(parent)
         this.nesting++
         for(let stmt of block){
-        //console.log(stmt.constructor.name)
             stmt.accept(this)
         }
         this.nesting--
@@ -40,10 +39,9 @@ class CFGVisitor {
 
         this.visitSequentialStatement(stmt.condition)
         let conditionNode = this._parentStack.slice(-1)[0]
-        //console.log(stmt)
-        // parent and condition are not assigned
+        
         this.visitBlockStatement(stmt.then)
-        // need also to keep as parent the last statement
+        
         if (stmt.alternates){
             let lastNode = this._parentStack.pop()
             this._parentStack.push(conditionNode);
@@ -68,12 +66,6 @@ class CFGVisitor {
             let parent = this._parentStack.pop()
             parent.addOutgoingEdge(node, null)
             node.addParent(parent)
-            //console.log(`(${node.id},${node.nesting}): parent:(${parent.id}, ${parent.nesting})`)
-            // if (parent.nesting < node.nesting){ 
-            //     // jump conditional or not, skip previous parents
-            //     // previous statement in the same nesting skip previous parents
-            //     break;
-            // }
         }
         this._parentStack.push(node);
     }
