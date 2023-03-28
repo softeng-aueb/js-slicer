@@ -47,6 +47,7 @@ class CFG {
     addNode(node){
         this.nodes.push(node);
     }
+    
 
     get nodes() {
         return this._nodes;

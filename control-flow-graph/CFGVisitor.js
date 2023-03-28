@@ -6,6 +6,7 @@ const CFGNode = require("./domain/CFGNode");
 const CFG = require("./domain/CFG");
 const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
 const CFGEdge = require("./domain/CFGEdge");
+const { cond } = require("lodash");
 
 class CFGVisitor {
 
@@ -13,6 +14,7 @@ class CFGVisitor {
         this._cfg = new CFG()
         this._id = 1;
         this._parentStack = [];
+        this.nesting = 0
     }
 
     visitArrayExpression(stmt){
@@ -25,34 +27,53 @@ class CFGVisitor {
 
     visitBlockStatement(block, parent, condition){
         //this._parentStack.push(parent)
+        this.nesting++
         for(let stmt of block){
         //console.log(stmt.constructor.name)
             stmt.accept(this)
         }
+        this.nesting--
     }
 
-    visitConditionalStatement(stmt){
-        let node = new CFGNode(this._id++, null, stmt, [], null)
-        this.cfg.addNode(node)
-        if (this._parentStack.length > 0){
-            let parent = this._parentStack.pop()
-            parent.addOutgoingEdge(node, null)
-            this._parentStack.push(node);
-            //console.log(stmt)
-            // parent and condition are not assigned
-            this.visitBlockStatement(stmt.then, parent, true)
-            // need also to keep as parent the last statement
-            this._parentStack.push(node);
+    visitConditionalStatement(stmt) {
+        if (!stmt) return
+
+        this.visitSequentialStatement(stmt.condition)
+        let conditionNode = this._parentStack.slice(-1)[0]
+        //console.log(stmt)
+        // parent and condition are not assigned
+        this.visitBlockStatement(stmt.then)
+        // need also to keep as parent the last statement
+        if (stmt.alternates){
+            let lastNode = this._parentStack.pop()
+            this._parentStack.push(conditionNode);
+            if (stmt.alternates instanceof ConditionalStatement) {
+                this.visitConditionalStatement(stmt.alternates)
+            } else {
+                this.visitBlockStatement(stmt.alternates)
+            }
+            this._parentStack.push(lastNode)
+        } else {
+            this._parentStack.push(conditionNode);
         }
+        
+        
     }
 
     visitSequentialStatement(stmt){
         let node = new CFGNode(this._id++, null, stmt, [], null)
+        node.nesting = this.nesting
         this.cfg.addNode(node)
         while(this._parentStack.length > 0){
             let parent = this._parentStack.pop()
             parent.addOutgoingEdge(node, null)
-            node.parent =  parent
+            node.addParent(parent)
+            //console.log(`(${node.id},${node.nesting}): parent:(${parent.id}, ${parent.nesting})`)
+            // if (parent.nesting < node.nesting){ 
+            //     // jump conditional or not, skip previous parents
+            //     // previous statement in the same nesting skip previous parents
+            //     break;
+            // }
         }
         this._parentStack.push(node);
     }
@@ -66,12 +87,24 @@ class CFGVisitor {
     }
 
     visitVariableDeclaration(stmt){
+        //console.log(stmt.value)
         stmt.value.accept(this)
         this.visitSequentialStatement(stmt)
     }
 
+    visitBinaryExpression(stmt){
+        //console.log(stmt.left)
+        stmt.left.accept(this)
+        stmt.right.accept(this)
+    }
+
     visitReturnStatement(stmt){
         this.visitSequentialStatement(stmt)
+    }
+
+    visitMemberExpression(stmt){
+        stmt.property.accept(this)
+        stmt.object.accept(this)
     }
 
     get cfg(){

@@ -7,7 +7,18 @@ class CFGNode {
         this._executionCondition = executionCondition
         this._statement = statement;
         this._edges = edges;
-        this._parent = parent;
+        this._parents = [];
+        this._parents.push(parent)
+        this._nesting = 0
+        this._branchNode = false
+    }
+
+    get nesting(){
+        return this._nesting
+    }
+
+    set nesting(value){
+        this._nesting = value
     }
 
     hasStatementType(typeStr){
@@ -29,12 +40,16 @@ class CFGNode {
         this.edges.push(edge)
     }
 
-    get parent(){
-        return this._parent;
+    get parents(){
+        return this._parents;
     }
 
-    set parent(value){
-        this._parent = value
+    set parents(value){
+        this._parents = value
+    }
+
+    addParent(parent){
+        this._parents.push(parent)
     }
 
     get id() {
