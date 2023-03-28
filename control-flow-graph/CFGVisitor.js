@@ -43,14 +43,15 @@ class CFGVisitor {
         this.visitBlockStatement(stmt.then)
         
         if (stmt.alternates){
-            let lastNode = this._parentStack.pop()
+            let stack = [...this._parentStack]
+            this._parentStack = []
             this._parentStack.push(conditionNode);
             if (stmt.alternates instanceof ConditionalStatement) {
                 this.visitConditionalStatement(stmt.alternates)
             } else {
                 this.visitBlockStatement(stmt.alternates)
             }
-            this._parentStack.push(lastNode)
+            this._parentStack.push(...stack)
         } else {
             this._parentStack.push(conditionNode);
         }

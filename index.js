@@ -20,7 +20,7 @@ class JsSlicer {
       let parsedFunc = Parser.parse(func);
 
       //Generate the control flow graph
-      let cfg = CFGGenerator.generateCfg(parsedFunc);
+      let cfg = CFGGenerator.generateCfg2(parsedFunc);
 
       return cfg;
     } catch (e) {
@@ -72,15 +72,33 @@ let func2 = `(a, b) => {
   return y
 }`
 
-let func3 = `(y) => {
-  if (y>0){
-    y=y+1
-  }else if (y== 0){
-    y=y+2;
-  }else{
-    y=y/2;
-  }
-  return y;
+let func3 = `
+  function foo(){
+    let ar = [1, 2, 3]
+    let a = 1
+    if (a > 1){
+        var b = 2
+        a = b + a
+        console.log(a)    
+    } else if (a < 1) {
+        var c = ar[0] + a
+        a = a + c
+        if (a == 0){
+            console.log(a)
+        } else {
+          console.log(b)
+        }
+        console.log(c)
+        if (a + c > 10){
+          console.log(c)
+        } else {
+          console.log(a)
+        }
+    } else {
+        var c = 1
+        console.log(c)
+    }
+    return a + b
 }`;
 
 let func4 = `function findNumberType (number){
@@ -166,6 +184,7 @@ function generateCFG() {
   'func9'*/]
   for (let i = 0; i < examples.length; i++) {
     let result = JsSlicer.cfg(examples[i].split("\n"))
+    result.print()
     exportCFGToDot(result, filenames[i])
   }
 }
