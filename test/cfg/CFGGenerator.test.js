@@ -7,6 +7,29 @@ function expectHasEdge(cfg, source, target){
     expect(cfg.hasEdge(source, target)).toBe(true)
 }
 
+it('should generate cfg for for statements', () => {
+    let code = `
+    function foo(){
+        let ar = [1, 2, 3]
+        let a = 1
+        for(let i = 0; i < 10; i++){
+            a = a + i
+            if (a > 10){
+                console.log(a)
+            }
+        }
+        return a + b
+    }`
+    let functionObj = parse(code)
+    let cfg = CFGGenerator.generateCfg2(functionObj)
+    cfg.print()
+    expect(cfg.nodes.length).toBe(9)
+    expectHasEdge(cfg, 3, 4) // init to condition   
+    expectHasEdge(cfg, 4, 5) // condition to body or next stmt
+    expectHasEdge(cfg, 4, 9)
+    expectHasEdge(cfg, 8, 4) // update to condition
+})
+
 it('should generate cfg for nested while statements', () => {
     let code = `
     function foo(){

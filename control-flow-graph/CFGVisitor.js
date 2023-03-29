@@ -34,6 +34,14 @@ class CFGVisitor {
         this.nesting--
     }
 
+    visitForStatement(stmt){
+        this.visitSequentialStatement(stmt.init)
+        // add update expression as the last statement of the for body
+        stmt.body.push(stmt.update)
+        this.visitLoopStatement(stmt)
+        stmt.body.pop()
+    }
+
     visitLoopStatement(stmt){
         if (!stmt) return
 
@@ -73,9 +81,7 @@ class CFGVisitor {
             this._parentStack.push(...stack)
         } else {
             this._parentStack.push(conditionNode);
-        }
-        
-        
+        }   
     }
 
     visitSequentialStatement(stmt){

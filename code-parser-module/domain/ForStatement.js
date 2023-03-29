@@ -30,5 +30,9 @@ class ForStatement extends LoopStatement {
     get updateVar(){
         return this._update.argument.name;
     }
+
+    accept(visitor){
+        visitor.visitForStatement(this)
+    }
 }
 module.exports = ForStatement;
