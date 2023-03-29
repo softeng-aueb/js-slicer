@@ -176,10 +176,23 @@ function foo(a, b){
 }`;
 
 
-let func8 = `function test (){
-  let y=1;
-  let x= 2;
-  return x+y;
+let func8 = `
+function foo(a, b){
+  let ar = [1, 2, 3]
+  let a = 10
+  while(a > 0){
+      console.log(a)
+      let b = ar[a]
+      if (b == 0){
+          break;
+      }
+      while(b > 0){
+          console.log(b)
+          if (a == 0){
+              break;
+          }
+      }
+  }
 }`;
 
 let func9 = `(a, b) => {
@@ -212,8 +225,8 @@ function generateCFG() {
     func4, 
     func5, 
     func6,
-    func7/*, 
-    func8, 
+    func7, 
+    func8/*, 
     func9*/]
   let filenames = [
     /*'func1',*/
@@ -222,8 +235,8 @@ function generateCFG() {
     'func4', 
     'func5', 
     'func6',
-    'func7'/*, 
-    'func8', 
+    'func7', 
+    'func8'/*, 
   'func9'*/]
   for (let i = 0; i < examples.length; i++) {
     let result = JsSlicer.cfg(examples[i].split("\n"))

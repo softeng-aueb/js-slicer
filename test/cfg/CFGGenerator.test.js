@@ -7,7 +7,37 @@ function expectHasEdge(cfg, source, target){
     expect(cfg.hasEdge(source, target)).toBe(true)
 }
 
-it('should support break from nested loops', () => {
+it('should support break from nested while loops', () => {
+    let code = `
+    function foo(a, b){
+        let ar = [1, 2, 3]
+        let a = 10
+        while(a > 0){
+            console.log(a)
+            let b = ar[a]
+            if (b == 0){
+                break;
+            }
+            while(b > 0){
+                console.log(b)
+                if (a == 0){
+                    break;
+                }
+            }
+        }
+    }`
+    let functionObj = parse(code)
+    let cfg = CFGGenerator.generateCfg2(functionObj)
+    cfg.print()
+    expect(cfg.nodes.length).toBe(11)
+    expectHasEdge(cfg, 2, 3) 
+    expectHasEdge(cfg, 3, 4) 
+    expectHasEdge(cfg, 5, 7) // break control flow
+    expectHasEdge(cfg, 6, 3) // update to condition flow 
+})
+
+
+it('should support break from nested for loops', () => {
     let code = `
     function foo(a, b){
         let ar = [1, 2, 3]
