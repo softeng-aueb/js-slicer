@@ -50,7 +50,6 @@ it('should generate cfg for if else if', () => {
             if (a == 0){
                 console.log(a)
             }
-            console.log(c)
         } else {
             var c = 1
             console.log(c)
@@ -60,11 +59,14 @@ it('should generate cfg for if else if', () => {
     let functionObj = parse(code)
     let cfg = CFGGenerator.generateCfg2(functionObj)
     cfg.print()
-    // expect(cfg.nodes.length).toBe(10)
-    // expectHasEdge(cfg, 3, 4)
-    // expectHasEdge(cfg, 3, 7)
-    // expectHasEdge(cfg, 6, 10)
-    // expectHasEdge(cfg, 9, 10)
+    expect(cfg.nodes.length).toBe(14)
+    expectHasEdge(cfg, 3, 4)
+    expectHasEdge(cfg, 3, 7)
+    expectHasEdge(cfg, 7, 12)
+    expectHasEdge(cfg, 6, 14)
+    expectHasEdge(cfg, 13, 14)
+    expectHasEdge(cfg, 11, 14)
+
 })
 
 it('should generate cfg for if then else', () => {
