@@ -20,6 +20,7 @@ const MemberExpression = require("../domain/MemberExpression");
 const ForStatement = require("../domain/ForStatement");
 const UpdateExpression = require("../domain/UpdateExpression");
 const ArrayExpression = require("../domain/ArrayExpression");
+const BreakStatement = require("../domain/BreakStatement");
 
 class AstObjectTypesParser {
 
@@ -31,6 +32,9 @@ class AstObjectTypesParser {
         //TODO: Add more cases
         if (expressionAstObj.type === AST_OBJECT_TYPES.ARRAY_EXPRESSION){
             return this.arrayExpressionParser(expressionAstObj)
+        }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.BREAK_STATEMENT){
+            return this.breakStatementParser(expressionAstObj)
         }
         if (expressionAstObj.type === AST_OBJECT_TYPES.WHILE_STATEMENT){
             return this.loopStatementParser(expressionAstObj)
@@ -199,6 +203,13 @@ class AstObjectTypesParser {
         }
         return new Identifier(identifierAstObj.name)
 
+    }
+
+    static breakStatementParser(breakStmtAstObj) {
+        if (!breakStmtAstObj || breakStmtAstObj.type !== AST_OBJECT_TYPES.BREAK_STATEMENT) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.BREAK_STATEMENT} object.`)
+        }
+        return new BreakStatement(breakStmtAstObj.label)
     }
 
     static literalParser(literalAstObj) {

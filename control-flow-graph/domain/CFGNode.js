@@ -1,3 +1,4 @@
+const astObjectTypes = require("../../code-parser-module/constants/astObjectTypes");
 const CFGEdge = require("./CFGEdge");
 
 class CFGNode {
@@ -10,8 +11,10 @@ class CFGNode {
         this._parents = [];
         this._parents.push(parent)
         this._nesting = 0
-        this._branchNode = false
+        this._breakNodes = []
+        //this._branchNode = false
     }
+
 
     get nesting(){
         return this._nesting
@@ -19,6 +22,10 @@ class CFGNode {
 
     set nesting(value){
         this._nesting = value
+    }
+
+    isBreakStatement(){
+        return this._statement.type === astObjectTypes.BREAK_STATEMENT;
     }
 
     isReturnStatement(){

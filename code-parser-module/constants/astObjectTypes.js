@@ -1,26 +1,26 @@
 const AST_OBJECT_TYPES = {
     ARRAY_EXPRESSION: "ArrayExpression",
-    FUNCTION_DECLARATION: "FunctionDeclaration",
-    VARIABLE_DECLARATION: "VariableDeclaration",
-    RETURN_STATEMENT:"ReturnStatement",
-    UNARY_EXPRESSION:"UnaryExpression",
-    BINARY_EXPRESSION:"BinaryExpression",
-    IDENTIFIER:"Identifier",
-    EXPRESSION_STATEMENT:"ExpressionStatement",
     ARROW_FUNCTION_EXPRESSION:"ArrowFunctionExpression",
-    IF_STATEMENT: "IfStatement",
-    BLOCK_STATEMENT : "BlockStatement",
-    LITERAL:"Literal",
-    FOR_STATEMENT:"ForStatement",
-    WHILE_STATEMENT:"WhileStatement",
     ASSIGNMENT_EXPRESSION : "AssignmentExpression",
-    CONDITIONAL_EXPRESSION : "ConditionalExpression",
-    LOGICAL_EXPRESSION : "LogicalExpression",
+    BINARY_EXPRESSION:"BinaryExpression",
+    BREAK_STATEMENT: "BreakStatement",
+    BLOCK_STATEMENT : "BlockStatement",
     CALL_EXPRESSION : "CallExpression",
-    OBJECT_EXPRESSION:"ObjectExpression",
+    CONDITIONAL_EXPRESSION : "ConditionalExpression",
+    EXPRESSION_STATEMENT:"ExpressionStatement",
+    FOR_STATEMENT:"ForStatement",
+    FUNCTION_DECLARATION: "FunctionDeclaration",
+    IDENTIFIER:"Identifier",
+    IF_STATEMENT: "IfStatement",
+    LITERAL:"Literal",
+    LOGICAL_EXPRESSION : "LogicalExpression",
     MEMBER_EXPRESSION:"MemberExpression",
-    UPDATE_EXPRESSION: "UpdateExpression"
-
+    OBJECT_EXPRESSION:"ObjectExpression",
+    RETURN_STATEMENT:"ReturnStatement",
+    WHILE_STATEMENT:"WhileStatement",
+    UNARY_EXPRESSION:"UnaryExpression",
+    UPDATE_EXPRESSION: "UpdateExpression",
+    VARIABLE_DECLARATION: "VariableDeclaration"
 }
 
 module.exports = Object.freeze(AST_OBJECT_TYPES)

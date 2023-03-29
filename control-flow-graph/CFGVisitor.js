@@ -1,19 +1,17 @@
-const FunctionObj = require("../code-parser-module/domain/FunctionObj");
+
 const ConditionalStatement = require("../code-parser-module/domain/ConditionalStatement");
-const {getNodeEdges, getConditionalStatementCFGNodes,getLoopStatementCFGNodes} = require("./helpers/cfgNodesHelpers")
-const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 const CFGNode = require("./domain/CFGNode");
+const LoopEntryNode = require("./domain/LoopEntryNode");
 const CFG = require("./domain/CFG");
-const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
-const CFGEdge = require("./domain/CFGEdge");
-const { cond } = require("lodash");
+const Stack = require("../utils/Stack");
 
 class CFGVisitor {
 
     constructor(){
         this._cfg = new CFG()
         this._id = 1;
-        this._parentStack = [];
+        this._parentStack = new Stack();
+        this._loopEntryStack = new Stack();
         this.nesting = 0
     }
 
@@ -26,7 +24,6 @@ class CFGVisitor {
     }
 
     visitBlockStatement(block, parent, condition){
-        //this._parentStack.push(parent)
         this.nesting++
         for(let stmt of block){
             stmt.accept(this)
@@ -45,16 +42,19 @@ class CFGVisitor {
     visitLoopStatement(stmt){
         if (!stmt) return
 
-        this.visitSequentialStatement(stmt.condition)
-        let conditionNode = this._parentStack.slice(-1)[0]
+        this.visitSequentialStatement(stmt.condition, true)
+        let loopEntryNode = this._parentStack.peek()
+        this._loopEntryStack.push(loopEntryNode)
+
         this.visitBlockStatement(stmt.body)
         // add loopback edges for contents of the parent stack
-        for(let node of this._parentStack){
-            this.addLoopBackEdge(node, conditionNode)
+        for(let node of this._parentStack.elements){
+            this.addLoopBackEdge(node, loopEntryNode)
         }
-        // actually do not clear it in all cases, filter and keep break nodes
-        this._parentStack = []
-        this._parentStack.push(conditionNode)
+        
+        this._parentStack.clear()
+        this._parentStack.push(loopEntryNode)
+        
     }
 
     addLoopBackEdge(source, loopEntryNode){
@@ -65,27 +65,33 @@ class CFGVisitor {
         if (!stmt) return
 
         this.visitSequentialStatement(stmt.condition)
-        let conditionNode = this._parentStack.slice(-1)[0]
+        let conditionNode = this._parentStack.peek()
         
         this.visitBlockStatement(stmt.then)
         
         if (stmt.alternates){
-            let stack = [...this._parentStack]
-            this._parentStack = []
+            let stackBackup = [...this._parentStack.elements]
+            this._parentStack.clear()
             this._parentStack.push(conditionNode);
             if (stmt.alternates instanceof ConditionalStatement) {
                 this.visitConditionalStatement(stmt.alternates)
             } else {
                 this.visitBlockStatement(stmt.alternates)
             }
-            this._parentStack.push(...stack)
+            this._parentStack.pushList(stackBackup)
         } else {
             this._parentStack.push(conditionNode);
         }   
     }
 
-    visitSequentialStatement(stmt){
-        let node = new CFGNode(this._id++, null, stmt, [], null)
+    visitSequentialStatement(stmt, isLoopEntry = false){
+        let node = null
+        if (isLoopEntry){
+            node = new LoopEntryNode(this._id++, null, stmt, [], null)
+        } else {
+            node = new CFGNode(this._id++, null, stmt, [], null)
+        }
+        
         node.nesting = this.nesting
         this.cfg.addNode(node)
         while(this._parentStack.length > 0){
@@ -122,6 +128,13 @@ class CFGVisitor {
 
     visitReturnStatement(stmt){
         this.visitSequentialStatement(stmt)
+        // subsequent nodes should not have incoming edges from this node
+        this._parentStack.pop()
+    }
+
+    visitBreakStatement(stmt){
+        this.visitSequentialStatement(stmt)
+        // should not have incoming edges from subsequent edges within the loop
         this._parentStack.pop()
     }
 

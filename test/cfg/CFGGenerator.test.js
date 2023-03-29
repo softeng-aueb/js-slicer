@@ -7,6 +7,24 @@ function expectHasEdge(cfg, source, target){
     expect(cfg.hasEdge(source, target)).toBe(true)
 }
 
+it('should support break statements', () => {
+    let code = `
+    function foo(a, b){
+        let ar = [1, 2, 3]
+        for(let i = 0; i < ar.length; i++){
+            if (ar[i] % 2 == 0){
+                break;
+            }
+        }
+        return 0
+    }`
+    let functionObj = parse(code)
+    let cfg = CFGGenerator.generateCfg2(functionObj)
+    cfg.print()
+    expect(cfg.nodes.length).toBe(7)
+    expectHasEdge(cfg, 2, 4) 
+})
+
 it('should handle multiple returns', () => {
     let code = `
     function foo(a, b){
