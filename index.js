@@ -155,11 +155,24 @@ let func6 = `function nestedFor(array){
   return max;
 }`;
 
-let func7 = `function isOdd (num){
-  if(num % 2 !== 0){
-    num = num +1;
+let func7 = `
+function foo(a, b){
+  let ar = [1, 2, 3]
+  for(let i = 0; i < ar.length; i++){
+      if (ar[i] % 2 == 0){
+          break;
+      }
+      for(let j = 0; j < i; j++){
+          console.log(j)
+          if (j %2 == 0){
+              break;
+          }
+          if (j == 3){
+              break;
+          }
+      }
   }
-  return false;
+  return 0
 }`;
 
 
@@ -198,7 +211,8 @@ function generateCFG() {
     func3,
     func4, 
     func5, 
-    func6/*, 
+    func6,
+    func7/*, 
     func8, 
     func9*/]
   let filenames = [
@@ -207,7 +221,8 @@ function generateCFG() {
     'func3',
     'func4', 
     'func5', 
-    'func6'/*, 
+    'func6',
+    'func7'/*, 
     'func8', 
   'func9'*/]
   for (let i = 0; i < examples.length; i++) {
