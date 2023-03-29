@@ -52,8 +52,12 @@ class CFGVisitor {
             this.addLoopBackEdge(node, loopEntryNode)
         }
         
+        // next node will have incoming edges from loopEntry and break nodes
         this._parentStack.clear()
         this._parentStack.push(loopEntryNode)
+        this._parentStack.pushList(loopEntryNode.breakNodes)
+        // remove node from stack on block exit
+        this._loopEntryStack.pop()
         
     }
 
@@ -135,7 +139,13 @@ class CFGVisitor {
     visitBreakStatement(stmt){
         this.visitSequentialStatement(stmt)
         // should not have incoming edges from subsequent edges within the loop
-        this._parentStack.pop()
+        let breakNode = this._parentStack.pop()
+        // add node to break statement to closest loop entry node
+        // FIXME: check label to find the appropriate loop
+        let loopEntry = this._loopEntryStack.peek()
+        if (loopEntry){
+            loopEntry.addBreakNode(breakNode)
+        }
     }
 
     visitMemberExpression(stmt){

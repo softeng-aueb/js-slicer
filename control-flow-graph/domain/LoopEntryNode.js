@@ -13,5 +13,9 @@ class LoopEntryNode extends CFGNode {
         this._breakNodes.push(node)
     }
 
+    get breakNodes(){
+        return this._breakNodes
+    }
+
 }
 module.exports = LoopEntryNode;

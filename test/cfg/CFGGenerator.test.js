@@ -22,7 +22,10 @@ it('should support break statements', () => {
     let cfg = CFGGenerator.generateCfg2(functionObj)
     cfg.print()
     expect(cfg.nodes.length).toBe(7)
-    expectHasEdge(cfg, 2, 4) 
+    expectHasEdge(cfg, 2, 3) 
+    expectHasEdge(cfg, 3, 4) 
+    expectHasEdge(cfg, 5, 7) // break control flow
+    expectHasEdge(cfg, 6, 3) // update to condition flow 
 })
 
 it('should handle multiple returns', () => {
