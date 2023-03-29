@@ -34,6 +34,25 @@ class CFGVisitor {
         this.nesting--
     }
 
+    visitLoopStatement(stmt){
+        if (!stmt) return
+
+        this.visitSequentialStatement(stmt.condition)
+        let conditionNode = this._parentStack.slice(-1)[0]
+        this.visitBlockStatement(stmt.body)
+        // add loopback edges for contents of the parent stack
+        for(let node of this._parentStack){
+            this.addLoopBackEdge(node, conditionNode)
+        }
+        // actually do not clear it in all cases, filter and keep break nodes
+        this._parentStack = []
+        this._parentStack.push(conditionNode)
+    }
+
+    addLoopBackEdge(source, loopEntryNode){
+        source.addOutgoingEdge(loopEntryNode, null)
+    }
+
     visitConditionalStatement(stmt) {
         if (!stmt) return
 
@@ -89,6 +108,10 @@ class CFGVisitor {
         //console.log(stmt.left)
         stmt.left.accept(this)
         stmt.right.accept(this)
+    }
+
+    visitUnaryExpression(stmt){
+        stmt.argument.accept(this)
     }
 
     visitReturnStatement(stmt){

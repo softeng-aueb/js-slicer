@@ -7,6 +7,63 @@ function expectHasEdge(cfg, source, target){
     expect(cfg.hasEdge(source, target)).toBe(true)
 }
 
+it('should generate cfg for nested while statements', () => {
+    let code = `
+    function foo(){
+        let ar = [1, 2, 3]
+        let a = 1
+        while(a < ar.length){
+            var b = 2
+            a = a + 1
+            while(b >= 0){
+                b--
+                if(b < 0){
+                    b = -10
+                }
+            }
+        }
+        return a + b
+    }`
+    let functionObj = parse(code)
+    let cfg = CFGGenerator.generateCfg2(functionObj)
+    cfg.print()
+    expect(cfg.nodes.length).toBe(10)
+    expectHasEdge(cfg, 3, 4)
+    expectHasEdge(cfg, 4, 5)
+    expectHasEdge(cfg, 3, 10)
+    expectHasEdge(cfg, 6, 7)
+    expectHasEdge(cfg, 6, 3)
+    expectHasEdge(cfg, 8, 6)
+    expectHasEdge(cfg, 9, 6)
+    // expectHasEdge(cfg, 7, 3)
+    // expectHasEdge(cfg, 3, 8)
+});
+
+
+it('should generate cfg for while statements', () => {
+    let code = `
+    function foo(){
+        let ar = [1, 2, 3]
+        let a = 1
+        while(a < ar.length){
+            var b = 2
+            console.log(a)    
+            if (b < 1){
+                console.log(b)
+            }
+        }
+        return a + b
+    }`
+    let functionObj = parse(code)
+    let cfg = CFGGenerator.generateCfg2(functionObj)
+    cfg.print()
+    expect(cfg.nodes.length).toBe(8)
+    expectHasEdge(cfg, 3, 4)
+    expectHasEdge(cfg, 6, 3)
+    expectHasEdge(cfg, 7, 3)
+    expectHasEdge(cfg, 3, 8)
+});
+
 it('should generate cfg for nested if statements', () => {
     let code = `
     function foo(){
