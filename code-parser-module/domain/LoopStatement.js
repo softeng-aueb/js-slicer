@@ -5,7 +5,6 @@ class LoopStatement {
         this._type = type;
         this._condition = condition;
         this._body = body;
-
     }
 
     get type() {
@@ -49,5 +48,8 @@ class LoopStatement {
         return statements;
     }
 
+    accept(visitor){
+        visitor.visitLoopStatement(this)
+    }
 }
 module.exports = LoopStatement;

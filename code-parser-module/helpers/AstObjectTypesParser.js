@@ -3,6 +3,7 @@ const AST_OBJECT_TYPES = require("../constants/astObjectTypes");
 const GENERAL = require("../constants/general");
 const Identifier = require("../domain/Identifier");
 const BinaryExpression = require("../domain/BinaryExpression");
+const UnaryExpression = require("../domain/UnaryExpression");
 const VariableDeclaration = require("../domain/VariableDeclaration");
 const ReturnStatement = require("../domain/ReturnStatement");
 const ConditionalStatement = require("../domain/ConditionalStatement");
@@ -31,9 +32,17 @@ class AstObjectTypesParser {
         if (expressionAstObj.type === AST_OBJECT_TYPES.ARRAY_EXPRESSION){
             return this.arrayExpressionParser(expressionAstObj)
         }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.WHILE_STATEMENT){
+            return this.loopStatementParser(expressionAstObj)
+        }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.FOR_STATEMENT){
+            return this.loopStatementParser(expressionAstObj)
+        }
         if (expressionAstObj.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION){
             return this.variableDeclarationsParser(expressionAstObj)
-        }else if (expressionAstObj.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
+        } else if (expressionAstObj.type === AST_OBJECT_TYPES.UNARY_EXPRESSION) {
+            return  this.unaryExpressionParser(expressionAstObj)
+        } else if (expressionAstObj.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
             return  this.binaryExpressionParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION){
             return this.conditionalStatementParser(expressionAstObj)
@@ -64,7 +73,7 @@ class AstObjectTypesParser {
         }
 
         console.log(expressionAstObj)
-        throw new Error('Unrecognized expression')
+        throw new Error('Unrecognized expression ' + expressionAstObj.type)
     }
 
 
@@ -148,6 +157,16 @@ class AstObjectTypesParser {
         let right = this.expressionParser(binaryExpressionAstObj.right);
 
         return new BinaryExpression(left, right, operator)
+    }
+
+    static unaryExpressionParser(unaryExpressionAstObj) {
+        if (!unaryExpressionAstObj || unaryExpressionAstObj.type !== AST_OBJECT_TYPES.UNARY_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.UNARY_EXPRESSION} object.`)
+        }
+        let operator = unaryExpressionAstObj.operator
+        let argument =  this.expressionParser(unaryExpressionAstObj.argument);
+
+        return new UnaryExpression(argument, operator)
     }
 
 

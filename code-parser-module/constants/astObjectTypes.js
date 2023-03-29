@@ -3,6 +3,7 @@ const AST_OBJECT_TYPES = {
     FUNCTION_DECLARATION: "FunctionDeclaration",
     VARIABLE_DECLARATION: "VariableDeclaration",
     RETURN_STATEMENT:"ReturnStatement",
+    UNARY_EXPRESSION:"UnaryExpression",
     BINARY_EXPRESSION:"BinaryExpression",
     IDENTIFIER:"Identifier",
     EXPRESSION_STATEMENT:"ExpressionStatement",
