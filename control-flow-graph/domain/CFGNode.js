@@ -21,6 +21,10 @@ class CFGNode {
         this._nesting = value
     }
 
+    isReturnStatement(){
+        return this._edges.length == 0
+    }
+
     hasStatementType(typeStr){
         return this.statement.constructor.name === typeStr;
     }

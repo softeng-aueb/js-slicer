@@ -7,6 +7,28 @@ function expectHasEdge(cfg, source, target){
     expect(cfg.hasEdge(source, target)).toBe(true)
 }
 
+it('should handle multiple returns', () => {
+    let code = `
+    function foo(a, b){
+        let ar = [1, 2, 3]
+        if (a > b){
+            return a
+        }
+        if (a > 2*b){
+            return b
+        }
+        return a + b + ar[a]
+    }`
+    let functionObj = parse(code)
+    let cfg = CFGGenerator.generateCfg2(functionObj)
+    cfg.print()
+    expect(cfg.nodes.length).toBe(6)
+    expectHasEdge(cfg, 2, 4) 
+    expect(cfg.getNodeById(3).isReturnStatement())
+    expect(cfg.getNodeById(5).isReturnStatement())
+    expect(cfg.getNodeById(6).isReturnStatement())
+})
+
 it('should generate cfg for for statements', () => {
     let code = `
     function foo(){

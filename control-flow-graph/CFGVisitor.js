@@ -122,6 +122,7 @@ class CFGVisitor {
 
     visitReturnStatement(stmt){
         this.visitSequentialStatement(stmt)
+        this._parentStack.pop()
     }
 
     visitMemberExpression(stmt){

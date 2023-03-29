@@ -66,22 +66,24 @@ let func1 = `function isOdd (num){
 
 let func2 = `
 function foo(){
-let ar = [1, 2, 3]
-        let a = 1
-        while(a < ar.length){
-            var b = 2
-            a = a + 1
-            while(b >= 0){
-                b--
-                if(b < 0){
-                    b = -10
-                }
-                b=11
-            }
-            var c = 10
+  let ar = [1, 2, 3]
+  let a = 1
+  while(a < ar.length){
+    var b = 2
+    a = a + 1
+    if (a > 1){
+      while(b >= 0){
+        b--
+        if(b < 0){
+          b = -10
         }
-        return a + b
-  }`
+        b=11
+      }
+    }            
+    var c = 10
+  }
+  return a + b
+}`
 
 let func3 = `
   function foo(){
@@ -112,12 +114,23 @@ let func3 = `
     return a + b
 }`;
 
-let func4 = `function findNumberType (number){
-  if(number % 2 === 0){
-    console.log("Number is even")
-  }else{
-    console.log("Number is odd")
+let func4 = `
+function foo(){
+  let ar = [1, 2, 3]
+  let a = 1
+  for(let i = 0; i < 10; i++){
+      a = a + i
+      if (a > 10){
+        console.log(a)
+      } else {
+        console.log(i)
+      }
+      while(a > 0){
+        a--
+        console.log(a)
+      }
   }
+  return a + b
 }`;
 
 let func5 = `function getSum (array){
@@ -130,11 +143,13 @@ let func5 = `function getSum (array){
   return sum;
 }`;
 
-let func6 = `function getMax (array){
+let func6 = `function nestedFor(array){
   let max= array[0];
   for(let i=0; i< array.length;i++){
-    if(max < array[i]){
-      max = array[i];
+    for(let j = 0; j < i; j++){
+      if(max < array[i]){
+        max = array[i];
+      }
     }
   }
   return max;
@@ -178,19 +193,21 @@ Use Graphviz Interactive Preview (VS COde plugin) to preview the files
 function generateCFG() {
 
   let examples = [
-    /*func1,*/ 
-    func2, 
-    func3/*, 
+    /*func1,*/
+    func2,
+    func3,
+    func4, 
     func5, 
-    func6, 
+    func6/*, 
     func8, 
     func9*/]
   let filenames = [
-    /*'func1',*/ 
-    'func2', 
-    'func3'/*, 
+    /*'func1',*/
+    'func2',
+    'func3',
+    'func4', 
     'func5', 
-    'func6', 
+    'func6'/*, 
     'func8', 
   'func9'*/]
   for (let i = 0; i < examples.length; i++) {
