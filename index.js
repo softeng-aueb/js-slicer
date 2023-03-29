@@ -64,13 +64,24 @@ let func1 = `function isOdd (num){
   return false;
 }`
 
-let func2 = `(a, b) => {
-  let y= a+b
-  while (y<5){
-    y=y+1
-  }
-  return y
-}`
+let func2 = `
+function foo(){
+let ar = [1, 2, 3]
+        let a = 1
+        while(a < ar.length){
+            var b = 2
+            a = a + 1
+            while(b >= 0){
+                b--
+                if(b < 0){
+                    b = -10
+                }
+                b=11
+            }
+            var c = 10
+        }
+        return a + b
+  }`
 
 let func3 = `
   function foo(){
@@ -167,16 +178,16 @@ Use Graphviz Interactive Preview (VS COde plugin) to preview the files
 function generateCFG() {
 
   let examples = [
-    /*func1, 
-    func2, */
+    /*func1,*/ 
+    func2, 
     func3/*, 
     func5, 
     func6, 
     func8, 
     func9*/]
   let filenames = [
-    /*'func1', 
-    'func2', */
+    /*'func1',*/ 
+    'func2', 
     'func3'/*, 
     'func5', 
     'func6', 
