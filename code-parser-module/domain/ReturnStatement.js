@@ -23,5 +23,9 @@ class ReturnStatement {
 
         return this._value.getUsedVariableNames();
     }
+
+    accept(visitor){
+        visitor.visitReturnStatement(this) 
+    }
 }
 module.exports = ReturnStatement;

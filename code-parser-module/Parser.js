@@ -16,8 +16,7 @@ class Parser {
 
         return new FunctionObj(functionName,functionArgs,functionBody,functionType);
     }
-
-
+    
 }
 
 module.exports = Parser;

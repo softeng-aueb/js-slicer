@@ -1,8 +1,18 @@
 class CFGEdge {
-    constructor(source, target, condition) {
+    constructor(source, target, condition, sourceNode, targetNode) {
         this._source = source;
         this._target = target;
         this._condition = condition;
+        this._sourceNode = sourceNode;
+        this._targetNode = targetNode;
+    }
+
+    get sourceNode(){
+        return this._sourceNode;
+    }
+
+    get targetNode(){
+        return this._targetNode;
     }
 
     get condition() {

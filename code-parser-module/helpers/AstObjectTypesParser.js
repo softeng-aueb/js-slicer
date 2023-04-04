@@ -3,6 +3,7 @@ const AST_OBJECT_TYPES = require("../constants/astObjectTypes");
 const GENERAL = require("../constants/general");
 const Identifier = require("../domain/Identifier");
 const BinaryExpression = require("../domain/BinaryExpression");
+const UnaryExpression = require("../domain/UnaryExpression");
 const VariableDeclaration = require("../domain/VariableDeclaration");
 const ReturnStatement = require("../domain/ReturnStatement");
 const ConditionalStatement = require("../domain/ConditionalStatement");
@@ -16,6 +17,10 @@ const FunctionCall = require("../domain/FunctionCall");
 const ObjectExpression = require("../domain/ObjectExpression");
 const ObjectProperty = require("../domain/ObjectProperty");
 const MemberExpression = require("../domain/MemberExpression");
+const ForStatement = require("../domain/ForStatement");
+const UpdateExpression = require("../domain/UpdateExpression");
+const ArrayExpression = require("../domain/ArrayExpression");
+const BreakStatement = require("../domain/BreakStatement");
 
 class AstObjectTypesParser {
 
@@ -25,7 +30,23 @@ class AstObjectTypesParser {
         }
 
         //TODO: Add more cases
-        if (expressionAstObj.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
+        if (expressionAstObj.type === AST_OBJECT_TYPES.ARRAY_EXPRESSION){
+            return this.arrayExpressionParser(expressionAstObj)
+        }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.BREAK_STATEMENT){
+            return this.breakStatementParser(expressionAstObj)
+        }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.WHILE_STATEMENT){
+            return this.loopStatementParser(expressionAstObj)
+        }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.FOR_STATEMENT){
+            return this.loopStatementParser(expressionAstObj)
+        }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION){
+            return this.variableDeclarationsParser(expressionAstObj)
+        } else if (expressionAstObj.type === AST_OBJECT_TYPES.UNARY_EXPRESSION) {
+            return  this.unaryExpressionParser(expressionAstObj)
+        } else if (expressionAstObj.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
             return  this.binaryExpressionParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION){
             return this.conditionalStatementParser(expressionAstObj)
@@ -39,7 +60,9 @@ class AstObjectTypesParser {
             return this.callExpressionParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION){
             return this.assignmentExpressionParser(expressionAstObj)
-        }else if(expressionAstObj.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT){
+        } else if (expressionAstObj.type ===AST_OBJECT_TYPES.UPDATE_EXPRESSION){
+            return this.updateExpressionParser(expressionAstObj)
+        } else if(expressionAstObj.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT){
             return this.expressionStatementParser(expressionAstObj)
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.BLOCK_STATEMENT){
             return this.blockStatementParser(expressionAstObj)
@@ -52,6 +75,9 @@ class AstObjectTypesParser {
         }else if(expressionAstObj.type === AST_OBJECT_TYPES.MEMBER_EXPRESSION){
             return this.memberExpressionParser(expressionAstObj)
         }
+
+        console.log(expressionAstObj)
+        throw new Error('Unrecognized expression ' + expressionAstObj.type)
     }
 
 
@@ -137,6 +163,16 @@ class AstObjectTypesParser {
         return new BinaryExpression(left, right, operator)
     }
 
+    static unaryExpressionParser(unaryExpressionAstObj) {
+        if (!unaryExpressionAstObj || unaryExpressionAstObj.type !== AST_OBJECT_TYPES.UNARY_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.UNARY_EXPRESSION} object.`)
+        }
+        let operator = unaryExpressionAstObj.operator
+        let argument =  this.expressionParser(unaryExpressionAstObj.argument);
+
+        return new UnaryExpression(argument, operator)
+    }
+
 
 
     static assignmentExpressionParser(assignmentExpressionAstObj) {
@@ -148,7 +184,17 @@ class AstObjectTypesParser {
         let right = this.expressionParser(assignmentExpressionAstObj.right);
 
         return new AssignmentStatement(left, right, operator)
+    }
 
+    static updateExpressionParser(updateExpressionAstObj) {
+        if (!updateExpressionAstObj || updateExpressionAstObj.type !== AST_OBJECT_TYPES.UPDATE_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.UPDATE_EXPRESSION} object.`)
+        }
+        let operator = updateExpressionAstObj.operator
+        let argument =  this.expressionParser(updateExpressionAstObj.argument);
+        let prefix = updateExpressionAstObj.prefix;
+
+        return new UpdateExpression(argument, prefix, operator)
     }
 
     static identifierParser(identifierAstObj) {
@@ -157,6 +203,13 @@ class AstObjectTypesParser {
         }
         return new Identifier(identifierAstObj.name)
 
+    }
+
+    static breakStatementParser(breakStmtAstObj) {
+        if (!breakStmtAstObj || breakStmtAstObj.type !== AST_OBJECT_TYPES.BREAK_STATEMENT) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.BREAK_STATEMENT} object.`)
+        }
+        return new BreakStatement(breakStmtAstObj.label)
     }
 
     static literalParser(literalAstObj) {
@@ -184,12 +237,22 @@ class AstObjectTypesParser {
         });
     }
 
+    static arrayExpressionParser(arrayExpressionAstObj) {
+        if (!arrayExpressionAstObj || arrayExpressionAstObj.type !== AST_OBJECT_TYPES.ARRAY_EXPRESSION) {
+            throw new Error(`Not a ${AST_OBJECT_TYPES.ARRAY_EXPRESSION} object.`)
+        }
+        let elements = arrayExpressionAstObj.elements.flatMap(statement => {
+            return this.expressionParser(statement);
+        });
+        let arrayExpression = new ArrayExpression(elements)
+        return arrayExpression;
+    }
+
     static conditionalStatementParser(conditionalStatementObj) {
         if (!conditionalStatementObj || (conditionalStatementObj.type !== AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION)) {
 
             throw new Error(`Not a ${AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION} object.`)
         }
-
         let condition = this.expressionParser(conditionalStatementObj.test);
         let then = this.expressionParser(conditionalStatementObj.consequent);
         let alternates = this.expressionParser(conditionalStatementObj.alternate);
@@ -202,10 +265,7 @@ class AstObjectTypesParser {
 
             throw new Error(`Not a ${AST_OBJECT_TYPES.IF_STATEMENT} object.`)
         }
-
         let condition = this.expressionParser(ifStatementObj.test);
-
-
         let then = ifStatementObj.consequent.body.map(e => {
             return this.expressionParser(e);
         });
@@ -216,12 +276,23 @@ class AstObjectTypesParser {
     }
 
     static loopStatementParser(loopStatementAstObj) {
-        if (!loopStatementAstObj || (loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_STATEMENT && loopStatementAstObj.type !== AST_OBJECT_TYPES.WHILE_STATEMENT)) {
+        if (!loopStatementAstObj || 
+            (loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_STATEMENT 
+                && loopStatementAstObj.type !== AST_OBJECT_TYPES.WHILE_STATEMENT)) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.FOR_STATEMENT} or  ${AST_OBJECT_TYPES.WHILE_STATEMENT} object.`)
         }
 
+
         let condition = this.expressionParser(loopStatementAstObj.test);
         let body =  this.expressionParser(loopStatementAstObj.body);
+
+        if (loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_STATEMENT){
+            //console.log(loopStatementAstObj)
+            let init = this.variableDeclarationsParser(loopStatementAstObj.init)
+            let update = this.expressionParser(loopStatementAstObj.update);
+            //console.log(update)
+            return new ForStatement(loopStatementAstObj.type, condition, body, init, update);
+        }
 
        return new LoopStatement(loopStatementAstObj.type,condition,body)
     }

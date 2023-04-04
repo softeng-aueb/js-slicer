@@ -39,6 +39,9 @@ class FunctionCall {
         }
         return varArray;    }
 
+        accept(visitor){
+            visitor.visitFunctionCall(this)
+        }
 
 }
 

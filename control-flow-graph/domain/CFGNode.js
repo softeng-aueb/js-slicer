@@ -1,12 +1,67 @@
+const astObjectTypes = require("../../code-parser-module/constants/astObjectTypes");
+const CFGEdge = require("./CFGEdge");
+
 class CFGNode {
 
-    constructor(id,executionCondition,statement,edges) {
+    constructor(id,executionCondition,statement,edges, parent) {
         this._id = id;
         this._executionCondition = executionCondition
         this._statement = statement;
         this._edges = edges;
+        this._parents = [];
+        this._parents.push(parent)
+        this._nesting = 0
+        this._breakNodes = []
+        //this._branchNode = false
     }
 
+
+    get nesting(){
+        return this._nesting
+    }
+
+    set nesting(value){
+        this._nesting = value
+    }
+
+    isBreakStatement(){
+        return this._statement.type === astObjectTypes.BREAK_STATEMENT;
+    }
+
+    isReturnStatement(){
+        return this._edges.length == 0
+    }
+
+    hasStatementType(typeStr){
+        return this.statement.constructor.name === typeStr;
+    }
+
+    hasEdgeTo(targetNodeId){
+        let result = this.edges.filter(e => e.target === targetNodeId);
+        if (result && result.length > 0){
+            return true
+        }
+        return false
+    }
+
+    addOutgoingEdge(targetNode, condition){
+        //console.log(`Adding edge to ${targetNode.id}`)
+        let edge = new CFGEdge(this.id, targetNode.id, condition, 
+            this, targetNode);
+        this.edges.push(edge)
+    }
+
+    get parents(){
+        return this._parents;
+    }
+
+    set parents(value){
+        this._parents = value
+    }
+
+    addParent(parent){
+        this._parents.push(parent)
+    }
 
     get id() {
         return this._id;

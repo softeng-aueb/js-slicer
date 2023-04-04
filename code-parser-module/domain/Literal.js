@@ -10,5 +10,9 @@ class Literal {
     set value(value) {
         this._value = value;
     }
+
+    accept(visitor){
+        
+    }
 }
 module.exports = Literal;

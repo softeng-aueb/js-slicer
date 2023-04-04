@@ -48,6 +48,11 @@ class AssignmentStatement{
     getDefinedVariable(){
         return this._left._name;
     }
+
+    accept(visitor){
+        visitor.visitAssignmentStatement(this)
+    }
+    
 }
 
 module.exports = AssignmentStatement;

@@ -42,5 +42,9 @@ class MemberExpression{
 
         return varArray;
     }
+
+    accept(visitor){
+        visitor.visitMemberExpression(this)
+    }
 }
 module.exports = MemberExpression;

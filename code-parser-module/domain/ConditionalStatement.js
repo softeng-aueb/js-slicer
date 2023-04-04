@@ -74,6 +74,9 @@ class ConditionalStatement{
         return statements;
     }
 
+    accept(visitor){
+        visitor.visitConditionalStatement(this)
+    }
 
 
 }

@@ -48,6 +48,9 @@ class VariableDeclaration {
         return this._names;
     }
 
+    accept(visitor){
+        visitor.visitVariableDeclaration(this);
+    }
 
 }
 
