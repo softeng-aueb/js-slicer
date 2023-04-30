@@ -180,19 +180,20 @@ let func8 = `
 function foo(a, b){
   let ar = [1, 2, 3]
   let a = 10
-  while(a > 0){
+  while(a > 0){ //3
       console.log(a)
       let b = ar[a]
-      if (b == 0){
-          break;
+      if (b == 0){ //6
+          break; // 7
       }
-      while(b > 0){
+      while(b > 0){ // 8
           console.log(b)
-          if (a == 0){
-              break;
+          if (a == 0){ // 10
+              break; // 11
           }
       }
   }
+  print('end') // 12
 }`;
 
 let func9 = `(a, b) => {

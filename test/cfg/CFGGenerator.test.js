@@ -12,16 +12,16 @@ it('should support break from nested while loops', () => {
     function foo(a, b){
         let ar = [1, 2, 3]
         let a = 10
-        while(a > 0){
+        while(a > 0){ // 3
             console.log(a)
             let b = ar[a]
-            if (b == 0){
-                break;
+            if (b == 0){ // 6
+                break; // 7
             }
-            while(b > 0){
+            while(b > 0){ // 8
                 console.log(b)
-                if (a == 0){
-                    break;
+                if (a == 0){ // 10
+                    break; // 11
                 }
             }
         }
@@ -32,8 +32,9 @@ it('should support break from nested while loops', () => {
     expect(cfg.nodes.length).toBe(11)
     expectHasEdge(cfg, 2, 3) 
     expectHasEdge(cfg, 3, 4) 
-    expectHasEdge(cfg, 5, 7) // break control flow
-    expectHasEdge(cfg, 6, 3) // update to condition flow 
+    expectHasEdge(cfg, 6, 7) // break control flow
+    expectHasEdge(cfg, 8, 3) // loop back to outer loop
+    expectHasEdge(cfg, 11, 3) // break to outer loop
 })
 
 
