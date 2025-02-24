@@ -99,6 +99,10 @@ class CFGNode {
         return cfg.find(node =>  node._edges.find(edge => edge._condition === true && edge._target === this._id));
     }
 
+    isExitNode(){
+        return this._edges.length === 0
+    }
+
     dominatesNode(paths,node){
         if(this._id === node._id){
             return true;

@@ -25,23 +25,24 @@ class FunctionCall {
         this._args = value;
     }
 
-    getUsedVariableNames(){
+    getUsedVariableNames() {
         let varArray = [];
-        for(let i in this._args){
+        for (let i in this._args) {
             let arg = this._args[i];
 
             if (arg instanceof Identifier) {
                 varArray.push(arg._name);
-            }else if(!(arg instanceof Identifier) && !(arg instanceof Literal)){
+            } else if (!(arg instanceof Identifier) && !(arg instanceof Literal)) {
                 varArray = varArray.concat(arg.getUsedVariableNames());
             }
 
         }
-        return varArray;    }
+        return varArray;
+    }
 
-        accept(visitor){
-            visitor.visitFunctionCall(this)
-        }
+    accept(visitor) {
+        visitor.visitFunctionCall(this)
+    }
 
 }
 

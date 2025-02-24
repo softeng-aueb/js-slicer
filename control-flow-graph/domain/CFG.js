@@ -35,6 +35,14 @@ class CFG {
         return fromNode.hasEdgeTo(to)
     }
 
+    hasExitNode(nodeId){
+        let node = this.getNodeById(nodeId)
+        if (!node){
+            throw new Error('Invalid node Id')
+        }
+        return node.isExitNode()
+    }
+
     getNodeById(id){
         let result = this.nodes.filter(n => n.id === id)
         if (result){

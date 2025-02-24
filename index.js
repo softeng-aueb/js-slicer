@@ -11,6 +11,7 @@ const { generateCfg } = require("./control-flow-graph/CFGGenerator");
 
 class JsSlicer {
 
+
   static cfg(func) {
     try {
       if (!func) {

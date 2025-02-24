@@ -2,9 +2,19 @@
 const Parser = require('../../code-parser-module/Parser.js');
 const FUNCTION_TYPES = require('../../code-parser-module/constants/functionTypes')
 const CFGGenerator = require('../../control-flow-graph/CFGGenerator')
+const CFGVisualizer = require('../../control-flow-graph/CFGVisualizer')
 
 function expectHasEdge(cfg, source, target){
     expect(cfg.hasEdge(source, target)).toBe(true)
+}
+
+function expectHasExitNode(cfg, node){
+    expect(cfg.hasExitNode(node)).toBe(true)
+}
+
+function showCFG(cfg, filename){
+    let visualizer = new CFGVisualizer(cfg, filename)
+    visualizer.exportToDot()
 }
 
 it('should support break from nested while loops', () => {
@@ -28,12 +38,17 @@ it('should support break from nested while loops', () => {
     }`
     let functionObj = parse(code)
     let cfg = CFGGenerator.generateCfg2(functionObj)
+    // use showCFG for debugging, the exported dot file
+    // is located in output folder
+    //showCFG(cfg, 'test-while')
     cfg.print()
     expect(cfg.nodes.length).toBe(11)
     expectHasEdge(cfg, 2, 3) 
-    expectHasEdge(cfg, 3, 4) 
-    expectHasEdge(cfg, 5, 7) // break control flow
-    expectHasEdge(cfg, 6, 3) // update to condition flow 
+    expectHasEdge(cfg, 3, 4)
+    expectHasEdge(cfg, 8, 9) // inside nested while
+    expectHasEdge(cfg, 8, 3) // from nested while to outer while
+    expectHasExitNode(cfg, 7) // first break, exit
+    expectHasEdge(cfg,11, 3) // nested while break to outer while
 })
 
 
