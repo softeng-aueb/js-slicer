@@ -14,6 +14,7 @@ class CFGVisitor {
         this._loopEntryStack = new Stack();
         this.nesting = 0;
         this._visualizer = new CFGVisualizer();
+        this._returnExitStack = [];
     }
 
     visitArrayExpression(stmt) {
@@ -153,7 +154,7 @@ class CFGVisitor {
     visitReturnStatement(stmt) {
         this.visitSequentialStatement(stmt);
         // subsequent nodes should not have incoming edges from this node
-        this._parentStack.pop();
+        this._returnExitStack.push(this._parentStack.pop());
     }
 
     visitBreakStatement(stmt) {

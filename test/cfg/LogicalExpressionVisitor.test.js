@@ -28,9 +28,11 @@ it("composite conditions v1", () => {
         let c=a+b;
         //   2       3        4       5       6        7
         if((b>5 && c>10) || (a>2 || (a<c && b>23)) && a<=b){
+            foo2(a,b);
             return true;
         }
         else{
+            foo2(b,c);
             return false;
         }
         
