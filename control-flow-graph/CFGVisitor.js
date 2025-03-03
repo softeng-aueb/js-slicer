@@ -175,7 +175,7 @@ class CFGVisitor {
     }
 
     visitLogicalExpression(stmt, parentStack) {
-        let LogicalExprVisitor = new LogicalExpressionVisitor(this._id++, this._cfg);
+        let LogicalExprVisitor = new LogicalExpressionVisitor(this._id, this._cfg);
         return LogicalExprVisitor.visit(stmt, parentStack);
     }
 
