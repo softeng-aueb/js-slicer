@@ -28,15 +28,19 @@ it("composite conditions v1", () => {
         let c=a+b;
         //   2       3        4       5       6        7
         if((b>5 && c>10) || (a>2 || (a<c && b>23)) && a<=b){
-            console.log('case true');
+            return true;
         }
         else{
-            console.log('case false');
+            return false;
         }
-        return a+b;
+        
     }`;
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "LogExpTest1");
-    //assertions...
+    expectHasEdge(cfg, 2, 4); //if 2 is false, it should jump to 4
+    expectHasEdge(cfg, 5, 8); //if 5 is false, it should jump to False node
+    expectHasEdge(cfg, 4, 7); //if 4 is true, it should jump to 7
+    expectHasEdge(cfg, 3, 9); //if 3 is true, it should jump to True node
+    expectHasEdge(cfg, 5, 8); //if 5 is false, it should jump to False node
 });
