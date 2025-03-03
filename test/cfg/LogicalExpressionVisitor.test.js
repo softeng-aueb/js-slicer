@@ -26,7 +26,7 @@ it("composite conditions v1", () => {
     let code = `
     function foo(a,b){
         let c=a+b;
-        //   5       6        7       8       9        10
+        //   2       3        4       5       6        7
         if((b>5 && c>10) || (a>2 || (a<c && b>23)) && a<=b){
             console.log('case true');
         }
@@ -37,5 +37,6 @@ it("composite conditions v1", () => {
     }`;
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "LogExpTest1");
     //assertions...
 });

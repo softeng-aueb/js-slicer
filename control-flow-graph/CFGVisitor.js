@@ -4,6 +4,7 @@ const LoopEntryNode = require("./domain/LoopEntryNode");
 const CFG = require("./domain/CFG");
 const Stack = require("../utils/Stack");
 const LogicalExpressionVisitor = require("./LogicalExpressionVisitor");
+const CFGVisualizer = require("./CFGVisualizer");
 
 class CFGVisitor {
     constructor() {
@@ -12,6 +13,7 @@ class CFGVisitor {
         this._parentStack = new Stack();
         this._loopEntryStack = new Stack();
         this.nesting = 0;
+        this._visualizer = new CFGVisualizer();
     }
 
     visitArrayExpression(stmt) {
@@ -66,15 +68,34 @@ class CFGVisitor {
     visitConditionalStatement(stmt) {
         if (!stmt) return;
 
-        this.visitSequentialStatement(stmt.condition);
-        let conditionNode = this._parentStack.peek();
+        let condition = stmt.condition;
+        let then = stmt.then;
+        let alternates = stmt.alternates;
 
-        this.visitBlockStatement(stmt.then);
+        this._visualizer.exportCFGToDot(this._cfg, "VisitorTest1");
 
-        if (stmt.alternates) {
+        if (condition) {
+            this._id = this.visitLogicalExpression(condition, this._parentStack);
+        }
+        this._visualizer.exportCFGToDot(this._cfg, "VisitorTest2");
+
+        // True and False nodes created by the logical expression visitor
+        let conditionTrueNode = this._parentStack.pop();
+        let conditionFalseNode = this._parentStack.pop();
+
+        this._parentStack.clear();
+        this._parentStack.push(conditionTrueNode);
+        if (then instanceof ConditionalStatement) {
+            this.visitConditionalStatement(then);
+        } else {
+            this.visitBlockStatement(then);
+        }
+        this._visualizer.exportCFGToDot(this._cfg, "VisitorTest3");
+
+        if (alternates) {
             let stackBackup = [...this._parentStack.elements];
             this._parentStack.clear();
-            this._parentStack.push(conditionNode);
+            this._parentStack.push(conditionFalseNode);
             if (stmt.alternates instanceof ConditionalStatement) {
                 this.visitConditionalStatement(stmt.alternates);
             } else {
@@ -82,11 +103,9 @@ class CFGVisitor {
             }
             this._parentStack.pushList(stackBackup);
         } else {
-            this._parentStack.push(conditionNode);
+            this._parentStack.push(conditionFalseNode);
         }
-        if (stmt.condition) {
-            this.visitLogicalExpression(stmt.condition);
-        }
+        this._visualizer.exportCFGToDot(this._cfg, "VisitorTest4");
     }
 
     visitSequentialStatement(stmt, isLoopEntry = false) {
@@ -154,9 +173,9 @@ class CFGVisitor {
         stmt.object.accept(this);
     }
 
-    visitLogicalExpression(stmt) {
-        let LogicalExprVisitor = new LogicalExpressionVisitor(this._id);
-        LogicalExprVisitor.visit(stmt);
+    visitLogicalExpression(stmt, parentStack) {
+        let LogicalExprVisitor = new LogicalExpressionVisitor(this._id++, this._cfg);
+        return LogicalExprVisitor.visit(stmt, parentStack);
     }
 
     get cfg() {

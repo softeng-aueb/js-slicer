@@ -9,15 +9,15 @@ const { forEach, each, forIn } = require("lodash");
  * Helper class used to create sub-CFG's from composite logical expressions.
  */
 class LogicalExpressionVisitor {
-    constructor(id) {
-        this._cfg = new CFG();
+    constructor(id, cfg) {
+        this._cfg = !cfg ? new CFG() : cfg;
         this._id = id;
     }
 
     /**
      * Explore the tree structure of LogicalExpressions using Post-Order traversal (By level starting from the bottom, left to right).
      *  */
-    visit(root) {
+    visit(root, parentStack) {
         if (!root) {
             console.log("Invalid LogicalExpression tree root!");
             return;
@@ -69,11 +69,11 @@ class LogicalExpressionVisitor {
             }
         }
 
-        // Debug for operators
-        console.log("Operators Order: ");
-        operatorQueue.forEach((it) => {
-            console.log(it.operator + " " + it.level);
-        });
+        // // Debug for operators
+        // console.log("Operators Order: ");
+        // operatorQueue.forEach((it) => {
+        //     console.log(it.operator + " " + it.level);
+        // });
 
         // Use the post order stack and process nodes in the correct order
         // We only process Binary Expressions as nodes, more types to be added later...
@@ -91,8 +91,19 @@ class LogicalExpressionVisitor {
         let addToTrue = []; // Helper structures to use in the end to connect
         let addToFalse = []; // nodes with the final True and False nodes
 
+        let first = true;
+
         while (postOrderNodesQueue.length > 0) {
             let currentNode = postOrderNodesQueue.shift();
+
+            if (first) {
+                let parentNode = parentStack.peek();
+                parentNode.addOutgoingEdge(currentNode);
+                currentNode.addParent(parentNode);
+                first = false;
+            }
+
+            parentStack.push(currentNode);
 
             // Handle current-previous pairs of expressions
             if (CFGNodeLastVisited.length === 0) {
@@ -129,6 +140,7 @@ class LogicalExpressionVisitor {
                                 addToTrue.push(previousNode);
                             } else {
                                 previousNode.addOutgoingEdge(nextNode, true);
+                                nextNode.addParent(previousNode);
                             }
                         } else {
                             addToTrue.push(previousNode);
@@ -139,6 +151,7 @@ class LogicalExpressionVisitor {
 
                     // If false, connect to current node
                     previousNode.addOutgoingEdge(currentNode, false);
+                    currentNode.addParent(previousNode);
 
                     this._cfg.addNode(previousNode);
                 } else if (operatorSym === "&&") {
@@ -166,6 +179,7 @@ class LogicalExpressionVisitor {
                                 addToFalse.push(previousNode);
                             } else {
                                 previousNode.addOutgoingEdge(nextNode, false);
+                                nextNode.addParent(previousNode);
                             }
                         } else {
                             addToFalse.push(previousNode);
@@ -174,6 +188,7 @@ class LogicalExpressionVisitor {
                     CFGNodeLastVisited.push(currentNode);
                     // If true, connect to current node
                     previousNode.addOutgoingEdge(currentNode, true);
+                    currentNode.addParent(previousNode);
                     this._cfg.addNode(previousNode);
                 }
             }
@@ -192,10 +207,15 @@ class LogicalExpressionVisitor {
 
         for (const n of addToFalse) {
             n.addOutgoingEdge(falseNode, false);
+            falseNode.addParent(n);
         }
         for (const n of addToTrue) {
             n.addOutgoingEdge(trueNode, true);
+            trueNode.addParent(n);
         }
+
+        parentStack.push(falseNode);
+        parentStack.push(trueNode);
 
         this._cfg.addNode(falseNode);
         this._cfg.addNode(trueNode);
@@ -203,6 +223,8 @@ class LogicalExpressionVisitor {
         // Print cfg for debugging
         let visualizer = new CFGVisualizer(this._cfg, "LogicExprVisitor");
         visualizer.exportToDot();
+
+        return this._id;
     }
 }
 
