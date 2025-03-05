@@ -73,15 +73,13 @@ class CFGVisitor {
         let then = stmt.then;
         let alternates = stmt.alternates;
 
-        this._visualizer.exportCFGToDot(this._cfg, "VisitorTest1");
-
         if (condition) {
             this._id = this.visitLogicalExpression(condition, this._parentStack);
         }
-        this._visualizer.exportCFGToDot(this._cfg, "VisitorTest2");
 
         // True and False nodes created by the logical expression visitor
         let conditionTrueNode = this._parentStack.pop();
+
         let conditionFalseNode = this._parentStack.pop();
 
         this._parentStack.clear();
@@ -91,7 +89,6 @@ class CFGVisitor {
         } else {
             this.visitBlockStatement(then);
         }
-        this._visualizer.exportCFGToDot(this._cfg, "VisitorTest3");
 
         if (alternates) {
             let stackBackup = [...this._parentStack.elements];
@@ -106,7 +103,6 @@ class CFGVisitor {
         } else {
             this._parentStack.push(conditionFalseNode);
         }
-        this._visualizer.exportCFGToDot(this._cfg, "VisitorTest4");
     }
 
     visitSequentialStatement(stmt, isLoopEntry = false) {
