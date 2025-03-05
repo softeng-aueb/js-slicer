@@ -78,7 +78,7 @@ it("composite conditions v2", () => {
 });
 
 /**
- * Should support single conditional statements
+ * Should support a single ternary expression
  */
 it("composite conditions v3", () => {
     let code = `
