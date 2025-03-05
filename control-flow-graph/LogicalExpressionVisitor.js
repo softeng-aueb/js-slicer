@@ -3,7 +3,7 @@ const BinaryExpression = require("../code-parser-module/domain/BinaryExpression"
 const LogicalExpression = require("../code-parser-module/domain/LogicalExpression");
 const CFG = require("./domain/CFG");
 const CFGNode = require("./domain/CFGNode");
-const { forEach, each, forIn } = require("lodash");
+const ConditionalStatement = require("../code-parser-module/domain/ConditionalStatement");
 
 /**
  * Helper class used to create sub-CFG's from composite logical expressions.
@@ -17,7 +17,7 @@ class LogicalExpressionVisitor {
     /**
      * Explore the tree structure of LogicalExpressions using Post-Order traversal (By level starting from the bottom, left to right).
      *  */
-    visit(root, parentStack) {
+    visit(root, parentStack, linkWithPrevious = true) {
         if (!root) {
             console.log("Invalid LogicalExpression tree root!");
             return;
@@ -78,12 +78,43 @@ class LogicalExpressionVisitor {
         // Use the post order stack and process nodes in the correct order
         // We only process Binary Expressions as nodes, more types to be added later...
         let postOrderNodesQueue = [];
-
+        let subConditionNodesList = [];
+        let parentStackTop = [...parentStack.elements].shift();
+        let validBinaryExpressionOperators = [">", "<", "==", "===", "<=", ">=", "!="]; // Used to filter out non logical Binary Expressions
+        let nodesToBeIgnored = []; // Helper stack for sub conditional tree roots
         while (postOrderStack.length > 0) {
             let stmt = postOrderStack.pop();
-            if (stmt instanceof BinaryExpression) {
+
+            if (stmt instanceof BinaryExpression && validBinaryExpressionOperators.includes(stmt._operator)) {
                 let postOrderNode = new CFGNode(this._id++, null, stmt, [], null);
+
                 postOrderNodesQueue.push(postOrderNode);
+                parentStack.push(postOrderNode);
+            }
+            // Handle composite conditionals within conditionals i.e Tetriary Expression
+            // by creating sub trees of their composite conditions
+            else if (stmt instanceof ConditionalStatement) {
+                let secondVisitor = new LogicalExpressionVisitor(this._id, this._cfg);
+                this._id = secondVisitor.visit(stmt.condition, parentStack, false);
+
+                // Keep resulting true and false nodes from sub-tree
+                // and place them correctly in the CFG later
+                let conditionTrueNode = parentStack.pop();
+                let conditionFalseNode = parentStack.pop();
+                subConditionNodesList.push({ trueNode: conditionTrueNode, falseNode: conditionFalseNode });
+
+                // Get sub tree root and mark as special case when handling it
+                // this root node must not be paired with next nodes and should only be used to
+                // connect it correctly with the previous in the queue node
+                let subTreeRoot = parentStack.pop();
+                nodesToBeIgnored.push(subTreeRoot);
+                postOrderNodesQueue.push(subTreeRoot);
+
+                // Push only one node final true or false into the ordered queue, the other will duplicate
+                // the first's edges since they jump to the same nodes
+                parentStack.clear();
+                parentStack.push(parentStackTop);
+                postOrderNodesQueue.push(conditionTrueNode);
             }
         }
 
@@ -92,23 +123,29 @@ class LogicalExpressionVisitor {
         let addToFalse = []; // nodes with the final True and False nodes
 
         let first = true;
+        let prevTreeRootNode;
+        //Used for sub conditionals
+        if (!linkWithPrevious) {
+            let tempCopy = [...postOrderNodesQueue];
+            prevTreeRootNode = tempCopy.shift();
+        }
 
         while (postOrderNodesQueue.length > 0) {
             let currentNode = postOrderNodesQueue.shift();
 
-            if (first) {
-                let parentNode = parentStack.peek();
-                parentNode.addOutgoingEdge(currentNode);
-                currentNode.addParent(parentNode);
+            // Link root node with previous node in stack
+            if (first && !parentStackTop.hasEdgeTo(currentNode.id) && linkWithPrevious) {
+                parentStackTop.addOutgoingEdge(currentNode);
+                currentNode.addParent(parentStackTop);
+                first = false;
+            } else if (first) {
                 first = false;
             }
-
-            parentStack.push(currentNode);
 
             // Handle current-previous pairs of expressions
             if (CFGNodeLastVisited.length === 0) {
                 CFGNodeLastVisited.push(currentNode);
-            } else {
+            } else if (operatorQueue.length > 0) {
                 let previousNode = CFGNodeLastVisited.pop();
                 let operatorObj = operatorQueue.shift();
 
@@ -140,6 +177,7 @@ class LogicalExpressionVisitor {
                                 addToTrue.push(previousNode);
                             } else {
                                 previousNode.addOutgoingEdge(nextNode, true);
+
                                 nextNode.addParent(previousNode);
                             }
                         } else {
@@ -147,8 +185,12 @@ class LogicalExpressionVisitor {
                         }
                     }
 
-                    CFGNodeLastVisited.push(currentNode);
-
+                    // Skip cases of nodes that need to be ignored
+                    if (nodesToBeIgnored.includes(currentNode)) {
+                        CFGNodeLastVisited = [];
+                    } else {
+                        CFGNodeLastVisited.push(currentNode);
+                    }
                     // If false, connect to current node
                     previousNode.addOutgoingEdge(currentNode, false);
                     currentNode.addParent(previousNode);
@@ -185,7 +227,12 @@ class LogicalExpressionVisitor {
                             addToFalse.push(previousNode);
                         }
                     }
-                    CFGNodeLastVisited.push(currentNode);
+                    // Skip cases of nodes that need to be ignored
+                    if (nodesToBeIgnored.includes(currentNode)) {
+                        CFGNodeLastVisited = [];
+                    } else {
+                        CFGNodeLastVisited.push(currentNode);
+                    }
                     // If true, connect to current node
                     previousNode.addOutgoingEdge(currentNode, true);
                     currentNode.addParent(previousNode);
@@ -194,7 +241,7 @@ class LogicalExpressionVisitor {
             }
             // If current node is the final expression in the condition
             // it decides the final outcome of the condition
-            if (operatorQueue.length === 0) {
+            if (operatorQueue.length === 0 && !nodesToBeIgnored.includes(currentNode)) {
                 addToFalse.push(currentNode);
                 addToTrue.push(currentNode);
                 this._cfg.addNode(currentNode);
@@ -202,8 +249,8 @@ class LogicalExpressionVisitor {
         }
 
         // Create final True and False nodes
-        let falseNode = new CFGNode(this._id++, null, null, [], null);
         let trueNode = new CFGNode(this._id++, null, null, [], null);
+        let falseNode = new CFGNode(this._id++, null, null, [], null);
 
         for (const n of addToFalse) {
             n.addOutgoingEdge(falseNode, false);
@@ -213,16 +260,33 @@ class LogicalExpressionVisitor {
             n.addOutgoingEdge(trueNode, true);
             trueNode.addParent(n);
         }
-
+        // Used for sub conditionals
+        if (!linkWithPrevious) {
+            parentStack.push(prevTreeRootNode);
+        }
         parentStack.push(falseNode);
         parentStack.push(trueNode);
 
         this._cfg.addNode(falseNode);
         this._cfg.addNode(trueNode);
 
-        // Print cfg for debugging
-        let visualizer = new CFGVisualizer(this._cfg, "LogicExprVisitor");
-        visualizer.exportToDot();
+        // Organize sub-conditionals true and false nodes to have the same edges
+        for (const obj of subConditionNodesList) {
+            let subConditionalTrueNode = obj.trueNode;
+            let subConditionalFalseNode = obj.falseNode;
+
+            for (const edge of subConditionalTrueNode.edges) {
+                let targetNode = edge.targetNode;
+                let edgeCondition = edge.condition;
+
+                subConditionalFalseNode.addOutgoingEdge(targetNode, edgeCondition);
+                targetNode.addParent(subConditionalFalseNode);
+            }
+        }
+
+        // // Print cfg for debugging
+        // let visualizer = new CFGVisualizer(this._cfg, "LogicExprVisitor");
+        // visualizer.exportToDot();
 
         return this._id;
     }
