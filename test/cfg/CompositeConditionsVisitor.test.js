@@ -39,7 +39,7 @@ it("composite conditions v1", () => {
     }`;
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
-    showCFG(cfg, "LogExpTest1");
+    showCFG(cfg, "CompCondTest1");
     expectHasEdge(cfg, 2, 4); //if 2 is false, it should jump to 4
     expectHasEdge(cfg, 5, 9); //if 5 is false, it should jump to False node
     expectHasEdge(cfg, 4, 7); //if 4 is true, it should jump to 7
@@ -66,7 +66,7 @@ it("composite conditions v2", () => {
 
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
-    showCFG(cfg, "LogExpTest2");
+    showCFG(cfg, "CompCondTest2");
     expectHasEdge(cfg, 2, 3); //if 2 is false, it should jump to 3
     expectHasEdge(cfg, 3, 4); //if 3 is false, it should jump to 4
     expectHasEdge(cfg, 4, 5); //if 4 is true, it should jump to 5
@@ -95,10 +95,32 @@ it("composite conditions v3", () => {
 
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
-    showCFG(cfg, "LogExpTest3");
+    showCFG(cfg, "CompCondTest3");
     expectHasEdge(cfg, 2, 4); //if 2 is false, it should jump to 4
     expectHasEdge(cfg, 3, 5); //if 3 is true, it should jump to 5
     expectHasEdge(cfg, 4, 5); //if 4 is true, it should jump to 5
     expectHasEdge(cfg, 3, 6); //if 3 is false, it should jump to 6
     expectHasEdge(cfg, 4, 6); //if 4 is false, it should jump to 6
+});
+
+/**
+ * Should support logical expressions within then/alternate blocks of conditionals
+ */
+it("composite conditions v4", () => {
+    let code = `
+    function foo(a,b){
+        let c = a+b;
+    //ids:  2      5      6     9      10 
+        if(c>10 ? a<b && c<a : a>5 || b<c){
+            return a
+        }
+        else{
+            return b
+        }
+    }
+    `;
+
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CompCondTest4");
 });

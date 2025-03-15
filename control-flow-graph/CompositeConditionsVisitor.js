@@ -313,7 +313,7 @@ class CompositeConditionsVisitor {
         if (stmt._then instanceof LogicalExpression) {
             isThenLogExpr = true;
 
-            parentStack = [];
+            parentStack = new Stack();
             parentStack.push(conditionThenNode);
 
             secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
@@ -325,11 +325,11 @@ class CompositeConditionsVisitor {
         if (stmt._alternates instanceof LogicalExpression) {
             isAlternateLogExpr = true;
 
-            parentStack = [];
+            parentStack = new Stack();
             parentStack.push(conditionAlternateNode);
 
             secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
-            this._id = secondVisitor.visit(stmt._argument, parentStack);
+            this._id = secondVisitor.visit(stmt._alternates, parentStack);
 
             alternateTrueNode = parentStack.pop();
             alternateFalseNode = parentStack.pop();
