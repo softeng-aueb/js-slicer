@@ -3,7 +3,7 @@ const CFGNode = require("./domain/CFGNode");
 const LoopEntryNode = require("./domain/LoopEntryNode");
 const CFG = require("./domain/CFG");
 const Stack = require("../utils/Stack");
-const LogicalExpressionVisitor = require("./LogicalExpressionVisitor");
+const CompositeConditionsVisitor = require("./CompositeConditionsVisitor");
 const CFGVisualizer = require("./CFGVisualizer");
 
 class CFGVisitor {
@@ -171,8 +171,8 @@ class CFGVisitor {
     }
 
     visitLogicalExpression(stmt, parentStack) {
-        let LogicalExprVisitor = new LogicalExpressionVisitor(this._id, this._cfg);
-        return LogicalExprVisitor.visit(stmt, parentStack);
+        let visitor = new CompositeConditionsVisitor(this._id, this._cfg);
+        return visitor.visit(stmt, parentStack);
     }
 
     get cfg() {
