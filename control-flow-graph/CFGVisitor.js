@@ -172,7 +172,7 @@ class CFGVisitor {
 
     visitLogicalExpression(stmt, parentStack) {
         let visitor = new CompositeConditionsVisitor(this._id, this._cfg);
-        return visitor.visit(stmt, parentStack);
+        return visitor.visit(stmt, parentStack, true, true);
     }
 
     get cfg() {

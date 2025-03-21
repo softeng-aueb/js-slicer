@@ -84,6 +84,7 @@ it("composite conditions v3", () => {
     let code = `
     function foo(a,b){
         let c = a+b;
+    //ids:  2      3      4
         if(c>10 ? a<2 : b<2){
             return a
         }
@@ -110,8 +111,8 @@ it("composite conditions v4", () => {
     let code = `
     function foo(a,b){
         let c = a+b;
-    //ids:  2      5      6     9      10 
-        if(c>10 ? a<b && c<a : a>5 || b<c){
+    //ids:   2      3      4     5      6      7
+        if((a>10 ? b<c && c<a : d>5 || e<c) && f>3){
             return a
         }
         else{
@@ -119,8 +120,62 @@ it("composite conditions v4", () => {
         }
     }
     `;
-
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CompCondTest4");
+    expectHasEdge(cfg, 2, 5); //if 2 is false, it should jump to 5
+    expectHasEdge(cfg, 3, 9); //if 3 is false, it should jump to False
+    expectHasEdge(cfg, 4, 7); //if 4 is true, it should jump to 7
+    expectHasEdge(cfg, 5, 6); //if 5 is false, it should jump to 6
+    expectHasEdge(cfg, 5, 7); //if 5 is true, it should jump to 7
+    expectHasEdge(cfg, 6, 9); //if 6 is false, it should jump to False
+});
+
+/**
+ * Should recursively support the existence of conditional statements within conditional statements
+ */
+it("composite conditions v5", () => {
+    let code = `
+    function foo(a,b){
+        let c = a+b;
+    //ids:  2     3      4     5     6       7
+        if(a>b ? b>5 : (b<a ? a<c : b<c && c>20) ){
+            return a
+        }
+        else{
+            return b
+        }
+    }
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CompCondTest5");
+    expectHasEdge(cfg, 2, 4); //if 2 is false, it should jump to 4
+    expectHasEdge(cfg, 4, 6); //if 4 is false, it should jump to 6
+    expectHasEdge(cfg, 6, 9); //if 6 is false, it should jump to False
+    expectHasEdge(cfg, 6, 7); //if 6 is true, it should jump to 7
+    expectHasEdge(cfg, 7, 9); //if 7 is false, it should jump to False
+    expectHasEdge(cfg, 7, 8); //if 7 is true, it should jump to True
+});
+
+/**
+ * Should support negation of expressions
+ */
+it("composite conditions v6", () => {
+    let code = `
+    function foo(a,b){
+        let c = a+b;
+    //ids:  
+        if(!(a>5 && b<3)){
+            return a
+        }
+        else{
+            return b
+        }
+    }
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CompCondTest6");
+    //TODO: Continue with not logic
 });

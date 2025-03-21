@@ -13,15 +13,17 @@ class CompositeConditionsVisitor {
         this._cfg = !cfg ? new CFG() : cfg;
         this._id = id;
         this._postOrderNodeQueue = [];
-        this._nodesToBeIgnored = [];
+        this._specialNodes = [];
         this._copyBehaviorNodesList = [];
         this.validBinaryExpressionOperators = [">", "<", "==", "===", "<=", ">=", "!="]; // Used to filter out non logical Binary Expressions
+        this._addToTrue = [];
+        this._addToFalse = [];
     }
 
     /**
      * Explore the tree structure of LogicalExpressions using Post-Order traversal (By level starting from the bottom, left to right).
      *  */
-    visit(root, parentStack, linkWithPrevious = true) {
+    visit(root, parentStack, linkWithPrevious = true, returnTrueFalseNodes = true) {
         if (!root) {
             console.log("Invalid LogicalExpression tree root!");
             return;
@@ -37,17 +39,18 @@ class CompositeConditionsVisitor {
         while (stack.length > 0) {
             let stmt = stack.pop();
 
+            if (stmt._argument) stack.push(stmt._argument);
+
             reversePostOrderStack.push(stmt);
 
             if (stmt._left) stack.push(stmt._left);
-            if (stmt._argument) stack.push(stmt._argument);
             if (stmt._right) stack.push(stmt._right);
         }
 
         /**
          * Traverse the tree a second time using in-order to arrange operators order
          */
-        let operatorQueue = []; // Queue for ordering the logical expression operators (left to right and by level)
+        let operatorQueue = []; // Queue for ordering the logical expression operators (left to right)
         stack = [];
         let current = root;
         let level = 0;
@@ -79,12 +82,12 @@ class CompositeConditionsVisitor {
             }
         }
 
-        // // Debug for operators
-        // console.log(`Visitor ID: ${this._id}`);
-        // console.log("Operators Order: ");
-        // operatorQueue.forEach((it) => {
-        //     console.log(it.operator + " " + it.level);
-        // });
+        // Debug for operators
+        console.log(`Visitor ID: ${this._id}`);
+        console.log("Operators Order: ");
+        operatorQueue.forEach((it) => {
+            console.log(it.operator + " " + it.level);
+        });
 
         /**
          * Process statements into CFG nodes and fill the post order queue
@@ -99,8 +102,6 @@ class CompositeConditionsVisitor {
          */
 
         let CFGNodeLastVisited = [];
-        let addToTrue = [];
-        let addToFalse = [];
         let parentNode = [...parentStack.elements].shift();
         let first = true;
         let prevTreeRootNode;
@@ -110,6 +111,7 @@ class CompositeConditionsVisitor {
             prevTreeRootNode = tempCopy.shift();
         }
 
+        // The most important algorithm, it connects nodes in pairs based on the operators between them
         while (this._postOrderNodeQueue.length > 0) {
             let currentNode = this._postOrderNodeQueue.shift();
 
@@ -133,123 +135,151 @@ class CompositeConditionsVisitor {
                 let operatorSym = operatorObj.operator;
                 let operatorLvl = operatorObj.level;
                 if (operatorSym === "||") {
-                    if (operatorLvl === 0) {
-                        // If expression is true, connect previous node with final True node
-                        addToTrue.push(previousNode);
+                    // If expression is true, connect previous node with the next node
+                    // if there is no other next node, connect with final True node
+                    let copyNodeQueue = [...this._postOrderNodeQueue];
+                    let copyOperatorQueue = [...operatorQueue];
+                    let nextNode = null;
+                    while (copyNodeQueue.length > 0) {
+                        // Find next node on the same level or higher
+                        let temp = copyNodeQueue.shift();
+                        let copyOp = copyOperatorQueue.shift();
+                        if (copyOp.level <= operatorLvl && copyOp.operator === "&&") {
+                            nextNode = temp;
+                            break;
+                        }
+                    }
+                    // If no other next node found on the same level or higher, connect with True node
+                    if (!nextNode) {
+                        if (this._specialNodes.includes(previousNode)) {
+                            if (previousNode.true) this._addToTrue.push(...previousNode.true);
+                        } else {
+                            this._addToTrue.push(previousNode);
+                        }
                     } else {
-                        // If expression is true, connect previous node with the next node
-                        // if there is no other next node, connect with final True node
-                        if (operatorQueue.length > 0) {
-                            let copyNodeStack = [...this._postOrderNodeQueue];
-                            let copyOperatorQueue = [...operatorQueue];
-                            let nextNode = null;
-                            while (copyNodeStack.length > 0) {
-                                // Find next node on the same level or higher
-                                let temp = copyNodeStack.shift();
-                                let copyOp = copyOperatorQueue.shift();
-                                if (copyOp.level <= operatorLvl && copyOp.operator === "&&") {
-                                    nextNode = temp;
-                                    break;
+                        if (this._specialNodes.includes(previousNode)) {
+                            if (previousNode.true) {
+                                for (const n of previousNode.true) {
+                                    n.addOutgoingEdge(nextNode, true);
+                                    nextNode.addParent(n);
                                 }
                             }
-                            //If no other next node found on the same level or higher, connect with True node
-                            if (!nextNode) {
-                                addToTrue.push(previousNode);
-                            } else {
-                                previousNode.addOutgoingEdge(nextNode, true);
-
-                                nextNode.addParent(previousNode);
-                            }
                         } else {
-                            addToTrue.push(previousNode);
+                            previousNode.addOutgoingEdge(nextNode, true);
+                            nextNode.addParent(previousNode);
                         }
                     }
 
-                    // Skip cases of nodes that need to be ignored
-                    if (this._nodesToBeIgnored.includes(currentNode)) {
-                        CFGNodeLastVisited = [];
-                    } else {
-                        CFGNodeLastVisited.push(currentNode);
-                    }
+                    CFGNodeLastVisited.push(currentNode);
+
                     // If false, connect to current node
-                    previousNode.addOutgoingEdge(currentNode, false);
-                    currentNode.addParent(previousNode);
+                    if (this._specialNodes.includes(previousNode)) {
+                        if (previousNode.false) {
+                            for (const n of previousNode.false) {
+                                n.addOutgoingEdge(currentNode, false);
+                                currentNode.addParent(n);
+                            }
+                        }
+                    } else {
+                        previousNode.addOutgoingEdge(currentNode, false);
+                        currentNode.addParent(previousNode);
+                    }
 
                     this._cfg.addNode(previousNode);
                 } else if (operatorSym === "&&") {
-                    if (operatorLvl === 0) {
-                        // If expression is false, connect previous node with final False node
-                        addToFalse.push(previousNode);
-                    } else {
-                        // If expression is false, connect previous node with the next node
-                        // if there is no other next node, connect with final False node
-                        if (operatorQueue.length > 0) {
-                            let copyNodeStack = [...this._postOrderNodeQueue];
-                            let copyOperatorQueue = [...operatorQueue];
-                            let nextNode = null;
-                            while (copyNodeStack.length > 0) {
-                                // Find next node on the same level or higher
-                                let temp = copyNodeStack.shift();
-                                let copyOp = copyOperatorQueue.shift();
-                                if (copyOp.level <= operatorLvl && copyOp.operator === "||") {
-                                    nextNode = temp;
-                                    break;
-                                }
-                            }
-                            //If no other next node found on the same level or higher, connect with False node
-                            if (!nextNode) {
-                                addToFalse.push(previousNode);
-                            } else {
-                                previousNode.addOutgoingEdge(nextNode, false);
-                                nextNode.addParent(previousNode);
-                            }
-                        } else {
-                            addToFalse.push(previousNode);
+                    // If expression is false, connect previous node with the next node
+                    // if there is no other next node, connect with final False node
+
+                    let copyNodeQueue = [...this._postOrderNodeQueue];
+                    let copyOperatorQueue = [...operatorQueue];
+                    let nextNode = null;
+                    while (copyNodeQueue.length > 0) {
+                        // Find next node on the same level or higher
+                        let temp = copyNodeQueue.shift();
+                        let copyOp = copyOperatorQueue.shift();
+                        if (copyOp.level <= operatorLvl && copyOp.operator === "||") {
+                            nextNode = temp;
+                            break;
                         }
                     }
-                    // Skip cases of nodes that need to be ignored
-                    if (this._nodesToBeIgnored.includes(currentNode)) {
-                        CFGNodeLastVisited = [];
+                    // If no other next node found on the same level or higher, connect with False node
+                    if (!nextNode) {
+                        if (this._specialNodes.includes(previousNode)) {
+                            if (previousNode.false) this._addToFalse.push(...previousNode.false);
+                        } else this._addToFalse.push(previousNode);
                     } else {
-                        CFGNodeLastVisited.push(currentNode);
+                        if (this._specialNodes.includes(previousNode)) {
+                            if (previousNode.false) {
+                                for (const n of previousNode.false) {
+                                    n.addOutgoingEdge(nextNode, false);
+                                    nextNode.addParent(n);
+                                }
+                            }
+                        } else {
+                            previousNode.addOutgoingEdge(nextNode, false);
+                            nextNode.addParent(previousNode);
+                        }
                     }
+
+                    CFGNodeLastVisited.push(currentNode);
+
                     // If true, connect to current node
-                    previousNode.addOutgoingEdge(currentNode, true);
-                    currentNode.addParent(previousNode);
+                    if (this._specialNodes.includes(previousNode)) {
+                        if (previousNode.true) {
+                            for (const n of previousNode.true) {
+                                n.addOutgoingEdge(currentNode, true);
+                                currentNode.addParent(n);
+                            }
+                        }
+                    } else {
+                        previousNode.addOutgoingEdge(currentNode, true);
+                        currentNode.addParent(previousNode);
+                    }
                     this._cfg.addNode(previousNode);
                 }
             }
             // If current node is the final expression in the condition
             // it decides the final outcome of the condition
-            if (operatorQueue.length === 0 && !this._nodesToBeIgnored.includes(currentNode)) {
-                addToFalse.push(currentNode);
-                addToTrue.push(currentNode);
+            if (operatorQueue.length === 0) {
+                if (this._specialNodes.includes(currentNode)) {
+                    if (currentNode.true) this._addToTrue.push(...currentNode.true);
+                    if (currentNode.false) this._addToFalse.push(...currentNode.false);
+                } else {
+                    this._addToFalse.push(currentNode);
+                    this._addToTrue.push(currentNode);
+                }
                 this._cfg.addNode(currentNode);
             }
         }
+        if (returnTrueFalseNodes) {
+            // Create final True and False nodes
+            let trueNode = new CFGNode(this._id++, null, null, [], null);
+            let falseNode = new CFGNode(this._id++, null, null, [], null);
 
-        // Create final True and False nodes
-        let trueNode = new CFGNode(this._id++, null, null, [], null);
-        let falseNode = new CFGNode(this._id++, null, null, [], null);
+            for (const n of this._addToFalse) {
+                n.addOutgoingEdge(falseNode, false);
+                falseNode.addParent(n);
+            }
+            for (const n of this._addToTrue) {
+                n.addOutgoingEdge(trueNode, true);
+                trueNode.addParent(n);
+            }
 
-        for (const n of addToFalse) {
-            n.addOutgoingEdge(falseNode, false);
-            falseNode.addParent(n);
+            this._cfg.addNode(falseNode);
+            this._cfg.addNode(trueNode);
+
+            // Used for sub conditionals
+            if (!linkWithPrevious) {
+                parentStack.push(prevTreeRootNode);
+            }
+            parentStack.push(falseNode);
+            parentStack.push(trueNode);
+        } else {
+            // Used for sub conditionals
+            if (!linkWithPrevious) {
+                parentStack.push(prevTreeRootNode);
+            }
         }
-        for (const n of addToTrue) {
-            n.addOutgoingEdge(trueNode, true);
-            trueNode.addParent(n);
-        }
-        // Used for sub conditionals
-        if (!linkWithPrevious) {
-            parentStack.push(prevTreeRootNode);
-        }
-        parentStack.push(falseNode);
-        parentStack.push(trueNode);
-
-        this._cfg.addNode(falseNode);
-        this._cfg.addNode(trueNode);
-
         // Apply origin/copy logic for node edges in conditional statements
         for (const obj of this._copyBehaviorNodesList) {
             let originNode = obj.origin;
@@ -268,7 +298,7 @@ class CompositeConditionsVisitor {
         // let visualizer = new CFGVisualizer(this._cfg, "LogicExprVisitor");
         // visualizer.exportToDot();
 
-        return this._id;
+        return returnTrueFalseNodes ? this._id : { id: this._id, true: this._addToTrue, false: this._addToFalse };
     }
 
     /**
@@ -286,84 +316,103 @@ class CompositeConditionsVisitor {
     visitConditionalStatement(stmt) {
         let parentStack = new Stack();
         let condStmtVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
-        this._id = condStmtVisitor.visit(stmt.condition, parentStack, false);
+        let condResult = condStmtVisitor.visit(stmt.condition, parentStack, false, false);
 
-        // Keep resulting true (then) and false (alternative) nodes from sub-tree
-        // and place them correctly in the CFG later
-        let conditionThenNode = parentStack.pop();
-        let conditionAlternateNode = parentStack.pop();
+        this._id = condResult.id;
 
         // Get sub tree root and mark as special case when handling it
         // this root node must not be paired with next nodes and should only be used to
         // connect it correctly with the previous in the queue node
         let subTreeRoot = parentStack.pop();
-        this._nodesToBeIgnored.push(subTreeRoot);
+        this._specialNodes.push(subTreeRoot);
         this._postOrderNodeQueue.push(subTreeRoot);
 
         // Create sub CFGs if then or alternate nodes are composite logical expressions
-        let isThenLogExpr = false;
-        let thenTrueNode;
-        let thenFalseNode;
-
-        let isAlternateLogExpr = false;
-        let alternateTrueNode;
-        let alternateFalseNode;
-
         let secondVisitor;
-        if (stmt._then instanceof LogicalExpression) {
-            isThenLogExpr = true;
 
+        let connectToTrue = [];
+        let connectToFalse = [];
+
+        // Case of then being composite
+        if (stmt._then instanceof LogicalExpression || stmt._then instanceof ConditionalStatement) {
             parentStack = new Stack();
-            parentStack.push(conditionThenNode);
-
             secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
-            this._id = secondVisitor.visit(stmt._then, parentStack);
 
-            thenTrueNode = parentStack.pop();
-            thenFalseNode = parentStack.pop();
+            let thenResult = secondVisitor.visit(stmt._then, parentStack, false, false);
+            this._id = thenResult.id;
+
+            let thenTreeRoot = parentStack.pop();
+            for (const n of condResult.true) {
+                n.addOutgoingEdge(thenTreeRoot, true);
+                thenTreeRoot.addParent(n);
+            }
+
+            connectToTrue.push(...thenResult.true);
+            connectToFalse.push(...thenResult.false);
         }
-        if (stmt._alternates instanceof LogicalExpression) {
-            isAlternateLogExpr = true;
+        // Case of then being simple leaf node
+        else {
+            stmt._then.accept(this);
+            let thenNode = this._postOrderNodeQueue.pop();
 
+            for (const n of condResult.true) {
+                n.addOutgoingEdge(thenNode, true);
+                thenNode.addParent(n);
+            }
+
+            connectToTrue.push(thenNode);
+            connectToFalse.push(thenNode);
+        }
+
+        // Case of alternate being composite
+        if (stmt._alternates instanceof LogicalExpression || stmt._alternates instanceof ConditionalStatement) {
             parentStack = new Stack();
-            parentStack.push(conditionAlternateNode);
-
             secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
-            this._id = secondVisitor.visit(stmt._alternates, parentStack);
 
-            alternateTrueNode = parentStack.pop();
-            alternateFalseNode = parentStack.pop();
+            let altResult = secondVisitor.visit(stmt._alternates, parentStack, false, false);
+            this._id = altResult.id;
+
+            let altTreeRoot = parentStack.pop();
+            for (const n of condResult.false) {
+                n.addOutgoingEdge(altTreeRoot, false);
+                altTreeRoot.addParent(n);
+            }
+
+            connectToTrue.push(...altResult.true);
+            connectToFalse.push(...altResult.false);
+        }
+        // Case of alternate being simple leaf node
+        else {
+            stmt._alternates.accept(this);
+            let altNode = this._postOrderNodeQueue.pop();
+
+            for (const n of condResult.false) {
+                n.addOutgoingEdge(altNode, false);
+                altNode.addParent(n);
+            }
+
+            connectToTrue.push(altNode);
+            connectToFalse.push(altNode);
         }
 
-        // Handle all possible cases
-        if (isThenLogExpr && isAlternateLogExpr) {
-            this._copyBehaviorNodesList.push({ origin: thenTrueNode, copy: thenFalseNode });
-            this._copyBehaviorNodesList.push({ origin: thenTrueNode, copy: alternateTrueNode });
-            this._copyBehaviorNodesList.push({ origin: thenTrueNode, copy: alternateFalseNode });
-            this._postOrderNodeQueue.push(thenTrueNode);
-        } else if (isThenLogExpr && !isAlternateLogExpr) {
-            this._copyBehaviorNodesList.push({ origin: thenTrueNode, copy: thenFalseNode });
-            this._copyBehaviorNodesList.push({ origin: thenTrueNode, copy: conditionAlternateNode });
-            this._postOrderNodeQueue.push(thenTrueNode);
-        } else if (!isThenLogExpr && isAlternateLogExpr) {
-            this._copyBehaviorNodesList.push({ origin: conditionThenNode, copy: alternateTrueNode });
-            this._copyBehaviorNodesList.push({ origin: conditionThenNode, copy: alternateFalseNode });
-            this._postOrderNodeQueue.push(conditionThenNode);
-        } else if (!isThenLogExpr && !isAlternateLogExpr) {
-            this._copyBehaviorNodesList.push({ origin: conditionThenNode, copy: conditionAlternateNode });
-            this._postOrderNodeQueue.push(conditionThenNode);
+        for (const n of connectToFalse) {
+            this._cfg.addNode(n);
         }
+        for (const n of connectToTrue) {
+            this._cfg.addNode(n);
+        }
+
+        subTreeRoot.true = connectToTrue;
+        subTreeRoot.false = connectToFalse;
     }
-    visitUnaryExpression(stmt) {
-        let isNot = false;
 
+    visitUnaryExpression(stmt) {
         // Handle Not Expressions
+        let isNot = stmt.not;
         while (stmt instanceof UnaryExpression && stmt._operator === "!") {
             stmt = stmt._argument;
-            isNot = !isNot;
+            stmt.not = !stmt.not;
         }
-
-        stmt.not = isNot;
     }
 
     /**
