@@ -14,8 +14,9 @@ class CompositeConditionsVisitor {
         this._id = id;
         this._postOrderNodeQueue = [];
         this._specialNodes = [];
-        this._copyBehaviorNodesList = [];
-        this.validBinaryExpressionOperators = [">", "<", "==", "===", "<=", ">=", "!="]; // Used to filter out non logical Binary Expressions
+        // Used to filter out non logical Binary Expressions
+        this.validBinaryExpressionOperators = [">", "<", "==", "===", "<=", ">=", "!="];
+        // Lists for nodes that should be placed in the true/false final node
         this._addToTrue = [];
         this._addToFalse = [];
     }
@@ -38,8 +39,6 @@ class CompositeConditionsVisitor {
         let reversePostOrderStack = [];
         while (stack.length > 0) {
             let stmt = stack.pop();
-
-            if (stmt._argument) stack.push(stmt._argument);
 
             reversePostOrderStack.push(stmt);
 
@@ -104,11 +103,11 @@ class CompositeConditionsVisitor {
         let CFGNodeLastVisited = [];
         let parentNode = [...parentStack.elements].shift();
         let first = true;
-        let prevTreeRootNode;
+        let treeRootNode;
         // Used for sub conditional tree linking
         if (!linkWithPrevious) {
             let tempCopy = [...this._postOrderNodeQueue];
-            prevTreeRootNode = tempCopy.shift();
+            treeRootNode = tempCopy.shift();
         }
 
         // The most important algorithm, it connects nodes in pairs based on the operators between them
@@ -152,17 +151,15 @@ class CompositeConditionsVisitor {
                     // If no other next node found on the same level or higher, connect with True node
                     if (!nextNode) {
                         if (this._specialNodes.includes(previousNode)) {
-                            if (previousNode.true) this._addToTrue.push(...previousNode.true);
+                            this._addToTrue.push(...(previousNode.isNegated ? previousNode.false : previousNode.true));
                         } else {
                             this._addToTrue.push(previousNode);
                         }
                     } else {
                         if (this._specialNodes.includes(previousNode)) {
-                            if (previousNode.true) {
-                                for (const n of previousNode.true) {
-                                    n.addOutgoingEdge(nextNode, true);
-                                    nextNode.addParent(n);
-                                }
+                            for (const n of previousNode.true) {
+                                n.addOutgoingEdge(nextNode, previousNode.isNegated ? false : true);
+                                nextNode.addParent(n);
                             }
                         } else {
                             previousNode.addOutgoingEdge(nextNode, true);
@@ -174,11 +171,9 @@ class CompositeConditionsVisitor {
 
                     // If false, connect to current node
                     if (this._specialNodes.includes(previousNode)) {
-                        if (previousNode.false) {
-                            for (const n of previousNode.false) {
-                                n.addOutgoingEdge(currentNode, false);
-                                currentNode.addParent(n);
-                            }
+                        for (const n of previousNode.false) {
+                            n.addOutgoingEdge(currentNode, previousNode.isNegated ? true : false);
+                            currentNode.addParent(n);
                         }
                     } else {
                         previousNode.addOutgoingEdge(currentNode, false);
@@ -205,15 +200,13 @@ class CompositeConditionsVisitor {
                     // If no other next node found on the same level or higher, connect with False node
                     if (!nextNode) {
                         if (this._specialNodes.includes(previousNode)) {
-                            if (previousNode.false) this._addToFalse.push(...previousNode.false);
+                            this._addToFalse.push(...(previousNode.isNegated ? previousNode.true : previousNode.false));
                         } else this._addToFalse.push(previousNode);
                     } else {
                         if (this._specialNodes.includes(previousNode)) {
-                            if (previousNode.false) {
-                                for (const n of previousNode.false) {
-                                    n.addOutgoingEdge(nextNode, false);
-                                    nextNode.addParent(n);
-                                }
+                            for (const n of previousNode.false) {
+                                n.addOutgoingEdge(nextNode, previousNode.isNegated ? true : false);
+                                nextNode.addParent(n);
                             }
                         } else {
                             previousNode.addOutgoingEdge(nextNode, false);
@@ -225,11 +218,9 @@ class CompositeConditionsVisitor {
 
                     // If true, connect to current node
                     if (this._specialNodes.includes(previousNode)) {
-                        if (previousNode.true) {
-                            for (const n of previousNode.true) {
-                                n.addOutgoingEdge(currentNode, true);
-                                currentNode.addParent(n);
-                            }
+                        for (const n of previousNode.true) {
+                            n.addOutgoingEdge(currentNode, previousNode.isNegated ? false : true);
+                            currentNode.addParent(n);
                         }
                     } else {
                         previousNode.addOutgoingEdge(currentNode, true);
@@ -242,8 +233,8 @@ class CompositeConditionsVisitor {
             // it decides the final outcome of the condition
             if (operatorQueue.length === 0) {
                 if (this._specialNodes.includes(currentNode)) {
-                    if (currentNode.true) this._addToTrue.push(...currentNode.true);
-                    if (currentNode.false) this._addToFalse.push(...currentNode.false);
+                    this._addToTrue.push(...(currentNode.isNegated ? currentNode.false : currentNode.true));
+                    this._addToFalse.push(...(currentNode.isNegated ? currentNode.true : currentNode.false));
                 } else {
                     this._addToFalse.push(currentNode);
                     this._addToTrue.push(currentNode);
@@ -270,33 +261,16 @@ class CompositeConditionsVisitor {
 
             // Used for sub conditionals
             if (!linkWithPrevious) {
-                parentStack.push(prevTreeRootNode);
+                parentStack.push(treeRootNode);
             }
             parentStack.push(falseNode);
             parentStack.push(trueNode);
         } else {
             // Used for sub conditionals
             if (!linkWithPrevious) {
-                parentStack.push(prevTreeRootNode);
+                parentStack.push(treeRootNode);
             }
         }
-        // Apply origin/copy logic for node edges in conditional statements
-        for (const obj of this._copyBehaviorNodesList) {
-            let originNode = obj.origin;
-            let copyNode = obj.copy;
-
-            for (const edge of originNode.edges) {
-                let targetNode = edge.targetNode;
-                let edgeCondition = edge.condition;
-
-                copyNode.addOutgoingEdge(targetNode, edgeCondition);
-                targetNode.addParent(copyNode);
-            }
-        }
-
-        // // Print cfg for debugging
-        // let visualizer = new CFGVisualizer(this._cfg, "LogicExprVisitor");
-        // visualizer.exportToDot();
 
         return returnTrueFalseNodes ? this._id : { id: this._id, true: this._addToTrue, false: this._addToFalse };
     }
@@ -305,12 +279,7 @@ class CompositeConditionsVisitor {
      * ----- Visiting non leaf statements -----
      */
     visitLogicalExpression(stmt) {
-        // Apply De Morgan's laws if negated
-        if (stmt.not) {
-            stmt._left.not = !stmt._left.not;
-            stmt._right.not = !stmt._right.not;
-            stmt._operator = stmt._operator === "&&" ? "||" : "&&";
-        }
+        //skip
     }
 
     visitConditionalStatement(stmt) {
@@ -322,10 +291,11 @@ class CompositeConditionsVisitor {
 
         // Get sub tree root and mark as special case when handling it
         // this root node must not be paired with next nodes and should only be used to
-        // connect it correctly with the previous in the queue node
-        let subTreeRoot = parentStack.pop();
-        this._specialNodes.push(subTreeRoot);
-        this._postOrderNodeQueue.push(subTreeRoot);
+        // connect it correctly with the previous in the queue node.
+        // It is also used to connect the resulting final true/false nodes with the correct next nodes.
+        let conditionRootNode = parentStack.pop();
+        this._specialNodes.push(conditionRootNode);
+        this._postOrderNodeQueue.push(conditionRootNode);
 
         // Create sub CFGs if then or alternate nodes are composite logical expressions
         let secondVisitor;
@@ -333,8 +303,8 @@ class CompositeConditionsVisitor {
         let connectToTrue = [];
         let connectToFalse = [];
 
-        // Case of then being composite
-        if (stmt._then instanceof LogicalExpression || stmt._then instanceof ConditionalStatement) {
+        // Visit and process the then statement
+        if (stmt._then) {
             parentStack = new Stack();
             secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
 
@@ -350,22 +320,9 @@ class CompositeConditionsVisitor {
             connectToTrue.push(...thenResult.true);
             connectToFalse.push(...thenResult.false);
         }
-        // Case of then being simple leaf node
-        else {
-            stmt._then.accept(this);
-            let thenNode = this._postOrderNodeQueue.pop();
 
-            for (const n of condResult.true) {
-                n.addOutgoingEdge(thenNode, true);
-                thenNode.addParent(n);
-            }
-
-            connectToTrue.push(thenNode);
-            connectToFalse.push(thenNode);
-        }
-
-        // Case of alternate being composite
-        if (stmt._alternates instanceof LogicalExpression || stmt._alternates instanceof ConditionalStatement) {
+        // Visit and process the alternate statement
+        if (stmt._alternates) {
             parentStack = new Stack();
             secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
 
@@ -381,19 +338,6 @@ class CompositeConditionsVisitor {
             connectToTrue.push(...altResult.true);
             connectToFalse.push(...altResult.false);
         }
-        // Case of alternate being simple leaf node
-        else {
-            stmt._alternates.accept(this);
-            let altNode = this._postOrderNodeQueue.pop();
-
-            for (const n of condResult.false) {
-                n.addOutgoingEdge(altNode, false);
-                altNode.addParent(n);
-            }
-
-            connectToTrue.push(altNode);
-            connectToFalse.push(altNode);
-        }
 
         for (const n of connectToFalse) {
             this._cfg.addNode(n);
@@ -402,16 +346,33 @@ class CompositeConditionsVisitor {
             this._cfg.addNode(n);
         }
 
-        subTreeRoot.true = connectToTrue;
-        subTreeRoot.false = connectToFalse;
+        conditionRootNode.true = connectToTrue;
+        conditionRootNode.false = connectToFalse;
     }
 
     visitUnaryExpression(stmt) {
         // Handle Not Expressions
-        let isNot = stmt.not;
+        let isNegated = false;
         while (stmt instanceof UnaryExpression && stmt._operator === "!") {
+            isNegated = !isNegated;
             stmt = stmt._argument;
-            stmt.not = !stmt.not;
+        }
+
+        // Visit and process the arguement statement
+        let secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
+        let parentStack = new Stack();
+        let visitResult = secondVisitor.visit(stmt, parentStack, false, false);
+
+        this._id = visitResult.id;
+
+        let argRootNode = parentStack.pop();
+        if (argRootNode) {
+            this._specialNodes.push(argRootNode);
+            this._postOrderNodeQueue.push(argRootNode);
+
+            argRootNode.true = visitResult.true;
+            argRootNode.false = visitResult.false;
+            argRootNode.isNegated = isNegated;
         }
     }
 

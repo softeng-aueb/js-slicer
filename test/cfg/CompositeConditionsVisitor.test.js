@@ -165,8 +165,8 @@ it("composite conditions v6", () => {
     let code = `
     function foo(a,b){
         let c = a+b;
-    //ids:  
-        if(!(a>5 && b<3)){
+    //ids:    2      3        4       5
+        if(!(a>5 && b<3) || (a>4 && !b<4)){
             return a
         }
         else{
@@ -177,5 +177,5 @@ it("composite conditions v6", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CompCondTest6");
-    //TODO: Continue with not logic
+    //TODO: Finalize not logic with new algorithm and fix the edges issues with not expressions
 });
