@@ -165,8 +165,8 @@ it("composite conditions v6", () => {
     let code = `
     function foo(a,b){
         let c = a+b;
-    //ids:    2      3        4       5
-        if(!(a>5 && b<3) || (a>4 && !b<4)){
+    //ids:    2      3          4       5         
+        if(!(a>5 && b<3) || (!(a>4) && b<4)){
             return a
         }
         else{
@@ -177,5 +177,39 @@ it("composite conditions v6", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CompCondTest6");
-    //TODO: Finalize not logic with new algorithm and fix the edges issues with not expressions
+    expectHasEdge(cfg, 2, 6); //if 2 is false, it should jump to True
+    expectHasEdge(cfg, 2, 3); //if 2 is true, it should jump to 3
+    expectHasEdge(cfg, 3, 6); //if 3 is false, it should jump to True
+    expectHasEdge(cfg, 3, 4); //if 3 is true, it should jump to 4
+    expectHasEdge(cfg, 4, 5); //if 4 is false, it should jump to 5
+    expectHasEdge(cfg, 4, 7); //if 4 is true, it should jump to False
+});
+
+/**
+ * Should support negation of expressions within conditionals
+ */
+it("composite conditions v7", () => {
+    let code = `
+    function foo(a,b){
+    let c = a + b;
+    //ids:     2      3         4        5        6         7      8
+        if( ((a>4 || b<4) && !(b>a)) ? b>20 || !(a>30) : !(b<2 || a>5)  ){
+            return a
+        }
+        else{
+            return b
+        }
+    }
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CompCondTest7");
+    expectHasEdge(cfg, 2, 4); //if 2 is false, it should jump to 4
+    expectHasEdge(cfg, 4, 5); //if 4 is false, it should jump to 5
+    expectHasEdge(cfg, 4, 7); //if 4 is true, it should jump to 7
+    expectHasEdge(cfg, 6, 10); //if 6 is true, it should jump to False
+    expectHasEdge(cfg, 6, 9); //if 6 is false, it should jump to True
+    expectHasEdge(cfg, 7, 10); //if 7 is true, it should jump to False
+    expectHasEdge(cfg, 8, 10); //if 8 is true, it should jump to False
+    expectHasEdge(cfg, 8, 9); //if 8 is false, it should jump to True
 });
