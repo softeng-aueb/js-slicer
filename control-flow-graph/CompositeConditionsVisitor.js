@@ -7,9 +7,10 @@ const FunctionCall = require("../code-parser-module/domain/FunctionCall");
 const UnaryExpression = require("../code-parser-module/domain/UnaryExpression");
 const CFGNode = require("./domain/CFGNode");
 const Stack = require("../utils/Stack");
+const DecisionNode = require("./domain/DecisionNode");
 
 class CompositeConditionsVisitor {
-    constructor(id, cfg) {
+    constructor(id, cfg, nesting = -1) {
         this._cfg = !cfg ? new CFG() : cfg;
         this._id = id;
         this._postOrderNodeQueue = [];
@@ -19,110 +20,36 @@ class CompositeConditionsVisitor {
         // Lists for nodes that should be placed in the true/false final node
         this._addToTrue = [];
         this._addToFalse = [];
+        this._nesting = nesting;
     }
 
     /**
      * Explore the tree structure of LogicalExpressions using Post-Order traversal (By level starting from the bottom, left to right).
      *  */
-    visit(root, parentStack, linkWithPrevious = true, returnTrueFalseNodes = true) {
+    visit(root, returnDecisionNode = true) {
         if (!root) {
             console.log("Invalid Condition tree root!");
             return;
         }
 
-        let stack = [root]; // Helper Stack for each tree traversal
+        let reversePostOrderStack = this.createReversePostOrderStack(root);
 
-        /*
-         * Traverse the tree once to create a temp reverse post order stack
-         */
+        let operatorQueue = this.createOperatorsQueue(root);
 
-        let reversePostOrderStack = [];
-        while (stack.length > 0) {
-            let stmt = stack.pop();
-
-            reversePostOrderStack.push(stmt);
-
-            if (stmt._left) stack.push(stmt._left);
-            if (stmt._right) stack.push(stmt._right);
-        }
+        this.createPostOrderNodeQueue(reversePostOrderStack);
 
         /**
-         * Traverse the tree a second time using in-order to arrange operators order
-         */
-        let operatorQueue = []; // Queue for ordering the logical expression operators (left to right)
-        stack = [];
-        let current = root;
-        let level = 0;
-
-        while (current !== null || stack.length > 0) {
-            while (current !== null) {
-                stack.push({ node: current, depth: level });
-                if (current instanceof LogicalExpression) {
-                    current = current._left;
-                    level++; // Increase level when going left
-                } else {
-                    current = null;
-                }
-            }
-
-            let item = stack.pop();
-            current = item.node;
-            level = item.depth;
-
-            if (current instanceof LogicalExpression) {
-                operatorQueue.push({
-                    operator: current._operator,
-                    level: level,
-                });
-                current = current._right || null;
-                level++; // Increase level when going right
-            } else {
-                current = null;
-            }
-        }
-
-        // // Debug for operators
-        // console.log(`Visitor ID: ${this._id}`);
-        // console.log("Operators Order: ");
-        // operatorQueue.forEach((it) => {
-        //     console.log(it.operator + " " + it.level);
-        // });
-
-        /**
-         * Process statements into CFG nodes and fill the post order queue
-         */
-
-        while (reversePostOrderStack.length > 0) {
-            reversePostOrderStack.pop().accept(this);
-        }
-
-        /**
-         * Use the post order queue and create the CFG
+         * Use the post order queue and create the condition's full CFG
          */
 
         let CFGNodeLastVisited = [];
-        let parentNode = [...parentStack.elements].shift();
-        let first = true;
-        let treeRootNode;
 
-        if (!linkWithPrevious) {
-            let tempCopy = [...this._postOrderNodeQueue];
-
-            treeRootNode = tempCopy.shift();
-        }
+        let tempCopy = [...this._postOrderNodeQueue];
+        let treeRootNode = tempCopy.shift();
 
         // The most important algorithm, it connects nodes in pairs based on the operators between them
         while (this._postOrderNodeQueue.length > 0) {
             let currentNode = this._postOrderNodeQueue.shift();
-
-            // Link root node with previous node in stack
-            if (first && linkWithPrevious && parentNode && !parentNode.hasEdgeTo(currentNode.id)) {
-                parentNode.addOutgoingEdge(currentNode);
-                currentNode.addParent(parentNode);
-                first = false;
-            } else if (first) {
-                first = false;
-            }
 
             // Handle current-previous pairs of expressions
             if (CFGNodeLastVisited.length === 0) {
@@ -243,48 +170,102 @@ class CompositeConditionsVisitor {
                 this._cfg.addNode(currentNode);
             }
         }
-        if (returnTrueFalseNodes) {
-            // Create final True and False nodes
-            let trueNode = new CFGNode(this._id++, null, null, [], null);
-            let falseNode = new CFGNode(this._id++, null, null, [], null);
 
-            for (const n of this._addToFalse) {
-                n.addOutgoingEdge(falseNode, n.isNegated ? true : false);
-                falseNode.addParent(n);
-            }
-            for (const n of this._addToTrue) {
-                n.addOutgoingEdge(trueNode, n.isNegated ? false : true);
-                trueNode.addParent(n);
+        return returnDecisionNode
+            ? new DecisionNode(treeRootNode, this._addToTrue, this._addToFalse, this._nesting)
+            : { id: this._id, true: this._addToTrue, false: this._addToFalse, root: treeRootNode };
+    }
+
+    /**
+     *  ------ Helper functions ------
+     */
+    createReversePostOrderStack(root) {
+        let stack = [root]; // Helper Stack for each tree traversal
+
+        /*
+         * Traverse the tree once to create a temp reverse post order stack
+         */
+
+        let reversePostOrderStack = [];
+        while (stack.length > 0) {
+            let stmt = stack.pop();
+
+            reversePostOrderStack.push(stmt);
+
+            if (stmt._left) stack.push(stmt._left);
+            if (stmt._right) stack.push(stmt._right);
+        }
+
+        return reversePostOrderStack;
+    }
+
+    createOperatorsQueue(root) {
+        /**
+         * Traverse the tree a second time using in-order to arrange operators order
+         */
+        let operatorQueue = []; // Queue for ordering the logical expression operators (left to right)
+        stack = [];
+        let current = root;
+        let level = 0;
+
+        while (current !== null || stack.length > 0) {
+            while (current !== null) {
+                stack.push({ node: current, depth: level });
+                if (current instanceof LogicalExpression) {
+                    current = current._left;
+                    level++; // Increase level when going left
+                } else {
+                    current = null;
+                }
             }
 
-            this._cfg.addNode(falseNode);
-            this._cfg.addNode(trueNode);
+            let item = stack.pop();
+            current = item.node;
+            level = item.depth;
 
-            if (!linkWithPrevious) {
-                parentStack.push(treeRootNode);
-            }
-            parentStack.push(falseNode);
-            parentStack.push(trueNode);
-        } else {
-            if (!linkWithPrevious) {
-                parentStack.push(treeRootNode);
+            if (current instanceof LogicalExpression) {
+                operatorQueue.push({
+                    operator: current._operator,
+                    level: level,
+                });
+                current = current._right || null;
+                level++; // Increase level when going right
+            } else {
+                current = null;
             }
         }
 
-        return returnTrueFalseNodes ? this._id : { id: this._id, true: this._addToTrue, false: this._addToFalse };
+        // // Debug for operators
+        // console.log(`Visitor ID: ${this._id}`);
+        // console.log("Operators Order: ");
+        // operatorQueue.forEach((it) => {
+        //     console.log(it.operator + " " + it.level);
+        // });
+
+        /**
+         * Process statements into CFG nodes and fill the post order queue
+         */
+
+        return operatorQueue;
+    }
+
+    createPostOrderNodeQueue(reversePostOrderStack) {
+        while (reversePostOrderStack.length > 0) {
+            reversePostOrderStack.pop().accept(this);
+        }
     }
 
     /**
      * ----- Visiting non leaf statements -----
      */
+
     visitLogicalExpression(stmt) {
         //skip
     }
 
     visitConditionalStatement(stmt) {
-        let parentStack = new Stack();
         let condStmtVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
-        let condResult = condStmtVisitor.visit(stmt.condition, parentStack, false, false);
+        let condResult = condStmtVisitor.visit(stmt.condition, false);
 
         this._id = condResult.id;
 
@@ -292,7 +273,7 @@ class CompositeConditionsVisitor {
         // this root node must not be paired with next nodes and should only be used to
         // connect it correctly with the previous in the queue node.
         // It is also used to connect the resulting final true/false nodes with the correct next nodes.
-        let conditionRootNode = parentStack.pop();
+        let conditionRootNode = condResult.root;
         this._specialNodes.push(conditionRootNode);
         this._postOrderNodeQueue.push(conditionRootNode);
 
@@ -304,13 +285,12 @@ class CompositeConditionsVisitor {
 
         // Visit and process the then statement
         if (stmt._then) {
-            parentStack = new Stack();
             secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
 
-            let thenResult = secondVisitor.visit(stmt._then, parentStack, false, false);
+            let thenResult = secondVisitor.visit(stmt._then, false);
             this._id = thenResult.id;
 
-            let thenTreeRoot = parentStack.pop();
+            let thenTreeRoot = thenResult.root;
             for (const n of condResult.true) {
                 n.addOutgoingEdge(thenTreeRoot, n.isNegated ? false : true);
                 thenTreeRoot.addParent(n);
@@ -322,13 +302,12 @@ class CompositeConditionsVisitor {
 
         // Visit and process the alternate statement
         if (stmt._alternates) {
-            parentStack = new Stack();
             secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
 
-            let altResult = secondVisitor.visit(stmt._alternates, parentStack, false, false);
+            let altResult = secondVisitor.visit(stmt._alternates, false);
             this._id = altResult.id;
 
-            let altTreeRoot = parentStack.pop();
+            let altTreeRoot = altResult.root;
             for (const n of condResult.false) {
                 n.addOutgoingEdge(altTreeRoot, n.isNegated ? true : false);
                 altTreeRoot.addParent(n);
@@ -359,12 +338,12 @@ class CompositeConditionsVisitor {
 
         // Visit and process the arguement statement
         let secondVisitor = new CompositeConditionsVisitor(this._id, this._cfg);
-        let parentStack = new Stack();
-        let visitResult = secondVisitor.visit(stmt, parentStack, false, false);
+
+        let visitResult = secondVisitor.visit(stmt, false);
 
         this._id = visitResult.id;
 
-        let argRootNode = parentStack.pop();
+        let argRootNode = visitResult.root;
 
         this._specialNodes.push(argRootNode);
         this._postOrderNodeQueue.push(argRootNode);

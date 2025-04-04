@@ -22,6 +22,19 @@ class CFGNode {
         this._nesting = value;
     }
 
+    addNextNode(node) {
+        this.addOutgoingEdge(node.getRoot(), n.isNegated ? false : true);
+        node.getRoot().addParent(this);
+    }
+
+    hasDanglingEdges() {
+        return false;
+    }
+
+    getRoot() {
+        return this;
+    }
+
     isBreakStatement() {
         return this._statement.type === astObjectTypes.BREAK_STATEMENT;
     }

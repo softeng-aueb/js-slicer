@@ -6,10 +6,12 @@ class DecisionNode {
         this.trueEdges = trueEdges;
         this.falseEdges = falseEdges;
         this.nesting = nesting;
-        this.allTrueEdgesConnected = this.trueEdges.length === 0 ? true : false;
-        this.allFalseEdgesConnected = this.falseEdges.length === 0 ? true : false;
+        this.allTrueEdgesConnected = false;
+        this.allFalseEdgesConnected = false;
     }
-
+    get nesting() {
+        return this.nesting;
+    }
     hasDanglingEdges() {
         return this.allTrueEdgesConnected && this.allFalseEdgesConnected;
     }
@@ -21,15 +23,14 @@ class DecisionNode {
     addNextNode(node) {
         if (!this.allTrueEdgesConnected) {
             for (const n of this.trueEdges) {
-                n.addOutgoingEdge(node, n.isNegated ? false : true);
-                node.addParent(n);
+                n.addOutgoingEdge(node.getRoot(), n.isNegated ? false : true);
+                node.getRoot().addParent(n);
             }
             this.allTrueEdgesConnected = true;
-        }
-        if (!this.allFalseEdgesConnected) {
+        } else if (!this.allFalseEdgesConnected) {
             for (const n of this.falseEdges) {
-                n.addOutgoingEdge(node, n.isNegated ? true : false);
-                node.addParent(n);
+                n.addOutgoingEdge(node.getRoot(), n.isNegated ? true : false);
+                node.getRoot().addParent(n);
             }
             this.allFalseEdgesConnected = true;
         }
