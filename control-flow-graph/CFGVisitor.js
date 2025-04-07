@@ -4,6 +4,7 @@ const CFGNode = require("./domain/CFGNode");
 const LoopEntryNode = require("./domain/LoopEntryNode");
 const CFG = require("./domain/CFG");
 const Stack = require("../utils/Stack");
+const LogicalExpressionVisitor = require("./LogicalExpressionVisitor");
 
 class CFGVisitor {
 
@@ -65,10 +66,21 @@ class CFGVisitor {
         source.addOutgoingEdge(loopEntryNode, null)
     }
 
+    visitExpressionStatement(stmt, loopEntry = false){
+        this.visitSequentialStatement(stmt, loopEntry)
+    }
+
+    visitLogicalExpression(stmt){
+        let logicalExprVisitor = new LogicalExpressionVisitor()
+        stmt.accept(logicalExprVisitor)
+    }
+
     visitConditionalStatement(stmt) {
         if (!stmt) return
 
-        this.visitSequentialStatement(stmt.condition)
+        //this.visitSequentialStatement(stmt.condition)
+        console.log(stmt.condition)
+        stmt.condition.accept(this)
         let conditionNode = this._parentStack.peek()
         
         this.visitBlockStatement(stmt.then)

@@ -1,0 +1,22 @@
+const AstVisitor = require("../../control-flow-graph/AstVisitor");
+
+class LogicalExpressionFinder extends AstVisitor {
+
+    constructor(){
+        super()
+        this._result = []
+    }
+
+    get result(){
+        return this._result;
+    }
+
+    visitLogicalExpression(stmt){
+        this._result.push(stmt)
+        super.visitLogicalExpression(stmt)
+    }
+
+}
+
+
+module.exports = LogicalExpressionFinder

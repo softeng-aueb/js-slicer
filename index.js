@@ -196,9 +196,10 @@ function foo(a, b){
   print('end') // 12
 }`;
 
-let func9 = `(a, b) => {
-  let y= a+b
-  while (y+1>0 && y>1){
+let func9 = `
+function foo(a, b) {
+  let y=a+b
+  if (y+1>0 && y>1){
     y=y+1
   }
   return x + func(z,y,a)
@@ -227,8 +228,8 @@ function generateCFG() {
     func5, 
     func6,
     func7, 
-    func8/*, 
-    func9*/]
+    func8, 
+    func9]
   let filenames = [
     /*'func1',*/
     'func2',
@@ -237,8 +238,8 @@ function generateCFG() {
     'func5', 
     'func6',
     'func7', 
-    'func8'/*, 
-  'func9'*/]
+    'func8', 
+  'func9']
   for (let i = 0; i < examples.length; i++) {
     let result = JsSlicer.cfg(examples[i].split("\n"))
     result.print()

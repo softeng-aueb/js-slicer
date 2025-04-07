@@ -39,6 +39,10 @@ class FunctionObj {
     set type(value) {
         this._type = value;
     }
+
+    accept(visitor){
+        visitor.visitFunctionDeclaration(this)
+    }
 }
 
 module.exports = FunctionObj;

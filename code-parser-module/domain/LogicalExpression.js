@@ -8,6 +8,14 @@ class LogicalExpression{
         this._operator = operator;
     }
 
+    isAndExpression(){
+        return this._operator === '&&'
+    }
+
+    isOrExpression(){
+        return this._operator === '||'
+    }
+
 
     get left() {
         return this._left;
@@ -33,6 +41,10 @@ class LogicalExpression{
         this._operator = value;
     }
 
+    accept(visitor){
+        visitor.visitLogicalExpression(this)
+    }
+
     getUsedVariableNames(){
         let varArray = [];
         if(this._left instanceof Identifier){
@@ -50,5 +62,7 @@ class LogicalExpression{
         return varArray;    }
 
 }
+
+
 
 module.exports = LogicalExpression;
