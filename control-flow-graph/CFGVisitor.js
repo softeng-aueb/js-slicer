@@ -73,35 +73,23 @@ class CFGVisitor {
         let then = stmt.then;
         let alternates = stmt.alternates;
 
+        let decisionNode;
+
         if (condition) {
-            this._id = this.visitLogicalExpression(condition, this._parentStack);
+            decisionNode = this.visitLogicalExpression(condition, this._parentStack);
+            this._parentStack.push(decisionNode);
         }
 
-        // True and False nodes created by the logical expression visitor
-        let conditionTrueNode = this._parentStack.pop();
-
-        let conditionFalseNode = this._parentStack.pop();
-
-        this._parentStack.clear();
-        this._parentStack.push(conditionTrueNode);
         if (then instanceof ConditionalStatement) {
             this.visitConditionalStatement(then);
         } else {
             this.visitBlockStatement(then);
         }
 
-        if (alternates) {
-            let stackBackup = [...this._parentStack.elements];
-            this._parentStack.clear();
-            this._parentStack.push(conditionFalseNode);
-            if (stmt.alternates instanceof ConditionalStatement) {
-                this.visitConditionalStatement(stmt.alternates);
-            } else {
-                this.visitBlockStatement(stmt.alternates);
-            }
-            this._parentStack.pushList(stackBackup);
+        if (alternates instanceof ConditionalStatement) {
+            this.visitConditionalStatement(alternates);
         } else {
-            this._parentStack.push(conditionFalseNode);
+            this.visitBlockStatement(alternates);
         }
     }
 
@@ -115,11 +103,7 @@ class CFGVisitor {
 
         node.nesting = this.nesting;
         this.cfg.addNode(node);
-        while (this._parentStack.length > 0) {
-            let parent = this._parentStack.pop();
-            parent.addOutgoingEdge(node, null);
-            node.addParent(parent);
-        }
+
         this._parentStack.push(node);
     }
 
@@ -171,8 +155,10 @@ class CFGVisitor {
     }
 
     visitLogicalExpression(stmt, parentStack) {
-        let visitor = new CompositeConditionsVisitor(this._id, this._cfg);
-        return visitor.visit(stmt, parentStack, true, true);
+        let visitor = new CompositeConditionsVisitor(this._id, this._cfg, parentStack.peek().nesting);
+        let decisionNode = visitor.visit(stmt, true);
+        this._id = visitor._id;
+        return decisionNode;
     }
 
     get cfg() {
