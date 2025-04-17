@@ -1,19 +1,28 @@
 const CFGNode = require("./CFGNode");
 
 class DecisionNode {
+    static idCount = 1;
+
     constructor(conditionRoot, trueEdges, falseEdges, nesting) {
         this.conditionRoot = conditionRoot;
         this.trueEdges = trueEdges;
         this.falseEdges = falseEdges;
-        this.nesting = nesting;
+        this._nesting = nesting;
         this.allTrueEdgesConnected = false;
         this.allFalseEdgesConnected = false;
+        this.id = "DN" + DecisionNode.idCount++;
     }
-    get nesting() {
-        return this.nesting;
+
+    static get nesting() {
+        return this._nesting;
     }
+
+    set nesting(value) {
+        this._nesting = value;
+    }
+
     hasDanglingEdges() {
-        return this.allTrueEdgesConnected && this.allFalseEdgesConnected;
+        return !(this.allTrueEdgesConnected && this.allFalseEdgesConnected);
     }
 
     getRoot() {

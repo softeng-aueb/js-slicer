@@ -204,7 +204,7 @@ class CompositeConditionsVisitor {
          * Traverse the tree a second time using in-order to arrange operators order
          */
         let operatorQueue = []; // Queue for ordering the logical expression operators (left to right)
-        stack = [];
+        let stack = [];
         let current = root;
         let level = 0;
 

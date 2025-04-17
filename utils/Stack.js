@@ -8,22 +8,7 @@ class Stack {
     }
 
     push(node) {
-        // Implement connection algorithm logic
-        if (this._elements.length === 0) {
-            this._elements.push(node);
-        } else {
-            let previousNode = this._elements.pop();
-            previousNode.addNextNode(node);
-
-            // Do not remove nodes with dangling edges
-            if (previousNode.hasDanglingEdges()) {
-                this._elements.push(previousNode);
-            }
-
-            this._elements.push(node);
-
-            //TODO: Implement block statement completion logic / same level nesting removal from stack
-        }
+        this._elements.push(node);
     }
 
     pushList(values) {

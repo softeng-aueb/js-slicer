@@ -15,6 +15,31 @@ class CFGVisitor {
         this.nesting = 0;
         this._visualizer = new CFGVisualizer();
         this._returnExitStack = [];
+        this._tempRemovedNodes = [];
+    }
+
+    // Implements connection algorithm logic
+    connectNodeToCFG(node) {
+        if (this._parentStack.length === 0) {
+            this._parentStack.push(node);
+        } else {
+            let previousNode = this._parentStack.pop();
+            previousNode.addNextNode(node);
+
+            // Do not remove nodes with dangling edges
+            if (previousNode.hasDanglingEdges()) {
+                this._parentStack.push(previousNode);
+            }
+
+            this._parentStack.push(node);
+        }
+
+        //Debug
+        let printStr = "";
+        this._parentStack.elements.forEach((it) => {
+            printStr = printStr.concat(`${it.id} `);
+        });
+        console.log("Parent stack content: " + printStr);
     }
 
     visitArrayExpression(stmt) {
@@ -30,6 +55,20 @@ class CFGVisitor {
         for (let stmt of block) {
             stmt.accept(this);
         }
+        // Reinsert nodes temporarily removed
+        while (this._tempRemovedNodes.length > 0) {
+            this._parentStack.push(this._tempRemovedNodes.shift());
+        }
+
+        // Temporarily remove nodes with nesting equal to current nesting
+        for (const n of this._parentStack._elements) {
+            if (n.nesting == this.nesting) {
+                let elements = this._parentStack._elements;
+                let indexToRemove = elements.findIndex((node) => node.id === n.id);
+                this._tempRemovedNodes.push(elements.splice(indexToRemove, 1));
+            }
+        }
+
         this.nesting--;
     }
 
@@ -54,6 +93,12 @@ class CFGVisitor {
             this.addLoopBackEdge(node, loopEntryNode);
         }
 
+        /**
+         *
+         * TODO: Ensure loop logic works with conditional statement new approach
+         *
+         */
+
         // next node will have incoming edges from loopEntry and break nodes
         this._parentStack.clear();
         this._parentStack.push(loopEntryNode);
@@ -77,7 +122,7 @@ class CFGVisitor {
 
         if (condition) {
             decisionNode = this.visitLogicalExpression(condition, this._parentStack);
-            this._parentStack.push(decisionNode);
+            this.connectNodeToCFG(decisionNode);
         }
 
         if (then instanceof ConditionalStatement) {
@@ -103,8 +148,7 @@ class CFGVisitor {
 
         node.nesting = this.nesting;
         this.cfg.addNode(node);
-
-        this._parentStack.push(node);
+        this.connectNodeToCFG(node);
     }
 
     visitFunctionCall(stmt) {
