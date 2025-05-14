@@ -213,3 +213,45 @@ it("composite conditions v7", () => {
     expectHasEdge(cfg, 8, 10); //if 8 is true, it should jump to Alternate
     expectHasEdge(cfg, 8, 9); //if 8 is false, it should jump to Then
 });
+
+/**
+ * Should support negation of expressions within conditionals
+ */
+it("composite conditions v8", () => {
+    let code = `
+    function foo(a,b){  //IDS:
+    let c = a + b;      //1
+    console.log(a);     //2
+    if(a>0 && b<10){    //DN1 (3,4)
+        a++;            //5
+        b++;            //6
+        console.log(a); //7
+    }
+    else if (c>15){     //DN2 (8)
+        c++;            //9
+        a++;            //10
+        if(c+b<40){     //DN3 (11)
+            a++;        //12
+        }
+        else{
+            c++;        //13
+        }
+        b++;            //14
+        if(a<5 && b<5){ //DN4 (15,16)
+            c++;        //17
+        }
+        else{
+            b++;        //18
+        }
+    }
+    else{
+        a++;            //19
+        b++;            //20
+    }
+    return c;           //21
+}
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CompCondTest8");
+});

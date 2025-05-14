@@ -35,11 +35,57 @@ class CFGVisitor {
         }
 
         //Debug
-        let printStr = "";
+        let printStr1 = "";
         this._parentStack.elements.forEach((it) => {
-            printStr = printStr.concat(`${it.id} `);
+            printStr1 = printStr1.concat(`${it.id} `);
         });
-        console.log("Parent stack content: " + printStr);
+
+        let printStr2 = "";
+        this._tempRemovedNodes.forEach((it) => {
+            printStr2 = printStr2.concat(`${it.id} `);
+        });
+
+        console.log(`Parent Stack: ${printStr1} | Backup: ${printStr2}`);
+    }
+
+    handleTemporaryRemovedNodes() {
+        // Called on block statement end
+        // Remove nodes with nesting greater than or equal to visitor's nesting and add them to a special list
+
+        //Debug
+        let printStr = "";
+
+        for (const n of this._parentStack._elements) {
+            if (n.nesting >= this.nesting) {
+                let elements = this._parentStack._elements;
+                let indexToRemove = elements.findIndex((node) => node.id === n.id);
+                let removedNode = elements.splice(indexToRemove, 1)[0];
+                this._tempRemovedNodes.push(removedNode);
+
+                printStr = printStr.concat(`${removedNode.id} `);
+            }
+        }
+
+        console.log("Nodes Temp Removed: " + printStr);
+    }
+
+    handleTemporaryRecoveredNodes() {
+        // Called on block statement end
+        // Recover nodes with nesting greater than visitor's nesting and connect them with stack's top
+
+        //Debug
+        let printStr = "";
+        for (const tn of this._tempRemovedNodes) {
+            if (tn.nesting > this.nesting) {
+                let indexToRemove = this._tempRemovedNodes.findIndex((node) => node.id === tn.id);
+                let recoveredNode = this._tempRemovedNodes.splice(indexToRemove, 1)[0];
+                recoveredNode.addNextNode(this._parentStack.peek());
+
+                printStr = printStr.concat(`${recoveredNode.id} `);
+            }
+        }
+
+        console.log("Nodes Recovered: " + printStr);
     }
 
     visitArrayExpression(stmt) {
@@ -52,24 +98,14 @@ class CFGVisitor {
 
     visitBlockStatement(block, parent, condition) {
         this.nesting++;
+
         for (let stmt of block) {
             stmt.accept(this);
         }
-        // Reinsert nodes temporarily removed
-        while (this._tempRemovedNodes.length > 0) {
-            this._parentStack.push(this._tempRemovedNodes.shift());
-        }
-
-        // Temporarily remove nodes with nesting equal to current nesting
-        for (const n of this._parentStack._elements) {
-            if (n.nesting == this.nesting) {
-                let elements = this._parentStack._elements;
-                let indexToRemove = elements.findIndex((node) => node.id === n.id);
-                this._tempRemovedNodes.push(elements.splice(indexToRemove, 1));
-            }
-        }
 
         this.nesting--;
+        this.handleTemporaryRemovedNodes();
+        this.handleTemporaryRecoveredNodes();
     }
 
     visitForStatement(stmt) {
@@ -83,15 +119,17 @@ class CFGVisitor {
     visitLoopStatement(stmt) {
         if (!stmt) return;
 
-        this.visitSequentialStatement(stmt.condition, true);
-        let loopEntryNode = this._parentStack.peek();
+        this.visitConditionalStatement(stmt.condition);
+        let loopEntryNode = this._parentStack.peek(); //this is now a decision node
         this._loopEntryStack.push(loopEntryNode);
 
         this.visitBlockStatement(stmt.body);
+
         // add loopback edges for contents of the parent stack
-        for (let node of this._parentStack.elements) {
-            this.addLoopBackEdge(node, loopEntryNode);
-        }
+
+        // for (let node of this._parentStack.elements) {
+        //     this.addLoopBackEdge(node, loopEntryNode);
+        // }
 
         /**
          *
@@ -100,9 +138,10 @@ class CFGVisitor {
          */
 
         // next node will have incoming edges from loopEntry and break nodes
-        this._parentStack.clear();
-        this._parentStack.push(loopEntryNode);
-        this._parentStack.pushList(loopEntryNode.breakNodes);
+
+        // this._parentStack.clear();
+        // this._parentStack.push(loopEntryNode);
+        // this._parentStack.pushList(loopEntryNode.breakNodes);
         // remove node from stack on block exit
         this._loopEntryStack.pop();
     }
@@ -140,11 +179,7 @@ class CFGVisitor {
 
     visitSequentialStatement(stmt, isLoopEntry = false) {
         let node = null;
-        if (isLoopEntry) {
-            node = new LoopEntryNode(this._id++, null, stmt, [], null);
-        } else {
-            node = new CFGNode(this._id++, null, stmt, [], null);
-        }
+        node = new CFGNode(this._id++, null, stmt, [], null);
 
         node.nesting = this.nesting;
         this.cfg.addNode(node);
