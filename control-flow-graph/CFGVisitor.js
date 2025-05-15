@@ -150,6 +150,55 @@ class CFGVisitor {
         source.addOutgoingEdge(loopEntryNode, null);
     }
 
+    /**
+     * 
+     * @param {*} stmt : the conditional statement
+     * @returns 
+     * 
+     * Pseudocode implementation:
+     * 
+     * // call with elseifBranch=false for top level if statement
+     * function visitConditionalStatement(stmt, elseifBranch)
+     * {
+     *      decisionNode = visitLogicalExpression(stmt.condition, parentStack)
+     *      // insert to parent stack exit nodes of previous block statements
+     *      // with higher or equal nesting
+     *      restoreBackupStack(currentNesting, elseifBranch)
+     *      attachToCFG(decisionNode) // see comments on visitSequentialStatement
+     *      
+     *      // then could be a block statement or any other statement (e.g. conditional)
+     *      stmt.then.accept(this)
+     *      // pop last statement and push to backup stack
+     *      // check if parentStack is empty first
+     *      backupStack.push(parentStack.pop())     
+     *      
+     *      // else if branch
+     *      if (stmt.alternates.condition){
+     *          visitConditionalStatement(stmt.alternates, true)  
+     *      } else {
+     *      // else branch, restore backup stack first to set last DN in the parent stack
+     *          restoreBackupStack(currentNesting, true)
+     *          stmt.alternates.accept(this)
+     *      // pop last statement and push to back stack
+     *          backupStack.push(parentStack.pop()) 
+     *      }
+     *  
+     *      // end of top level if statement
+     *      if (elseifBranch == false){
+     *          restoreBackupStack(currentNesting, false)
+     *      }
+     * 
+     * }
+     * function restoreBackupStack(currentNesting, elsifEntry){
+     *      if (elsifEntry){
+     *          // search backup stack and pop only the first DN with equal nesting to currentNesting
+     *      } else {
+     *          // pop nodes until (excluding) first node found with nesting > currentNesting
+     *      }
+     *      // add popped nodes to parent stack
+     * }
+     * 
+     */
     visitConditionalStatement(stmt) {
         if (!stmt) return;
 
@@ -177,6 +226,37 @@ class CFGVisitor {
         }
     }
 
+
+
+    /**
+     * @param {*} stmt 
+     * @param {*} isLoopEntry 
+     * 
+     * Pseudocode implementation:
+     * 
+     * node = createNode(params)
+     * cfg.addNode(node)
+     * attachToCFG(node)
+     * // repeat until the first node with lower nesting than the new node
+     * // the parent stack is cleared from nodes with higher or equal nesting
+     * // plus the first node with lower nesting (to handle the case of nodes that follow if statement)
+     * 
+     * functio attachToCFG(node){
+     *      do {
+     *          parent = parentStack.pop()
+     *          parent.addNext(node)
+     *      } while(parent.nesting >= node.nesting)
+     *  
+     *      if (parent.hasDanglingEdges()) {
+     *          backupStack.push(parent)
+     *      } 
+     *      // push the attached node to parent stack, in order to be the parent
+     *      // for the next statement
+     *      parentStack.push(node)
+     * }
+     * 
+     * 
+     */
     visitSequentialStatement(stmt, isLoopEntry = false) {
         let node = null;
         node = new CFGNode(this._id++, null, stmt, [], null);
