@@ -193,7 +193,7 @@ class CFGVisitor {
      *      if (elsifEntry){
      *          // search backup stack and pop only the first DN with equal nesting to currentNesting
      *      } else {
-     *          // pop nodes until (excluding) first node found with nesting > currentNesting
+     *          // pop nodes until (excluding) first node found with nesting < currentNesting
      *      }
      *      // add popped nodes to parent stack
      * }
