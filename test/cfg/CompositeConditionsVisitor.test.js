@@ -254,4 +254,10 @@ it("composite conditions v8", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CompCondTest8");
+    expectHasEdge(cfg, 7, 21); // 7 is an exit node and must lead to 21
+    expectHasEdge(cfg, 17, 21); // 17 is an exit node and must lead to 21
+    expectHasEdge(cfg, 18, 21); // 18 is an exit node and must lead to 21
+    expectHasEdge(cfg, 20, 21); // 20 is an exit node and must lead to 21
+    expectHasEdge(cfg, 12, 14); // 12 is an exit node and must lead to 14
+    expectHasEdge(cfg, 13, 14); // 13 is an exit node and must lead to 14
 });
