@@ -44,10 +44,12 @@ class CFGGenerator {
     static generateCfg2(functionObj) {
         let visitor = new CFGVisitor();
         let statements = functionObj.body;
-        for (let stmt of statements) {
-            //console.log(stmt.constructor.name)
-            stmt.accept(visitor);
-        }
+
+        // for (let stmt of statements) {
+        //     //console.log(stmt.constructor.name)
+        //     stmt.accept(visitor);
+        // }
+        visitor.visitBlockStatement(statements);
 
         // Add exit nodes for return jumps
         let exitNode = new CFGNode(visitor._id, null, null, [], null);

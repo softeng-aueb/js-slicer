@@ -5,6 +5,8 @@ const CFG = require("./domain/CFG");
 const Stack = require("../utils/Stack");
 const CompositeConditionsVisitor = require("./CompositeConditionsVisitor");
 const CFGVisualizer = require("./CFGVisualizer");
+const DecisionNode = require("./domain/DecisionNode");
+const ExitNodeList = require("./domain/ExitNodeList");
 
 class CFGVisitor {
     constructor() {
@@ -20,6 +22,14 @@ class CFGVisitor {
 
     // Implements connection algorithm logic
     connectNodeToCFG(node) {
+        //Debug
+        let printStr2 = "";
+        this._parentStack.elements.forEach((it) => {
+            printStr2 = printStr2.concat(`${it.id} `);
+        });
+
+        console.log(`Starting Parent Stack: ${printStr2}`);
+
         if (this._parentStack.length === 0) {
             this._parentStack.push(node);
         } else {
@@ -40,52 +50,7 @@ class CFGVisitor {
             printStr1 = printStr1.concat(`${it.id} `);
         });
 
-        let printStr2 = "";
-        this._tempRemovedNodes.forEach((it) => {
-            printStr2 = printStr2.concat(`${it.id} `);
-        });
-
-        console.log(`Parent Stack: ${printStr1} | Backup: ${printStr2}`);
-    }
-
-    handleTemporaryRemovedNodes() {
-        // Called on block statement end
-        // Remove nodes with nesting greater than or equal to visitor's nesting and add them to a special list
-
-        //Debug
-        let printStr = "";
-
-        for (const n of this._parentStack._elements) {
-            if (n.nesting >= this.nesting) {
-                let elements = this._parentStack._elements;
-                let indexToRemove = elements.findIndex((node) => node.id === n.id);
-                let removedNode = elements.splice(indexToRemove, 1)[0];
-                this._tempRemovedNodes.push(removedNode);
-
-                printStr = printStr.concat(`${removedNode.id} `);
-            }
-        }
-
-        console.log("Nodes Temp Removed: " + printStr);
-    }
-
-    handleTemporaryRecoveredNodes() {
-        // Called on block statement end
-        // Recover nodes with nesting greater than visitor's nesting and connect them with stack's top
-
-        //Debug
-        let printStr = "";
-        for (const tn of this._tempRemovedNodes) {
-            if (tn.nesting > this.nesting) {
-                let indexToRemove = this._tempRemovedNodes.findIndex((node) => node.id === tn.id);
-                let recoveredNode = this._tempRemovedNodes.splice(indexToRemove, 1)[0];
-                recoveredNode.addNextNode(this._parentStack.peek());
-
-                printStr = printStr.concat(`${recoveredNode.id} `);
-            }
-        }
-
-        console.log("Nodes Recovered: " + printStr);
+        console.log(`Parent Stack: ${printStr1}`);
     }
 
     visitArrayExpression(stmt) {
@@ -96,16 +61,45 @@ class CFGVisitor {
         this.visitSequentialStatement(stmt);
     }
 
-    visitBlockStatement(block, parent, condition) {
+    visitBlockStatement(block) {
         this.nesting++;
 
+        // This list holds the returned exit nodes from if statements and is used to create a ExitNodeList object that holds the nodes
+        // and is pushed in the parent stack to be connected with the immediate next node then removed.
+        let blockStatementExitNodes = null;
+
         for (let stmt of block) {
-            stmt.accept(this);
+            blockStatementExitNodes = stmt.accept(this);
+
+            if (blockStatementExitNodes) {
+                let nodelist = new ExitNodeList(blockStatementExitNodes);
+                this._parentStack.push(nodelist);
+
+                console.log(`Nodelist created: ${nodelist.getItemIds()}`);
+            }
         }
 
         this.nesting--;
-        this.handleTemporaryRemovedNodes();
-        this.handleTemporaryRecoveredNodes();
+
+        let current = this._parentStack.pop();
+
+        // If the top of the stack is a ExitNodeList (block statement ended with if statement) then
+        // remove it and return the list of its nodes.
+        if (current instanceof ExitNodeList) {
+            console.log(`Temporarily removed nodelist: ${current.getItemIds()}`);
+            return current.getList();
+        }
+        // If the top of the stack is a DN, do not remove, there is never a correct state where a DN should be removed with this algorithm.
+        // It may be removed on accident due to return nodes being removed on their own when visited.
+        else if (current instanceof DecisionNode) {
+            this._parentStack.push(current);
+        }
+        // If the top of the stack is a normal node, remove it and return it
+        else if (current) {
+            console.log(`Temporarily removed node: ${current.id}`);
+            return [current];
+        }
+        return [];
     }
 
     visitForStatement(stmt) {
@@ -164,22 +158,32 @@ class CFGVisitor {
             this.connectNodeToCFG(decisionNode);
         }
 
+        let IfStatementExitNodes = [];
+
         if (then instanceof ConditionalStatement) {
-            this.visitConditionalStatement(then);
+            IfStatementExitNodes.push(...this.visitConditionalStatement(then));
         } else {
-            this.visitBlockStatement(then);
+            IfStatementExitNodes.push(...this.visitBlockStatement(then));
         }
 
         if (alternates instanceof ConditionalStatement) {
-            this.visitConditionalStatement(alternates);
+            IfStatementExitNodes.push(...this.visitConditionalStatement(alternates));
         } else {
-            this.visitBlockStatement(alternates);
+            IfStatementExitNodes.push(...this.visitBlockStatement(alternates));
         }
+
+        // //Debug
+        // let printStr = "";
+        // IfStatementExitNodes.forEach((it) => {
+        //     printStr = printStr.concat(`${it.id} `);
+        // });
+        // console.log(`IF Statement ${decisionNode.id} ended with return list: ${printStr}`);
+
+        return IfStatementExitNodes;
     }
 
     visitSequentialStatement(stmt, isLoopEntry = false) {
-        let node = null;
-        node = new CFGNode(this._id++, null, stmt, [], null);
+        let node = new CFGNode(this._id++, null, stmt, [], null);
 
         node.nesting = this.nesting;
         this.cfg.addNode(node);

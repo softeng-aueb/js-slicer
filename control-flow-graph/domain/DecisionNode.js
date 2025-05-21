@@ -1,5 +1,3 @@
-const CFGNode = require("./CFGNode");
-
 class DecisionNode {
     static idCount = 1;
 

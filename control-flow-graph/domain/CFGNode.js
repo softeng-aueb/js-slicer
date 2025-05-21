@@ -23,7 +23,7 @@ class CFGNode {
     }
 
     addNextNode(node) {
-        this.addOutgoingEdge(node.getRoot(), node.isNegated ? false : true);
+        this.addOutgoingEdge(node.getRoot());
         node.getRoot().addParent(this);
     }
 

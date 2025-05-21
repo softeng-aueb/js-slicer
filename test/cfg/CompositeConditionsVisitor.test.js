@@ -215,7 +215,7 @@ it("composite conditions v7", () => {
 });
 
 /**
- * Should support negation of expressions within conditionals
+ * Should correctly connect all nodes in this generic example
  */
 it("composite conditions v8", () => {
     let code = `
