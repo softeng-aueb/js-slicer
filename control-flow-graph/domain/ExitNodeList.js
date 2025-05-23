@@ -1,4 +1,10 @@
 class ExitNodeList {
+    // FIXME: This should be renamed to JoinNode
+    // The JoinNode abstraction represents a set of CFG nodes 
+    // whose outgoing edges will meet to a single node
+    // actually the join point of a set of alternative flows
+    
+    // We don't need an id
     static idCount = 1;
 
     constructor(list) {
@@ -15,10 +21,13 @@ class ExitNodeList {
         return printStr;
     }
 
+    // FIXME: we don't need this
     get id() {
         return this._id;
     }
 
+    // FIXME: we don't need this
+    // The details would be encapsulated
     getList() {
         return this.list;
     }
@@ -29,6 +38,14 @@ class ExitNodeList {
 
     getRoot() {
         return this;
+    }
+
+    // FIXME: the method merges to the current JoinNode another JoinNode or plain CFGNode
+    // The join node's list is expanded with the contents of the JoinNode or the plain node
+    merge(node){
+        // if node is plain node push
+        // else push node.getList()
+        this.list.push(node)
     }
 
     addNextNode(node) {

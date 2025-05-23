@@ -72,6 +72,9 @@ class CFGVisitor {
             blockStatementExitNodes = stmt.accept(this);
 
             if (blockStatementExitNodes) {
+                // FIXME: the JoinNode instance has been created by the respective visitConditionalStatement
+                // replace the following with:
+                // this._parentStack.push(exitNodes)
                 let nodelist = new ExitNodeList(blockStatementExitNodes);
                 this._parentStack.push(nodelist);
 
@@ -85,6 +88,20 @@ class CFGVisitor {
 
         // If the top of the stack is a ExitNodeList (block statement ended with if statement) then
         // remove it and return the list of its nodes.
+
+
+        // FIXME: is there a case that the current node is a DN node (I think not)
+        // FIXME: in case that the currentNode is a return node then we should return nothing (e.g. null)
+        // otherwise just return the current node (which could be plain node or JoinNode - for the time being)
+        /*
+            if (current instanceof Return){
+                return null
+            } else {
+                return current
+            }
+        */
+
+        // FIXME: the following should probably be replaced by the above code
         if (current instanceof ExitNodeList) {
             console.log(`Temporarily removed nodelist: ${current.getItemIds()}`);
             return current.getList();
@@ -113,6 +130,7 @@ class CFGVisitor {
     visitLoopStatement(stmt) {
         if (!stmt) return;
 
+        // FIXME: Check if continue and loop exit nodes could also be represented by JoinNode instance
         this.visitConditionalStatement(stmt.condition);
         let loopEntryNode = this._parentStack.peek(); //this is now a decision node
         this._loopEntryStack.push(loopEntryNode);
@@ -158,8 +176,17 @@ class CFGVisitor {
             this.connectNodeToCFG(decisionNode);
         }
 
+        // FIXME: actually we need a JoinNode that will merge all exits of the conditional branches
+        // let joinNode = new JoinNode()
         let IfStatementExitNodes = [];
 
+
+        // FIXME: the next statements could be replace just by the two following polymorphic calls
+        // joinNode.merge(then.accept(this))
+        // joinNode.merge(alternates.accept(this))
+
+
+        // FIXME: should be removed
         if (then instanceof ConditionalStatement) {
             IfStatementExitNodes.push(...this.visitConditionalStatement(then));
         } else {
@@ -179,6 +206,7 @@ class CFGVisitor {
         // });
         // console.log(`IF Statement ${decisionNode.id} ended with return list: ${printStr}`);
 
+        // FIXME: return joinNode
         return IfStatementExitNodes;
     }
 
