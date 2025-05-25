@@ -6,7 +6,7 @@ const Stack = require("../utils/Stack");
 const CompositeConditionsVisitor = require("./CompositeConditionsVisitor");
 const CFGVisualizer = require("./CFGVisualizer");
 const DecisionNode = require("./domain/DecisionNode");
-const ExitNodeList = require("./domain/ExitNodeList");
+const JoinNode = require("./domain/JoinNode");
 
 class CFGVisitor {
     constructor() {
@@ -64,21 +64,15 @@ class CFGVisitor {
     visitBlockStatement(block) {
         this.nesting++;
 
-        // This list holds the returned exit nodes from if statements and is used to create a ExitNodeList object that holds the nodes
+        // This variable holds the returned exit nodes from if statements and is used to create a JoinNode object that holds the nodes
         // and is pushed in the parent stack to be connected with the immediate next node then removed.
-        let blockStatementExitNodes = null;
+        let exitNodes = null;
 
         for (let stmt of block) {
-            blockStatementExitNodes = stmt.accept(this);
+            exitNodes = stmt.accept(this);
 
-            if (blockStatementExitNodes) {
-                // FIXME: the JoinNode instance has been created by the respective visitConditionalStatement
-                // replace the following with:
-                // this._parentStack.push(exitNodes)
-                let nodelist = new ExitNodeList(blockStatementExitNodes);
-                this._parentStack.push(nodelist);
-
-                console.log(`Nodelist created: ${nodelist.getItemIds()}`);
+            if (exitNodes && exitNodes.list.length > 0) {
+                this._parentStack.push(exitNodes);
             }
         }
 
@@ -86,37 +80,14 @@ class CFGVisitor {
 
         let current = this._parentStack.pop();
 
-        // If the top of the stack is a ExitNodeList (block statement ended with if statement) then
-        // remove it and return the list of its nodes.
-
-
-        // FIXME: is there a case that the current node is a DN node (I think not)
-        // FIXME: in case that the currentNode is a return node then we should return nothing (e.g. null)
-        // otherwise just return the current node (which could be plain node or JoinNode - for the time being)
-        /*
-            if (current instanceof Return){
-                return null
-            } else {
-                return current
-            }
-        */
-
-        // FIXME: the following should probably be replaced by the above code
-        if (current instanceof ExitNodeList) {
-            console.log(`Temporarily removed nodelist: ${current.getItemIds()}`);
-            return current.getList();
-        }
         // If the top of the stack is a DN, do not remove, there is never a correct state where a DN should be removed with this algorithm.
         // It may be removed on accident due to return nodes being removed on their own when visited.
-        else if (current instanceof DecisionNode) {
+        if (current instanceof DecisionNode) {
             this._parentStack.push(current);
+            return [];
+        } else {
+            return current;
         }
-        // If the top of the stack is a normal node, remove it and return it
-        else if (current) {
-            console.log(`Temporarily removed node: ${current.id}`);
-            return [current];
-        }
-        return [];
     }
 
     visitForStatement(stmt) {
@@ -176,38 +147,28 @@ class CFGVisitor {
             this.connectNodeToCFG(decisionNode);
         }
 
-        // FIXME: actually we need a JoinNode that will merge all exits of the conditional branches
-        // let joinNode = new JoinNode()
-        let IfStatementExitNodes = [];
+        let joinNode = new JoinNode();
 
-
-        // FIXME: the next statements could be replace just by the two following polymorphic calls
-        // joinNode.merge(then.accept(this))
-        // joinNode.merge(alternates.accept(this))
-
-
-        // FIXME: should be removed
         if (then instanceof ConditionalStatement) {
-            IfStatementExitNodes.push(...this.visitConditionalStatement(then));
+            joinNode.merge(this.visitConditionalStatement(then));
         } else {
-            IfStatementExitNodes.push(...this.visitBlockStatement(then));
+            joinNode.merge(this.visitBlockStatement(then));
         }
 
         if (alternates instanceof ConditionalStatement) {
-            IfStatementExitNodes.push(...this.visitConditionalStatement(alternates));
+            joinNode.merge(this.visitConditionalStatement(alternates));
         } else {
-            IfStatementExitNodes.push(...this.visitBlockStatement(alternates));
+            joinNode.merge(this.visitBlockStatement(alternates));
         }
 
-        // //Debug
-        // let printStr = "";
-        // IfStatementExitNodes.forEach((it) => {
-        //     printStr = printStr.concat(`${it.id} `);
-        // });
-        // console.log(`IF Statement ${decisionNode.id} ended with return list: ${printStr}`);
+        //Debug
+        let printStr = "";
+        joinNode.list.forEach((it) => {
+            printStr = printStr.concat(`${it.id} `);
+        });
+        console.log(`IF Statement ${decisionNode.id} ended with return list: ${printStr}`);
 
-        // FIXME: return joinNode
-        return IfStatementExitNodes;
+        return joinNode;
     }
 
     visitSequentialStatement(stmt, isLoopEntry = false) {
@@ -227,13 +188,11 @@ class CFGVisitor {
     }
 
     visitVariableDeclaration(stmt) {
-        //console.log(stmt.value)
         stmt.value.accept(this);
         this.visitSequentialStatement(stmt);
     }
 
     visitBinaryExpression(stmt) {
-        //console.log(stmt.left)
         stmt.left.accept(this);
         stmt.right.accept(this);
     }
