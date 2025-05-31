@@ -261,3 +261,36 @@ it("composite conditions v8", () => {
     expectHasEdge(cfg, 12, 14); // 12 is an exit node and must lead to 14
     expectHasEdge(cfg, 13, 14); // 13 is an exit node and must lead to 14
 });
+
+/**
+ * Should handle for loops
+ */
+it("composite conditions v9", () => {
+    let code = `
+    function foo(a,b){  //IDS:
+    let c = a + b; //1
+    console.log(a); //2
+        //3      //4    //13
+    for(let i=0; i<c; i++){
+            //5
+        if(i>5){
+            a--; //6
+            break; //7
+        }
+                //8
+        else if(i==3){
+            a++; //9
+            continue; //10
+        }
+        else{
+            b++; //11
+        }
+        console.log(a+b); //12
+    }
+    return; //14
+}
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CompCondTest9");
+});

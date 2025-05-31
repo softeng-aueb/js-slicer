@@ -7,6 +7,7 @@ const CompositeConditionsVisitor = require("./CompositeConditionsVisitor");
 const CFGVisualizer = require("./CFGVisualizer");
 const DecisionNode = require("./domain/DecisionNode");
 const JoinNode = require("./domain/JoinNode");
+const BlockStatement = require("../code-parser-module/domain/BlockStatement");
 
 class CFGVisitor {
     constructor() {
@@ -63,12 +64,12 @@ class CFGVisitor {
 
     visitBlockStatement(block) {
         this.nesting++;
-
+        let stmts = block instanceof BlockStatement ? block.stmts : block;
         // This variable holds the returned exit nodes from if statements and is used to create a JoinNode object that holds the nodes
         // and is pushed in the parent stack to be connected with the immediate next node then removed.
         let exitNodes = null;
 
-        for (let stmt of block) {
+        for (let stmt of stmts) {
             exitNodes = stmt.accept(this);
 
             if (exitNodes && exitNodes.list.length > 0) {
@@ -101,32 +102,10 @@ class CFGVisitor {
     visitLoopStatement(stmt) {
         if (!stmt) return;
 
-        // FIXME: Check if continue and loop exit nodes could also be represented by JoinNode instance
-        this.visitConditionalStatement(stmt.condition);
-        let loopEntryNode = this._parentStack.peek(); //this is now a decision node
-        this._loopEntryStack.push(loopEntryNode);
+        let conditionNode = this.visitConditionalStatement(stmt.condition);
+        this.connectNodeToCFG(conditionNode);
 
         this.visitBlockStatement(stmt.body);
-
-        // add loopback edges for contents of the parent stack
-
-        // for (let node of this._parentStack.elements) {
-        //     this.addLoopBackEdge(node, loopEntryNode);
-        // }
-
-        /**
-         *
-         * TODO: Ensure loop logic works with conditional statement new approach
-         *
-         */
-
-        // next node will have incoming edges from loopEntry and break nodes
-
-        // this._parentStack.clear();
-        // this._parentStack.push(loopEntryNode);
-        // this._parentStack.pushList(loopEntryNode.breakNodes);
-        // remove node from stack on block exit
-        this._loopEntryStack.pop();
     }
 
     addLoopBackEdge(source, loopEntryNode) {
@@ -147,28 +126,19 @@ class CFGVisitor {
             this.connectNodeToCFG(decisionNode);
         }
 
-        let joinNode = new JoinNode();
+        let conditionalExitsJoinNode = new JoinNode();
 
-        if (then instanceof ConditionalStatement) {
-            joinNode.merge(this.visitConditionalStatement(then));
-        } else {
-            joinNode.merge(this.visitBlockStatement(then));
-        }
-
-        if (alternates instanceof ConditionalStatement) {
-            joinNode.merge(this.visitConditionalStatement(alternates));
-        } else {
-            joinNode.merge(this.visitBlockStatement(alternates));
-        }
+        conditionalExitsJoinNode.merge(then.accept(this));
+        conditionalExitsJoinNode.merge(alternates.accept(this));
 
         //Debug
         let printStr = "";
-        joinNode.list.forEach((it) => {
+        conditionalExitsJoinNode.list.forEach((it) => {
             printStr = printStr.concat(`${it.id} `);
         });
         console.log(`IF Statement ${decisionNode.id} ended with return list: ${printStr}`);
 
-        return joinNode;
+        return conditionalExitsJoinNode;
     }
 
     visitSequentialStatement(stmt, isLoopEntry = false) {
@@ -209,14 +179,6 @@ class CFGVisitor {
 
     visitBreakStatement(stmt) {
         this.visitSequentialStatement(stmt);
-        // should not have incoming edges from subsequent edges within the loop
-        let breakNode = this._parentStack.pop();
-        // add node to break statement to closest loop entry node
-        // FIXME: check label to find the appropriate loop
-        let loopEntry = this._loopEntryStack.peek();
-        if (loopEntry) {
-            loopEntry.addBreakNode(breakNode);
-        }
     }
 
     visitMemberExpression(stmt) {

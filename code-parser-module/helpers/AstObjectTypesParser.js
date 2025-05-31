@@ -24,6 +24,7 @@ const BreakStatement = require("../domain/BreakStatement");
 const WhileStatement = require("../domain/WhileStatement");
 const DoWhileStatement = require("../domain/DoWhileStatement");
 const ContinueStatement = require("../domain/ContinueStatement");
+const BlockStatement = require("../domain/BlockStatement");
 
 class AstObjectTypesParser {
     static expressionParser(expressionAstObj) {
@@ -236,9 +237,10 @@ class AstObjectTypesParser {
         if (!blockStatementAstObj || blockStatementAstObj.type !== AST_OBJECT_TYPES.BLOCK_STATEMENT) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.BLOCK_STATEMENT} object.`);
         }
-        return blockStatementAstObj.body.flatMap((statement) => {
+        let block = blockStatementAstObj.body.flatMap((statement) => {
             return this.expressionParser(statement);
         });
+        return new BlockStatement(block);
     }
 
     static arrayExpressionParser(arrayExpressionAstObj) {
@@ -268,10 +270,7 @@ class AstObjectTypesParser {
             throw new Error(`Not a ${AST_OBJECT_TYPES.IF_STATEMENT} object.`);
         }
         let condition = this.expressionParser(ifStatementObj.test);
-        let then = ifStatementObj.consequent.body.map((e) => {
-            return this.expressionParser(e);
-        });
-
+        let then = this.expressionParser(ifStatementObj.consequent);
         let alternates = ifStatementObj.alternate ? this.expressionParser(ifStatementObj.alternate) : null;
 
         return new ConditionalStatement(condition, then, alternates);
