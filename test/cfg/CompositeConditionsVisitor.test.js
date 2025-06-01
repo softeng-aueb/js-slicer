@@ -336,4 +336,9 @@ it("composite conditions v10", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CompCondTest10");
+    expectHasEdge(cfg, 4, 5); // 4 should lead to 5 if true
+    expectHasEdge(cfg, 4, 14); // 4 should lead to 14 if false
+    expectHasEdge(cfg, 7, 14); // 7 should lead to 14 because of break
+    expectHasEdge(cfg, 10, 4); // 10 should lead to 4 because it is a while loop.
+    expectHasEdge(cfg, 13, 4); // 13 should lead to condition node (4).
 });
