@@ -1,4 +1,4 @@
-class BreakStatement{
+class BreakStatement {
     constructor(label) {
         this._label = label;
     }
@@ -11,8 +11,8 @@ class BreakStatement{
         this._label = value;
     }
 
-    accept(visitor){
-        visitor.visitBreakStatement(this)
+    accept(visitor) {
+        visitor.visitBreakStatement(this);
     }
 }
 module.exports = BreakStatement;

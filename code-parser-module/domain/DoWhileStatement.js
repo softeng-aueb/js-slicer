@@ -6,7 +6,7 @@ class DoWhileStatement extends LoopStatement {
     }
 
     accept(visitor) {
-        visitor.visitDoWhileStatement(this);
+        return visitor.visitDoWhileStatement(this);
     }
 }
 module.exports = DoWhileStatement;

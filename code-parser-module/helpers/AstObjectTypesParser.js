@@ -40,6 +40,9 @@ class AstObjectTypesParser {
             return this.breakStatementParser(expressionAstObj);
         }
         if (expressionAstObj.type === AST_OBJECT_TYPES.CONTINUE_STATEMENT) {
+            return this.continueStatementParser(expressionAstObj);
+        }
+        if (expressionAstObj.type === AST_OBJECT_TYPES.CONTINUE_STATEMENT) {
             return;
         }
         if (
@@ -229,8 +232,8 @@ class AstObjectTypesParser {
         if (!returnStatementAstObj || returnStatementAstObj.type !== AST_OBJECT_TYPES.RETURN_STATEMENT) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.RETURN_STATEMENT} object.`);
         }
-        let argument = this.expressionParser(returnStatementAstObj.argument);
-        return new ReturnStatement(argument);
+        let argument = returnStatementAstObj.argument;
+        return new ReturnStatement(argument ? this.expressionParser(argument) : argument);
     }
 
     static blockStatementParser(blockStatementAstObj) {

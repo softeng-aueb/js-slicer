@@ -6,7 +6,7 @@ class WhileStatement extends LoopStatement {
     }
 
     accept(visitor) {
-        visitor.visitWhileStatement(this);
+        return visitor.visitWhileStatement(this);
     }
 }
 module.exports = WhileStatement;

@@ -29,8 +29,7 @@ class JoinNode {
 
     addNextNode(node) {
         for (let n of this.list) {
-            n.addOutgoingEdge(node.getRoot());
-            node.getRoot().addParent(n);
+            n.addNextNode(node);
         }
     }
 }

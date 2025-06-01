@@ -8,17 +8,19 @@ const CFGVisualizer = require("./CFGVisualizer");
 const DecisionNode = require("./domain/DecisionNode");
 const JoinNode = require("./domain/JoinNode");
 const BlockStatement = require("../code-parser-module/domain/BlockStatement");
+const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
+const BreakStatement = require("../code-parser-module/domain/BreakStatement");
+const ContinueStatement = require("../code-parser-module/domain/ContinueStatement");
 
 class CFGVisitor {
     constructor() {
         this._cfg = new CFG();
         this._id = 1;
         this._parentStack = new Stack();
-        this._loopEntryStack = new Stack();
         this.nesting = 0;
         this._visualizer = new CFGVisualizer();
         this._returnExitStack = [];
-        this._tempRemovedNodes = [];
+        this._loopJumpNodeRecords = [];
     }
 
     // Implements connection algorithm logic
@@ -55,7 +57,7 @@ class CFGVisitor {
     }
 
     visitArrayExpression(stmt) {
-        this.visitBlockStatement(stmt.elements);
+        this.visitBlockStatement(new BlockStatement(stmt.elements));
     }
 
     visitUpdateExpression(stmt) {
@@ -64,12 +66,18 @@ class CFGVisitor {
 
     visitBlockStatement(block) {
         this.nesting++;
-        let stmts = block instanceof BlockStatement ? block.stmts : block;
         // This variable holds the returned exit nodes from if statements and is used to create a JoinNode object that holds the nodes
         // and is pushed in the parent stack to be connected with the immediate next node then removed.
         let exitNodes = null;
 
+        let stmts = block._stmts;
+
         for (let stmt of stmts) {
+            if (stmt instanceof ReturnStatement || stmt instanceof BreakStatement || stmt instanceof ContinueStatement) {
+                stmt.accept(this);
+                return null;
+            }
+
             exitNodes = stmt.accept(this);
 
             if (exitNodes && exitNodes.list.length > 0) {
@@ -79,37 +87,59 @@ class CFGVisitor {
 
         this.nesting--;
 
-        let current = this._parentStack.pop();
+        return this._parentStack.pop();
+    }
 
-        // If the top of the stack is a DN, do not remove, there is never a correct state where a DN should be removed with this algorithm.
-        // It may be removed on accident due to return nodes being removed on their own when visited.
-        if (current instanceof DecisionNode) {
-            this._parentStack.push(current);
-            return [];
-        } else {
-            return current;
-        }
+    visitWhileStatement(stmt) {
+        return this.visitLoopStatement(stmt, false);
     }
 
     visitForStatement(stmt) {
         this.visitSequentialStatement(stmt.init);
         // add update expression as the last statement of the for body
-        stmt.body.push(stmt.update);
-        this.visitLoopStatement(stmt);
-        stmt.body.pop();
+        stmt.body.stmts.push(stmt.update);
+        let loopJoinExitNode = this.visitLoopStatement(stmt, true);
+        stmt.body.stmts.pop();
+
+        return loopJoinExitNode;
     }
 
-    visitLoopStatement(stmt) {
+    visitLoopStatement(stmt, hasUpdateExpression = false) {
         if (!stmt) return;
 
-        let conditionNode = this.visitConditionalStatement(stmt.condition);
+        let conditionNode = this.visitLogicalExpression(stmt.condition, this._parentStack);
         this.connectNodeToCFG(conditionNode);
 
-        this.visitBlockStatement(stmt.body);
-    }
+        // Create a record for all break/continue nodes related to this loop only
+        let currentLoopJumpNodes = {};
 
-    addLoopBackEdge(source, loopEntryNode) {
-        source.addOutgoingEdge(loopEntryNode, null);
+        currentLoopJumpNodes.breaks = [];
+        currentLoopJumpNodes.continues = [];
+
+        this._loopJumpNodeRecords.push(currentLoopJumpNodes);
+
+        let loopBackNode = this.visitBlockStatement(stmt.body);
+
+        let loopJoinExitNode = new JoinNode();
+
+        currentLoopJumpNodes = this._loopJumpNodeRecords.pop();
+
+        // Handle exit nodes
+        for (const breakNode of currentLoopJumpNodes.breaks) {
+            loopJoinExitNode.merge(breakNode);
+        }
+        loopJoinExitNode.merge(conditionNode);
+
+        // Handle loopback nodes
+        // If loop has update expression (for example For Loop)
+        // then continue nodes should have edges to the update expression,
+        // if not then those edges are placed towards the condition node
+        for (const continueNode of currentLoopJumpNodes.continues) {
+            continueNode.addNextNode(hasUpdateExpression ? loopBackNode : conditionNode);
+        }
+        loopBackNode.addNextNode(conditionNode);
+
+        return loopJoinExitNode;
     }
 
     visitConditionalStatement(stmt) {
@@ -179,6 +209,24 @@ class CFGVisitor {
 
     visitBreakStatement(stmt) {
         this.visitSequentialStatement(stmt);
+        // subsequent nodes should not have incoming edges from this node
+        let thisNode = this._parentStack.pop();
+
+        //add itself to most recent loop's break nodes record
+        let currentLoopRecord = this._loopJumpNodeRecords.pop();
+        currentLoopRecord.breaks.push(thisNode);
+        this._loopJumpNodeRecords.push(currentLoopRecord);
+    }
+
+    visitContinueStatement(stmt) {
+        this.visitSequentialStatement(stmt);
+        // subsequent nodes should not have incoming edges from this node
+        let thisNode = this._parentStack.pop();
+
+        //add itself to most recent loop's continue nodes record
+        let currentLoopRecord = this._loopJumpNodeRecords.pop();
+        currentLoopRecord.continues.push(thisNode);
+        this._loopJumpNodeRecords.push(currentLoopRecord);
     }
 
     visitMemberExpression(stmt) {

@@ -2,20 +2,17 @@ const ConditionalStatement = require("./ConditionalStatement");
 const LoopStatement = require("./LoopStatement");
 
 class ForStatement extends LoopStatement {
-
-    constructor(type,condition,body, init,
-        update) {
+    constructor(type, condition, body, init, update) {
         super(type, condition, body);
         this._init = init;
         this._update = update;
     }
 
-
     get init() {
         return this._init;
     }
-    
-    set init(value){
+
+    set init(value) {
         this._init = value;
     }
 
@@ -27,12 +24,12 @@ class ForStatement extends LoopStatement {
         this._update = value;
     }
 
-    get updateVar(){
+    get updateVar() {
         return this._update.argument.name;
     }
 
-    accept(visitor){
-        visitor.visitForStatement(this)
+    accept(visitor) {
+        return visitor.visitForStatement(this);
     }
 }
 module.exports = ForStatement;

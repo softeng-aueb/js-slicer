@@ -7,6 +7,7 @@ const CFG = require("./domain/CFG");
 const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
 const CFGEdge = require("./domain/CFGEdge");
 const CFGVisitor = require("./CFGVisitor");
+const BlockStatement = require("../code-parser-module/domain/BlockStatement");
 
 class CFGGenerator {
     static generateCfg(functionObj) {
@@ -45,7 +46,7 @@ class CFGGenerator {
         let visitor = new CFGVisitor();
         let statements = functionObj.body;
 
-        visitor.visitBlockStatement(statements);
+        visitor.visitBlockStatement(new BlockStatement(statements));
 
         // Add exit nodes for return jumps
         let exitNode = new CFGNode(visitor._id, null, null, [], null);

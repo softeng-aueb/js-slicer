@@ -293,4 +293,47 @@ it("composite conditions v9", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CompCondTest9");
+    expectHasEdge(cfg, 4, 5); // 4 should lead to 5 if true
+    expectHasEdge(cfg, 4, 14); // 4 should lead to 14 if false
+    expectHasEdge(cfg, 7, 14); // 7 should lead to 14 because of break
+    expectHasEdge(cfg, 10, 13); // 10 should lead to update expression (13) because it is a for loop.
+    expectHasEdge(cfg, 12, 13); // 12 should lead to update expression (13).
+    expectHasEdge(cfg, 13, 4); // Update expression (13) should lead to condition node (4).
+});
+
+/**
+ * Should handle while loops
+ */
+it("composite conditions v10", () => {
+    let code = `
+    function foo(a,b){  
+                //IDS:
+    let c = a + b; //1
+    let i = 0; //2
+    console.log(a); //3
+
+         //4   
+    while(i<c){
+            //5
+        if(i>5){
+            a--; //6
+            break; //7
+        }
+                //8
+        else if(i==3){
+            a++; //9
+            continue; //10
+        }
+        else{
+            b++; //11
+        }
+        console.log(a+b); //12
+        i++; //13
+    }
+    return; //14
+}
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CompCondTest10");
 });
