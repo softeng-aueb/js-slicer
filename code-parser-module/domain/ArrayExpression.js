@@ -1,11 +1,10 @@
 const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
-class ArrayExpression{
+class ArrayExpression {
     constructor(elements) {
         this._elements = elements;
     }
-
 
     get elements() {
         return this._elements;
@@ -15,8 +14,8 @@ class ArrayExpression{
         this._elements = value;
     }
 
-    accept(visitor){
-        visitor.visitArrayExpression(this)
+    accept(visitor) {
+        visitor.visitArrayExpression(this);
     }
 }
 

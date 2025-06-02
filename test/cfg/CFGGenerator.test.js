@@ -152,19 +152,19 @@ it("should generate cfg for for statements", () => {
 it("should generate cfg for nested while statements", () => {
     let code = `
     function foo(){
-        let ar = [1, 2, 3]
-        let a = 1
-        while(a < ar.length){
-            var b = 2
-            a = a + 1
-            while(b >= 0){
-                b--
-                if(b < 0){
-                    b = -10
+        let ar = [1, 2, 3] //1
+        let a = 1           //2
+        while(a < ar.length){ //3
+            var b = 2   //4
+            a = a + 1 //5
+            while(b >= 0){ //6
+                b-- //7
+                if(b < 0){ //8
+                    b = -10 //9
                 }
             }
         }
-        return a + b
+        return a + b //10
     }`;
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
@@ -255,6 +255,7 @@ it("should generate cfg for if else if", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
+    showCFG(cfg, "CFGGeneratorTestIfElseIf");
     expect(cfg.nodes.length).toBe(14);
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 3, 7);
@@ -303,6 +304,7 @@ it("should generate cfg for sequential statements", () => {
     `;
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CFGGeneratorTestSequentialStmts");
     expect(cfg.nodes.length).toBe(7);
     expect(cfg.getNodeById(2).hasStatementType("UpdateExpression")).toBe(true);
     expect(cfg.hasEdge(1, 2)).toBe(true);
@@ -337,10 +339,10 @@ it("should create an exit node for all returns", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "ReturnExitNodes");
-    expectHasEdge(cfg, 5, 15);
-    expectHasEdge(cfg, 14, 15);
-    expectHasEdge(cfg, 9, 15);
-    expectHasEdge(cfg, 13, 15);
+    expectHasEdge(cfg, 3, 9);
+    expectHasEdge(cfg, 5, 9);
+    expectHasEdge(cfg, 7, 9);
+    expectHasEdge(cfg, 8, 9);
 });
 
 /*

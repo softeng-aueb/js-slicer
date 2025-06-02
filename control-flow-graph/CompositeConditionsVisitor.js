@@ -390,6 +390,9 @@ class CompositeConditionsVisitor {
     visitIdentifier(stmt) {
         //skip
     }
+    visitMemberExpression(stmt) {
+        //skip
+    }
 }
 
 module.exports = CompositeConditionsVisitor;

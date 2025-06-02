@@ -57,7 +57,10 @@ class CFGVisitor {
     }
 
     visitArrayExpression(stmt) {
-        this.visitBlockStatement(new BlockStatement(stmt.elements));
+        console.log("logging:", stmt.elements);
+        for (let elem of stmt.elements) {
+            elem.accept(this);
+        }
     }
 
     visitUpdateExpression(stmt) {
@@ -75,6 +78,7 @@ class CFGVisitor {
         for (let stmt of stmts) {
             if (stmt instanceof ReturnStatement || stmt instanceof BreakStatement || stmt instanceof ContinueStatement) {
                 stmt.accept(this);
+                this.nesting--;
                 return null;
             }
 
@@ -87,8 +91,10 @@ class CFGVisitor {
 
         this.nesting--;
 
-        return this._parentStack.pop();
+        return stmts.length > 0 ? this._parentStack.pop() : null;
     }
+
+    visitDoWhileStatement(stmt) {}
 
     visitWhileStatement(stmt) {
         return this.visitLoopStatement(stmt, false);
@@ -159,7 +165,7 @@ class CFGVisitor {
         let conditionalExitsJoinNode = new JoinNode();
 
         conditionalExitsJoinNode.merge(then.accept(this));
-        conditionalExitsJoinNode.merge(alternates.accept(this));
+        conditionalExitsJoinNode.merge(alternates ? alternates.accept(this) : this._parentStack.pop());
 
         //Debug
         let printStr = "";
