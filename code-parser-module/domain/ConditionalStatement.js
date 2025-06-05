@@ -74,8 +74,8 @@ class ConditionalStatement {
         return statements;
     }
 
-    accept(visitor) {
-        return visitor.visitConditionalStatement(this);
+    accept(visitor, isCalledAsFirstOnDoWhile = false) {
+        return visitor.visitConditionalStatement(this, isCalledAsFirstOnDoWhile);
     }
 }
 module.exports = ConditionalStatement;

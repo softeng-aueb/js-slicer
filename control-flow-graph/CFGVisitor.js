@@ -11,6 +11,7 @@ const BlockStatement = require("../code-parser-module/domain/BlockStatement");
 const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
 const BreakStatement = require("../code-parser-module/domain/BreakStatement");
 const ContinueStatement = require("../code-parser-module/domain/ContinueStatement");
+const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 
 class CFGVisitor {
     constructor() {
@@ -21,6 +22,7 @@ class CFGVisitor {
         this._visualizer = new CFGVisualizer();
         this._returnExitStack = [];
         this._loopJumpNodeRecords = [];
+        this._doWhileLoopBackTargets = [];
     }
 
     // Implements connection algorithm logic
@@ -94,14 +96,75 @@ class CFGVisitor {
         return stmts.length > 0 ? this._parentStack.pop() : null;
     }
 
-    visitDoWhileStatement(stmt) {}
+    visitDoWhileStatement(stmt, isCalledAsFirstOnDoWhile = false) {
+        // Create a record for all break/continue nodes related to this loop only
+        let currentLoopJumpNodes = {};
 
-    visitWhileStatement(stmt) {
-        return this.visitLoopStatement(stmt, false);
+        currentLoopJumpNodes.breaks = [];
+        currentLoopJumpNodes.continues = [];
+
+        this._loopJumpNodeRecords.push(currentLoopJumpNodes);
+
+        // Special handling for first expression needed in order to obtain a valid loopback target for the condition
+        let firstBlockNode = null;
+        let first = stmt.body.stmts.splice(0, 1)[0];
+        if (first instanceof ConditionalStatement || first instanceof LoopStatement) {
+            let exitNodes = first.accept(this, true);
+            firstBlockNode = this._doWhileLoopBackTargets.pop();
+
+            if (exitNodes && exitNodes.list.length > 0) {
+                this._parentStack.push(exitNodes);
+            }
+        } else {
+            first.accept(this);
+            firstBlockNode = this._parentStack.peek();
+        }
+
+        if (isCalledAsFirstOnDoWhile) {
+            this._doWhileLoopBackTargets.push(firstBlockNode);
+        }
+
+        let loopBackNode = this.visitBlockStatement(stmt.body);
+
+        // In Do...While the condition must be parsed last
+        let conditionNode = this.visitLogicalExpression(stmt.condition, this.nesting);
+        this.connectNodeToCFG(conditionNode);
+
+        currentLoopJumpNodes = this._loopJumpNodeRecords.pop();
+
+        let loopJoinExitNode = new JoinNode();
+
+        // Handle exit nodes
+        for (const breakNode of currentLoopJumpNodes.breaks) {
+            loopJoinExitNode.merge(breakNode);
+        }
+        loopJoinExitNode.merge(conditionNode);
+
+        // Handle loopback nodes
+
+        for (const continueNode of currentLoopJumpNodes.continues) {
+            continueNode.addNextNode(conditionNode);
+        }
+        loopBackNode.addNextNode(conditionNode);
+
+        // In Do...While the loop back target is the first statement in the loop's block
+        conditionNode.addNextNode(firstBlockNode);
+
+        return loopJoinExitNode;
     }
 
-    visitForStatement(stmt) {
+    visitWhileStatement(stmt, isCalledAsFirstOnDoWhile = false) {
+        return this.visitLoopStatement(stmt, false, isCalledAsFirstOnDoWhile);
+    }
+
+    visitForStatement(stmt, isCalledAsFirstOnDoWhile = false) {
         this.visitSequentialStatement(stmt.init);
+
+        // If called as the first expression of do..while push the init node.
+        if (isCalledAsFirstOnDoWhile) {
+            this._doWhileLoopBackTargets.push(this._parentStack.peek());
+        }
+
         // add update expression as the last statement of the for body
         stmt.body.stmts.push(stmt.update);
         let loopJoinExitNode = this.visitLoopStatement(stmt, true);
@@ -110,10 +173,10 @@ class CFGVisitor {
         return loopJoinExitNode;
     }
 
-    visitLoopStatement(stmt, hasUpdateExpression = false) {
+    visitLoopStatement(stmt, hasUpdateExpression = false, isCalledAsFirstOnDoWhile = false) {
         if (!stmt) return;
 
-        let conditionNode = this.visitLogicalExpression(stmt.condition, this._parentStack);
+        let conditionNode = this.visitLogicalExpression(stmt.condition, this.nesting);
         this.connectNodeToCFG(conditionNode);
 
         // Create a record for all break/continue nodes related to this loop only
@@ -145,10 +208,19 @@ class CFGVisitor {
         }
         loopBackNode.addNextNode(conditionNode);
 
+        // Push the correct node for do while if this loop is
+        // a first expression of the block and is a while loop.
+        // Case of For loops handled seperately in their own call.
+        if (isCalledAsFirstOnDoWhile) {
+            if (!hasUpdateExpression) {
+                this._doWhileLoopBackTargets.push(conditionNode);
+            }
+        }
+
         return loopJoinExitNode;
     }
 
-    visitConditionalStatement(stmt) {
+    visitConditionalStatement(stmt, isCalledAsFirstOnDoWhile = false) {
         if (!stmt) return;
 
         let condition = stmt.condition;
@@ -158,8 +230,10 @@ class CFGVisitor {
         let decisionNode;
 
         if (condition) {
-            decisionNode = this.visitLogicalExpression(condition, this._parentStack);
+            decisionNode = this.visitLogicalExpression(condition, this.nesting);
             this.connectNodeToCFG(decisionNode);
+
+            if (isCalledAsFirstOnDoWhile) this._doWhileLoopBackTargets.push(decisionNode);
         }
 
         let conditionalExitsJoinNode = new JoinNode();
@@ -240,8 +314,8 @@ class CFGVisitor {
         stmt.object.accept(this);
     }
 
-    visitLogicalExpression(stmt, parentStack) {
-        let visitor = new CompositeConditionsVisitor(this._id, this._cfg, parentStack.peek().nesting);
+    visitLogicalExpression(stmt, nesting) {
+        let visitor = new CompositeConditionsVisitor(this._id, this._cfg, nesting);
         let decisionNode = visitor.visit(stmt, true);
         this._id = visitor._id;
         return decisionNode;

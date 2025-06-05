@@ -5,8 +5,8 @@ class WhileStatement extends LoopStatement {
         super(type, condition, body);
     }
 
-    accept(visitor) {
-        return visitor.visitWhileStatement(this);
+    accept(visitor, isCalledAsFirstOnDoWhile = false) {
+        return visitor.visitWhileStatement(this, isCalledAsFirstOnDoWhile);
     }
 }
 module.exports = WhileStatement;

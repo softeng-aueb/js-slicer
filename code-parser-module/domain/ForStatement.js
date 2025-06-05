@@ -28,8 +28,8 @@ class ForStatement extends LoopStatement {
         return this._update.argument.name;
     }
 
-    accept(visitor) {
-        return visitor.visitForStatement(this);
+    accept(visitor, isCalledAsFirstOnDoWhile = false) {
+        return visitor.visitForStatement(this, isCalledAsFirstOnDoWhile);
     }
 }
 module.exports = ForStatement;

@@ -8,6 +8,8 @@ const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
 const CFGEdge = require("./domain/CFGEdge");
 const CFGVisitor = require("./CFGVisitor");
 const BlockStatement = require("../code-parser-module/domain/BlockStatement");
+const JoinNode = require("./domain/JoinNode");
+const { union } = require("lodash");
 
 class CFGGenerator {
     static generateCfg(functionObj) {
@@ -46,7 +48,10 @@ class CFGGenerator {
         let visitor = new CFGVisitor();
         let statements = functionObj.body;
 
-        visitor.visitBlockStatement(new BlockStatement(statements));
+        for (let stmt of statements) {
+            console.log(stmt);
+        }
+        let unfinishedExitNodes = visitor.visitBlockStatement(new BlockStatement(statements));
 
         // Add exit nodes for return jumps
         let exitNode = new CFGNode(visitor._id, null, null, [], null);
@@ -54,6 +59,9 @@ class CFGGenerator {
             n.addOutgoingEdge(exitNode);
             exitNode.addParent(n);
         }
+        // Add edges from final nodes that are not return nodes
+        if (unfinishedExitNodes) unfinishedExitNodes.addNextNode(exitNode);
+
         return visitor.cfg;
     }
 }

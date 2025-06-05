@@ -5,8 +5,8 @@ class DoWhileStatement extends LoopStatement {
         super(type, condition, body);
     }
 
-    accept(visitor) {
-        return visitor.visitDoWhileStatement(this);
+    accept(visitor, isCalledAsFirstOnDoWhile = false) {
+        return visitor.visitDoWhileStatement(this, isCalledAsFirstOnDoWhile);
     }
 }
 module.exports = DoWhileStatement;

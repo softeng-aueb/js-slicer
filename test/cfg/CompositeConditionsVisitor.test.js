@@ -342,3 +342,43 @@ it("composite conditions v10", () => {
     expectHasEdge(cfg, 10, 4); // 10 should lead to 4 because it is a while loop.
     expectHasEdge(cfg, 13, 4); // 13 should lead to condition node (4).
 });
+
+/**
+ * Should handle do..while loops
+ */
+it("composite conditions v11", () => {
+    let code = `
+    function foo(a,b){  
+                //IDS:
+    let c = a + b; //1
+    let i = 0; //2
+    console.log(a); //3
+    a++; //4
+    do{
+        if(i>5){ //5
+            a--; //6
+            break; //7
+        }
+        else if(i==3){//8
+            a++; //9
+            continue; //10
+        }
+        else{
+            b++; //11
+        }
+        console.log(a+b); //12
+        i++; //13
+    }while(i<c)//14
+    return; //15
+}
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CompCondTest11");
+    expectHasEdge(cfg, 4, 5); // 4 should lead to 5
+    expectHasEdge(cfg, 7, 15); // 7 should lead to 15 because of break
+    expectHasEdge(cfg, 10, 14); // 10 should lead to 14 because it is a do..while loop.
+    expectHasEdge(cfg, 13, 14); // 13 should lead to condition node (14).
+    expectHasEdge(cfg, 14, 15); // 14 should lead to 15 if false.
+    expectHasEdge(cfg, 14, 5); // 14 should lead to 5 if true.
+});
