@@ -381,6 +381,11 @@ class CompositeConditionsVisitor {
         this._postOrderNodeQueue.push(node);
     }
 
+    visitVariableDeclaration(stmt) {
+        let node = new CFGNode(this._id++, null, stmt, [], null);
+        this._postOrderNodeQueue.push(node);
+    }
+
     /**
      * ----- Visiting others -----
      */

@@ -48,9 +48,9 @@ class CFGGenerator {
         let visitor = new CFGVisitor();
         let statements = functionObj.body;
 
-        for (let stmt of statements) {
-            console.log(stmt);
-        }
+        // for (let stmt of statements) {
+        //     console.log(stmt);
+        // }
         let unfinishedExitNodes = visitor.visitBlockStatement(new BlockStatement(statements));
 
         // Add exit nodes for return jumps

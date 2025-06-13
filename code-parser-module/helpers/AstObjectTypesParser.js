@@ -25,11 +25,12 @@ const WhileStatement = require("../domain/WhileStatement");
 const DoWhileStatement = require("../domain/DoWhileStatement");
 const ContinueStatement = require("../domain/ContinueStatement");
 const BlockStatement = require("../domain/BlockStatement");
+const ForEachStatement = require("../domain/ForEachStatement");
 
 class AstObjectTypesParser {
     static expressionParser(expressionAstObj) {
         if (!expressionAstObj) {
-            throw new Error("Missing required param.");
+            throw new Error(`Missing required param. Was given ${expressionAstObj}`);
         }
 
         //TODO: Add more cases
@@ -48,7 +49,9 @@ class AstObjectTypesParser {
         if (
             expressionAstObj.type === AST_OBJECT_TYPES.WHILE_STATEMENT ||
             expressionAstObj.type === AST_OBJECT_TYPES.DO_WHILE_STATEMENT ||
-            expressionAstObj.type === AST_OBJECT_TYPES.FOR_STATEMENT
+            expressionAstObj.type === AST_OBJECT_TYPES.FOR_STATEMENT ||
+            expressionAstObj.type === AST_OBJECT_TYPES.FOR_OF_STATEMENT ||
+            expressionAstObj.type === AST_OBJECT_TYPES.FOR_IN_STATEMENT
         ) {
             return this.loopStatementParser(expressionAstObj);
         }
@@ -86,7 +89,6 @@ class AstObjectTypesParser {
             return this.memberExpressionParser(expressionAstObj);
         }
 
-        console.log(expressionAstObj);
         throw new Error("Unrecognized expression " + expressionAstObj.type);
     }
 
@@ -118,9 +120,14 @@ class AstObjectTypesParser {
             return value.id && value.id.name;
         });
 
-        let value = this.expressionParser(variableDeclarationAstObj.declarations.find((val) => val.init).init);
+        //let value = this.expressionParser(variableDeclarationAstObj.declarations.find((val) => val.init).init);
+        let values = _.map(variableDeclarationAstObj.declarations, function (declaration) {
+            if (declaration.init !== undefined) {
+                return declaration.init === null ? null : AstObjectTypesParser.expressionParser(declaration.init);
+            }
+        });
 
-        return new VariableDeclaration(kind, varNames, value);
+        return new VariableDeclaration(kind, varNames, values);
     }
 
     static callExpressionParser(callExpressionAstObj) {
@@ -284,26 +291,38 @@ class AstObjectTypesParser {
             !loopStatementAstObj ||
             (loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_STATEMENT &&
                 loopStatementAstObj.type !== AST_OBJECT_TYPES.WHILE_STATEMENT &&
-                loopStatementAstObj.type !== AST_OBJECT_TYPES.DO_WHILE_STATEMENT)
+                loopStatementAstObj.type !== AST_OBJECT_TYPES.DO_WHILE_STATEMENT &&
+                loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_OF_STATEMENT &&
+                loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_IN_STATEMENT)
         ) {
             throw new Error(
-                `Not a ${AST_OBJECT_TYPES.FOR_STATEMENT} or  ${AST_OBJECT_TYPES.WHILE_STATEMENT} or ${AST_OBJECT_TYPES.DO_WHILE_STATEMENT}object.`
+                `Not a ${AST_OBJECT_TYPES.FOR_STATEMENT} or  ${AST_OBJECT_TYPES.WHILE_STATEMENT}
+                 or ${AST_OBJECT_TYPES.DO_WHILE_STATEMENT} or ${AST_OBJECT_TYPES.FOR_OF_STATEMENT} object.`
             );
         }
 
-        let condition = this.expressionParser(loopStatementAstObj.test);
+        let condition;
+        if (loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_OF_STATEMENT || loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_IN_STATEMENT) {
+            condition = this.expressionParser(loopStatementAstObj.left);
+        } else {
+            condition = this.expressionParser(loopStatementAstObj.test);
+        }
+
         let body = this.expressionParser(loopStatementAstObj.body);
 
         if (loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_STATEMENT) {
-            //console.log(loopStatementAstObj)
             let init = this.variableDeclarationsParser(loopStatementAstObj.init);
             let update = this.expressionParser(loopStatementAstObj.update);
-            //console.log(update)
             return new ForStatement(loopStatementAstObj.type, condition, body, init, update);
         } else if (loopStatementAstObj.type === AST_OBJECT_TYPES.WHILE_STATEMENT) {
             return new WhileStatement(loopStatementAstObj.type, condition, body);
         } else if (loopStatementAstObj.type === AST_OBJECT_TYPES.DO_WHILE_STATEMENT) {
             return new DoWhileStatement(loopStatementAstObj.type, condition, body);
+        } else if (
+            loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_OF_STATEMENT ||
+            loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_IN_STATEMENT
+        ) {
+            return new ForEachStatement(loopStatementAstObj.type, condition, body);
         }
     }
 }

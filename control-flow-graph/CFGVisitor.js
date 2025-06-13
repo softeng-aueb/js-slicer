@@ -96,6 +96,10 @@ class CFGVisitor {
         return stmts.length > 0 ? this._parentStack.pop() : null;
     }
 
+    visitForEachStatement(stmt, isCalledAsFirstOnDoWhile = false) {
+        return this.visitLoopStatement(stmt, false, isCalledAsFirstOnDoWhile);
+    }
+
     visitDoWhileStatement(stmt, isCalledAsFirstOnDoWhile = false) {
         // Create a record for all break/continue nodes related to this loop only
         let currentLoopJumpNodes = {};
@@ -125,6 +129,12 @@ class CFGVisitor {
         }
 
         let loopBackNode = this.visitBlockStatement(stmt.body);
+        // Loopback node is null only when the dowhile block has one statement and that statement
+        // is either a conditional or another loop.
+        // In that case, The loopback node will be a join node found in the parent stack.
+        if (!loopBackNode) {
+            loopBackNode = this._parentStack.pop();
+        }
 
         // In Do...While the condition must be parsed last
         let conditionNode = this.visitLogicalExpression(stmt.condition, this.nesting);
@@ -268,7 +278,6 @@ class CFGVisitor {
     }
 
     visitVariableDeclaration(stmt) {
-        stmt.value.accept(this);
         this.visitSequentialStatement(stmt);
     }
 

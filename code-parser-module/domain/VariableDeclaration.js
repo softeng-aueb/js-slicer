@@ -2,13 +2,11 @@ const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
 class VariableDeclaration {
-
-    constructor(type,names,value) {
+    constructor(type, names, values) {
         this._type = type;
         this._names = names;
-        this._value = value;
+        this._values = values;
     }
-
 
     get type() {
         return this._type;
@@ -26,32 +24,25 @@ class VariableDeclaration {
         this._names = value;
     }
 
-    get value() {
-        return this._value;
+    get values() {
+        return this._values;
     }
 
-    set value(value) {
-        this._value = value;
+    set values(values) {
+        this._values = values;
     }
 
-    getUsedVariableNames(){
-        if(this._value instanceof Identifier)
-            return [this._value._name];
-
-        if(this._value instanceof Literal)
-            return [];
-
-        return this._value.getUsedVariableNames();
+    getUsedVariableNames() {
+        return this._values;
     }
 
-    getDefinedVariable(){
+    getDefinedVariable() {
         return this._names;
     }
 
-    accept(visitor){
+    accept(visitor) {
         visitor.visitVariableDeclaration(this);
     }
-
 }
 
 module.exports = VariableDeclaration;
