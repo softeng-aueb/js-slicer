@@ -117,7 +117,7 @@ class AstObjectTypesParser {
         let kind = variableDeclarationAstObj.kind;
 
         let varNames = _.map(variableDeclarationAstObj.declarations, function (value) {
-            return value.id && value.id.name;
+            return AstObjectTypesParser.expressionParser(value.id);
         });
 
         //let value = this.expressionParser(variableDeclarationAstObj.declarations.find((val) => val.init).init);

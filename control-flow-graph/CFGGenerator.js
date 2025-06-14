@@ -9,7 +9,6 @@ const CFGEdge = require("./domain/CFGEdge");
 const CFGVisitor = require("./CFGVisitor");
 const BlockStatement = require("../code-parser-module/domain/BlockStatement");
 const JoinNode = require("./domain/JoinNode");
-const { union } = require("lodash");
 
 class CFGGenerator {
     static generateCfg(functionObj) {
@@ -45,12 +44,9 @@ class CFGGenerator {
     }
 
     static generateCfg2(functionObj) {
-        let visitor = new CFGVisitor();
+        let visitor = new CFGVisitor(false);
         let statements = functionObj.body;
 
-        // for (let stmt of statements) {
-        //     console.log(stmt);
-        // }
         let unfinishedExitNodes = visitor.visitBlockStatement(new BlockStatement(statements));
 
         // Add exit nodes for return jumps

@@ -1,4 +1,4 @@
-class Identifier{
+class Identifier {
     constructor(name) {
         this._name = name;
     }
@@ -11,8 +11,6 @@ class Identifier{
         this._name = value;
     }
 
-    accept(visitor){
-        
-    }
+    accept(visitor) {}
 }
 module.exports = Identifier;

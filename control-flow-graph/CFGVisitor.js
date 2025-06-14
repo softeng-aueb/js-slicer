@@ -14,7 +14,7 @@ const ContinueStatement = require("../code-parser-module/domain/ContinueStatemen
 const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 
 class CFGVisitor {
-    constructor() {
+    constructor(debug = true) {
         this._cfg = new CFG();
         this._id = 1;
         this._parentStack = new Stack();
@@ -23,17 +23,19 @@ class CFGVisitor {
         this._returnExitStack = [];
         this._loopJumpNodeRecords = [];
         this._doWhileLoopBackTargets = [];
+        this._debug = debug;
     }
 
     // Implements connection algorithm logic
     connectNodeToCFG(node) {
         //Debug
-        let printStr2 = "";
-        this._parentStack.elements.forEach((it) => {
-            printStr2 = printStr2.concat(`${it.id} `);
-        });
-
-        console.log(`Starting Parent Stack: ${printStr2}`);
+        if (this._debug) {
+            let printStr2 = "";
+            this._parentStack.elements.forEach((it) => {
+                printStr2 = printStr2.concat(`${it.id} `);
+            });
+            console.log(`Starting Parent Stack: ${printStr2}`);
+        }
 
         if (this._parentStack.length === 0) {
             this._parentStack.push(node);
@@ -50,16 +52,17 @@ class CFGVisitor {
         }
 
         //Debug
-        let printStr1 = "";
-        this._parentStack.elements.forEach((it) => {
-            printStr1 = printStr1.concat(`${it.id} `);
-        });
+        if (this._debug) {
+            let printStr1 = "";
+            this._parentStack.elements.forEach((it) => {
+                printStr1 = printStr1.concat(`${it.id} `);
+            });
 
-        console.log(`Parent Stack: ${printStr1}`);
+            console.log(`Parent Stack: ${printStr1}`);
+        }
     }
 
     visitArrayExpression(stmt) {
-        console.log("logging:", stmt.elements);
         for (let elem of stmt.elements) {
             elem.accept(this);
         }
@@ -86,14 +89,15 @@ class CFGVisitor {
 
             exitNodes = stmt.accept(this);
 
-            if (exitNodes && exitNodes.list.length > 0) {
+            if (exitNodes /*&& exitNodes.list.length > 0*/) {
                 this._parentStack.push(exitNodes);
             }
         }
 
         this.nesting--;
 
-        return stmts.length > 0 ? this._parentStack.pop() : null;
+        let result = stmts.length > 0 ? this._parentStack.pop() : null;
+        return result;
     }
 
     visitForEachStatement(stmt, isCalledAsFirstOnDoWhile = false) {
@@ -116,7 +120,7 @@ class CFGVisitor {
             let exitNodes = first.accept(this, true);
             firstBlockNode = this._doWhileLoopBackTargets.pop();
 
-            if (exitNodes && exitNodes.list.length > 0) {
+            if (exitNodes /*&& exitNodes.list.length > 0*/) {
                 this._parentStack.push(exitNodes);
             }
         } else {
@@ -127,7 +131,6 @@ class CFGVisitor {
         if (isCalledAsFirstOnDoWhile) {
             this._doWhileLoopBackTargets.push(firstBlockNode);
         }
-
         let loopBackNode = this.visitBlockStatement(stmt.body);
         // Loopback node is null only when the dowhile block has one statement and that statement
         // is either a conditional or another loop.
@@ -138,7 +141,6 @@ class CFGVisitor {
 
         // In Do...While the condition must be parsed last
         let conditionNode = this.visitLogicalExpression(stmt.condition, this.nesting);
-        this.connectNodeToCFG(conditionNode);
 
         currentLoopJumpNodes = this._loopJumpNodeRecords.pop();
 
@@ -160,6 +162,14 @@ class CFGVisitor {
         // In Do...While the loop back target is the first statement in the loop's block
         conditionNode.addNextNode(firstBlockNode);
 
+        //Debug
+        if (this._debug) {
+            let printStr = "";
+            loopJoinExitNode.list.forEach((it) => {
+                printStr = printStr.concat(`${it.id} `);
+            });
+            console.log(`${stmt.type} ${conditionNode.id} ended with return list: ${printStr}`);
+        }
         return loopJoinExitNode;
     }
 
@@ -227,6 +237,14 @@ class CFGVisitor {
             }
         }
 
+        //Debug
+        if (this._debug) {
+            let printStr = "";
+            loopJoinExitNode.list.forEach((it) => {
+                printStr = printStr.concat(`${it.id} `);
+            });
+            console.log(`${stmt.type} Loop Statement ${conditionNode.id} ended with return list: ${printStr}`);
+        }
         return loopJoinExitNode;
     }
 
@@ -252,16 +270,18 @@ class CFGVisitor {
         conditionalExitsJoinNode.merge(alternates ? alternates.accept(this) : this._parentStack.pop());
 
         //Debug
-        let printStr = "";
-        conditionalExitsJoinNode.list.forEach((it) => {
-            printStr = printStr.concat(`${it.id} `);
-        });
-        console.log(`IF Statement ${decisionNode.id} ended with return list: ${printStr}`);
+        if (this._debug) {
+            let printStr = "";
+            conditionalExitsJoinNode.list.forEach((it) => {
+                printStr = printStr.concat(`${it.id} `);
+            });
+            console.log(`IF Statement ${decisionNode.id} ended with return list: ${printStr}`);
+        }
 
         return conditionalExitsJoinNode;
     }
 
-    visitSequentialStatement(stmt, isLoopEntry = false) {
+    visitSequentialStatement(stmt) {
         let node = new CFGNode(this._id++, null, stmt, [], null);
 
         node.nesting = this.nesting;
@@ -278,6 +298,13 @@ class CFGVisitor {
     }
 
     visitVariableDeclaration(stmt) {
+        for (let i = 0; i < stmt.names.length; i++) {
+            this.visitIdentifier(stmt.names[i]);
+            stmt.values[i].accept(this);
+        }
+    }
+
+    visitIdentifier(stmt) {
         this.visitSequentialStatement(stmt);
     }
 
