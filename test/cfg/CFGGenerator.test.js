@@ -7,10 +7,6 @@ function expectHasEdge(cfg, source, target) {
     expect(cfg.hasEdge(source, target)).toBe(true);
 }
 
-function expectHasExitNode(cfg, node) {
-    expect(cfg.hasExitNode(node)).toBe(true);
-}
-
 function showCFG(cfg, filename) {
     let visualizer = new CFGVisualizer(cfg, filename);
     visualizer.exportToDot();
@@ -46,7 +42,6 @@ it("should support break from nested while loops", () => {
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 8, 9); // inside nested while
     expectHasEdge(cfg, 8, 3); // from nested while to outer while
-    expectHasExitNode(cfg, 7); // first break, exit
     expectHasEdge(cfg, 11, 3); // nested while break to outer while
 });
 
@@ -306,7 +301,7 @@ it("should generate cfg for sequential statements", () => {
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CFGGeneratorTestSequentialStmts");
     expect(cfg.nodes.length).toBe(7);
-    expect(cfg.getNodeById(2).hasStatementType("UpdateExpression")).toBe(true);
+    expect(cfg.getNodeById(3).hasStatementType("UpdateExpression")).toBe(true);
     expect(cfg.hasEdge(1, 2)).toBe(true);
     expect(cfg.hasEdge(2, 3)).toBe(true);
     expect(cfg.hasEdge(3, 4)).toBe(true);

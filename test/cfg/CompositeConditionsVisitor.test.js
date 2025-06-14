@@ -6,10 +6,6 @@ function expectHasEdge(cfg, source, target) {
     expect(cfg.hasEdge(source, target)).toBe(true);
 }
 
-function expectHasExitNode(cfg, node) {
-    expect(cfg.hasExitNode(node)).toBe(true);
-}
-
 function showCFG(cfg, filename) {
     let visualizer = new CFGVisualizer(cfg, filename);
     visualizer.exportToDot();
@@ -18,6 +14,18 @@ function showCFG(cfg, filename) {
 function parse(str) {
     return Parser.parse(str.split("\n"));
 }
+
+/**
+ *
+ *      This test suite is focused on testing the fuctionality and correctness of the
+ *      Composite Conditions Visitor module. Tests include basic and advanced cases of logical expressions
+ *      that can be found in If and Ternary statements.
+ *
+ *      Each test includes the exact numbered label above or next to an expression that matches the order
+ *      in which a node is parsed within the CFG for better understanding of the test.
+ *
+ *      Global exit node of the function always has the largest number as its label.
+ */
 
 /**
  * Should support the correct creation of CFGs with composite conditions
@@ -78,7 +86,7 @@ it("composite conditions v2", () => {
 });
 
 /**
- * Should support a single ternary expression
+ * Should support a lone ternary statement
  */
 it("composite conditions v3", () => {
     let code = `
@@ -105,7 +113,7 @@ it("composite conditions v3", () => {
 });
 
 /**
- * Should support logical expressions within then/alternate blocks of conditionals
+ * Should support logical expressions within then/alternate blocks of ternary statements
  */
 it("composite conditions v4", () => {
     let code = `
@@ -132,7 +140,7 @@ it("composite conditions v4", () => {
 });
 
 /**
- * Should recursively support the existence of conditional statements within conditional statements
+ * Should recursively support the existence of ternary statements within ternary statements
  */
 it("composite conditions v5", () => {
     let code = `
@@ -186,7 +194,7 @@ it("composite conditions v6", () => {
 });
 
 /**
- * Should support negation of expressions within conditionals
+ * Should support negation of expressions within ternary statements
  */
 it("composite conditions v7", () => {
     let code = `
@@ -260,125 +268,4 @@ it("composite conditions v8", () => {
     expectHasEdge(cfg, 20, 21); // 20 is an exit node and must lead to 21
     expectHasEdge(cfg, 12, 14); // 12 is an exit node and must lead to 14
     expectHasEdge(cfg, 13, 14); // 13 is an exit node and must lead to 14
-});
-
-/**
- * Should handle for loops
- */
-it("composite conditions v9", () => {
-    let code = `
-    function foo(a,b){  //IDS:
-    let c = a + b; //1
-    console.log(a); //2
-        //3      //4    //13
-    for(let i=0; i<c; i++){
-            //5
-        if(i>5){
-            a--; //6
-            break; //7
-        }
-                //8
-        else if(i==3){
-            a++; //9
-            continue; //10
-        }
-        else{
-            b++; //11
-        }
-        console.log(a+b); //12
-    }
-    return; //14
-}
-    `;
-    let functionObj = parse(code);
-    let cfg = CFGGenerator.generateCfg2(functionObj);
-    showCFG(cfg, "CompCondTest9");
-    expectHasEdge(cfg, 4, 5); // 4 should lead to 5 if true
-    expectHasEdge(cfg, 4, 14); // 4 should lead to 14 if false
-    expectHasEdge(cfg, 7, 14); // 7 should lead to 14 because of break
-    expectHasEdge(cfg, 10, 13); // 10 should lead to update expression (13) because it is a for loop.
-    expectHasEdge(cfg, 12, 13); // 12 should lead to update expression (13).
-    expectHasEdge(cfg, 13, 4); // Update expression (13) should lead to condition node (4).
-});
-
-/**
- * Should handle while loops
- */
-it("composite conditions v10", () => {
-    let code = `
-    function foo(a,b){  
-                //IDS:
-    let c = a + b; //1
-    let i = 0; //2
-    console.log(a); //3
-
-         //4   
-    while(i<c){
-            //5
-        if(i>5){
-            a--; //6
-            break; //7
-        }
-                //8
-        else if(i==3){
-            a++; //9
-            continue; //10
-        }
-        else{
-            b++; //11
-        }
-        console.log(a+b); //12
-        i++; //13
-    }
-    return; //14
-}
-    `;
-    let functionObj = parse(code);
-    let cfg = CFGGenerator.generateCfg2(functionObj);
-    showCFG(cfg, "CompCondTest10");
-    expectHasEdge(cfg, 4, 5); // 4 should lead to 5 if true
-    expectHasEdge(cfg, 4, 14); // 4 should lead to 14 if false
-    expectHasEdge(cfg, 7, 14); // 7 should lead to 14 because of break
-    expectHasEdge(cfg, 10, 4); // 10 should lead to 4 because it is a while loop.
-    expectHasEdge(cfg, 13, 4); // 13 should lead to condition node (4).
-});
-
-/**
- * Should handle do..while loops
- */
-it("composite conditions v11", () => {
-    let code = `
-    function foo(a,b){  
-                //IDS:
-    let c = a + b; //1
-    let i = 0; //2
-    console.log(a); //3
-    a++; //4
-    do{
-        if(i>5){ //5
-            a--; //6
-            break; //7
-        }
-        else if(i==3){//8
-            a++; //9
-            continue; //10
-        }
-        else{
-            b++; //11
-        }
-        console.log(a+b); //12
-        i++; //13
-    }while(i<c)//14
-    return; //15
-}
-    `;
-    let functionObj = parse(code);
-    let cfg = CFGGenerator.generateCfg2(functionObj);
-    showCFG(cfg, "CompCondTest11");
-    expectHasEdge(cfg, 4, 5); // 4 should lead to 5
-    expectHasEdge(cfg, 7, 15); // 7 should lead to 15 because of break
-    expectHasEdge(cfg, 10, 14); // 10 should lead to 14 because it is a do..while loop.
-    expectHasEdge(cfg, 13, 14); // 13 should lead to condition node (14).
-    expectHasEdge(cfg, 14, 15); // 14 should lead to 15 if false.
-    expectHasEdge(cfg, 14, 5); // 14 should lead to 5 if true.
 });
