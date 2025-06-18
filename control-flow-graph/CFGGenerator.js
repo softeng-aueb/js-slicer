@@ -8,7 +8,6 @@ const ReturnStatement = require("../code-parser-module/domain/ReturnStatement");
 const CFGEdge = require("./domain/CFGEdge");
 const CFGVisitor = require("./CFGVisitor");
 const BlockStatement = require("../code-parser-module/domain/BlockStatement");
-const JoinNode = require("./domain/JoinNode");
 
 class CFGGenerator {
     static generateCfg(functionObj) {

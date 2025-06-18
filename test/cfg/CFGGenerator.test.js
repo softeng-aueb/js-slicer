@@ -1,5 +1,4 @@
 const Parser = require("../../code-parser-module/Parser.js");
-const FUNCTION_TYPES = require("../../code-parser-module/constants/functionTypes");
 const CFGGenerator = require("../../control-flow-graph/CFGGenerator");
 const CFGVisualizer = require("../../control-flow-graph/CFGVisualizer");
 
