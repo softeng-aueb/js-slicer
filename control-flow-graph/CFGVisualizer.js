@@ -1,23 +1,21 @@
-
-const fs = require('fs')
+const fs = require("fs");
 
 class CFGVisualizer {
-
-    constructor(cfg, filename){
+    constructor(cfg, filename) {
         this.cfg = cfg;
         this.filename = filename;
     }
 
-    exportToDot(){
-        this.exportCFGToDot(this.cfg, this.filename)
+    exportToDot() {
+        this.exportCFGToDot(this.cfg, this.filename);
     }
 
     exportCFGToDot(cfg, filename) {
-        let dot = this.writeCFGToDot(cfg)
-        fs.writeFileSync(`./output/cfg-${filename}.dot`, dot)
+        let dot = this.writeCFGToDot(cfg);
+        fs.writeFileSync(`./output/cfg-${filename}.dot`, dot);
     }
 
-    writeCFGToDot(cfg) {
+    static writeCFGToDot(cfg) {
         let digraph = `digraph G {
           rankdir=TB;
           ranksep="0.2 equally";
@@ -38,25 +36,24 @@ class CFGVisualizer {
                 colorscheme="blues4", 
                 color="2", 
                 fontcolor="4", 
-                style="filled"];`
+                style="filled"];`;
 
         for (let node of cfg.nodes) {
-            digraph += `\t"${node._id}";\n`
+            digraph += `\t"${node._id}";\n`;
         }
         for (let node of cfg.nodes) {
             for (let edge of node.edges) {
-                digraph += `\t"${edge.source}" -> "${edge.target}"`
-                let properties = []
+                digraph += `\t"${edge.source}" -> "${edge.target}"`;
+                let properties = [];
                 if (edge.condition) {
-                    properties.push(`label="${edge.condition}"`)
+                    properties.push(`label="${edge.condition}"`);
                 }
                 digraph += `[${properties.join(", ")}];\n`;
             }
         }
-        digraph += "}"
+        digraph += "}";
         return digraph;
     }
-
 }
 
 module.exports = CFGVisualizer;

@@ -1,6 +1,4 @@
-const VAR_TYPES = require("../constants/varTypes");
 const AST_OBJECT_TYPES = require("../constants/astObjectTypes");
-const GENERAL = require("../constants/general");
 const Identifier = require("../domain/Identifier");
 const BinaryExpression = require("../domain/BinaryExpression");
 const UnaryExpression = require("../domain/UnaryExpression");
@@ -8,9 +6,7 @@ const VariableDeclaration = require("../domain/VariableDeclaration");
 const ReturnStatement = require("../domain/ReturnStatement");
 const ConditionalStatement = require("../domain/ConditionalStatement");
 const Literal = require("../domain/Literal");
-const LoopStatement = require("../domain/LoopStatement");
 const AssignmentStatement = require("../domain/AssignmentStatement");
-const Alternate = require("../domain/Alternate");
 const _ = require("lodash");
 const LogicalExpression = require("../domain/LogicalExpression");
 const FunctionCall = require("../domain/FunctionCall");

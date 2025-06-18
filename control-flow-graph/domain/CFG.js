@@ -1,4 +1,3 @@
-const CDGNodeNames = require("../../control-dependency-graph/constants/CDGNodeNames");
 const FDTNode = require("../../forward-dominance-tree/domain/FDTNode");
 const FDTEdge = require("../../forward-dominance-tree/domain/FDTEdge");
 const FDT = require("../../forward-dominance-tree/domain/FDT");
@@ -22,7 +21,7 @@ class CFG {
             let targets = node.edges.map((e) => e.targetNode.id);
             lines.push(`Node: ${node.id} -> ${targets.join(", ")}`);
         }
-        console.log(lines.join("\n"));
+        return lines.join("\n");
     }
 
     hasEdge(from, to) {
@@ -140,7 +139,11 @@ class CFG {
             .forEach((topology) => {
                 this.getVariableDependency(fromNode, this.getNodeById(topology._target), topology._paths).forEach((vd) => {
                     //Add DDGEdge if it does not exist already
-                    if (!ddgEdges.some((edge) => edge._source === fromNode._id && edge._target === topology._target && vd === edge._dependantVariable)) {
+                    if (
+                        !ddgEdges.some(
+                            (edge) => edge._source === fromNode._id && edge._target === topology._target && vd === edge._dependantVariable
+                        )
+                    ) {
                         ddgEdges.push(new DDGEdge(fromNode._id, topology._target, vd));
                     }
                 });
@@ -161,8 +164,14 @@ class CFG {
         let sourceNodeUsedVars = fromNode._statement.getUsedVariableNames();
         let destNodeUsedVars = toNode._statement.getUsedVariableNames();
 
-        let sourceNodeDeclaredVar = fromNode._statement instanceof AssignmentStatement || fromNode._statement instanceof VariableDeclaration ? fromNode._statement.getDefinedVariable() : undefined;
-        let destNodeDeclaredVar = toNode._statement instanceof AssignmentStatement || toNode._statement instanceof VariableDeclaration ? toNode._statement.getDefinedVariable() : undefined;
+        let sourceNodeDeclaredVar =
+            fromNode._statement instanceof AssignmentStatement || fromNode._statement instanceof VariableDeclaration
+                ? fromNode._statement.getDefinedVariable()
+                : undefined;
+        let destNodeDeclaredVar =
+            toNode._statement instanceof AssignmentStatement || toNode._statement instanceof VariableDeclaration
+                ? toNode._statement.getDefinedVariable()
+                : undefined;
 
         let allVars = _.uniq(sourceNodeUsedVars.concat(destNodeUsedVars));
         if (sourceNodeDeclaredVar) allVars = allVars.concat(sourceNodeDeclaredVar);
@@ -183,9 +192,14 @@ class CFG {
         for (let i in allVars) {
             let variable = allVars[i];
             let nodesAreDataDependent = paths.some((path) => {
-                let remainingNodes = path.filter((nodeId) => nodeId !== fromNode._id && nodeId !== toNode._id).map((nodeId) => this.getNodeById(nodeId));
+                let remainingNodes = path
+                    .filter((nodeId) => nodeId !== fromNode._id && nodeId !== toNode._id)
+                    .map((nodeId) => this.getNodeById(nodeId));
                 let hasInterveningDefinition = remainingNodes.some((rNode) => {
-                    let rNodeDeclaredVar = rNode._statement instanceof AssignmentStatement || rNode._statement instanceof VariableDeclaration ? rNode._statement.getDefinedVariable() : undefined;
+                    let rNodeDeclaredVar =
+                        rNode._statement instanceof AssignmentStatement || rNode._statement instanceof VariableDeclaration
+                            ? rNode._statement.getDefinedVariable()
+                            : undefined;
                     return rNodeDeclaredVar && rNodeDeclaredVar.includes(variable);
                 });
 
@@ -193,7 +207,10 @@ class CFG {
                     !hasInterveningDefinition &&
                     ((sourceNodeDeclaredVar && sourceNodeDeclaredVar.includes(variable) && destNodeUsedVars.includes(variable)) ||
                         (sourceNodeUsedVars.includes(variable) && destNodeDeclaredVar && destNodeDeclaredVar.includes(variable)) ||
-                        (sourceNodeDeclaredVar && sourceNodeDeclaredVar.includes(variable) && destNodeDeclaredVar && destNodeDeclaredVar.includes(variable)))
+                        (sourceNodeDeclaredVar &&
+                            sourceNodeDeclaredVar.includes(variable) &&
+                            destNodeDeclaredVar &&
+                            destNodeDeclaredVar.includes(variable)))
                 );
             });
             if (nodesAreDataDependent) variableDependencyList.push(variable);

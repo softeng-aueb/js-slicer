@@ -1,12 +1,7 @@
-const CFGVisualizer = require("./CFGVisualizer");
-const BinaryExpression = require("../code-parser-module/domain/BinaryExpression");
 const LogicalExpression = require("../code-parser-module/domain/LogicalExpression");
 const CFG = require("./domain/CFG");
-const ConditionalStatement = require("../code-parser-module/domain/ConditionalStatement");
-const FunctionCall = require("../code-parser-module/domain/FunctionCall");
 const UnaryExpression = require("../code-parser-module/domain/UnaryExpression");
 const CFGNode = require("./domain/CFGNode");
-const Stack = require("../utils/Stack");
 const DecisionNode = require("./domain/DecisionNode");
 
 class CompositeConditionsVisitor {
@@ -259,7 +254,7 @@ class CompositeConditionsVisitor {
      * ----- Visiting non leaf statements -----
      */
 
-    visitLogicalExpression(stmt) {
+    visitLogicalExpression() {
         //skip
     }
 
@@ -389,13 +384,13 @@ class CompositeConditionsVisitor {
     /**
      * ----- Visiting others -----
      */
-    visitLiteral(stmt) {
+    visitLiteral() {
         //skip
     }
-    visitIdentifier(stmt) {
+    visitIdentifier() {
         //skip
     }
-    visitMemberExpression(stmt) {
+    visitMemberExpression() {
         //skip
     }
 }
