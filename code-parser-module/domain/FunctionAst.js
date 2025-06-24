@@ -54,21 +54,7 @@ class FunctionAst {
     getFunctionBody() {
         const bodyStatements = (this.codeParsedObj && this.codeParsedObj.body && this.codeParsedObj.body.body) || [];
         return bodyStatements.flatMap((statement) => {
-            if (statement.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION) {
-                return AstObjectTypesParser.variableDeclarationsParser(statement);
-            } else if (statement.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT) {
-                return AstObjectTypesParser.expressionStatementParser(statement);
-            } else if (statement.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
-                return AstObjectTypesParser.returnStatementParser(statement);
-            } else if (statement.type === AST_OBJECT_TYPES.IF_STATEMENT) {
-                return AstObjectTypesParser.ifStatementParser(statement);
-            } else if (
-                statement.type === AST_OBJECT_TYPES.FOR_STATEMENT ||
-                statement.type === AST_OBJECT_TYPES.WHILE_STATEMENT ||
-                statement.type === AST_OBJECT_TYPES.DO_WHILE_STATEMENT
-            ) {
-                return AstObjectTypesParser.loopStatementParser(statement);
-            }
+            return AstObjectTypesParser.expressionParser(statement);
         });
     }
 }

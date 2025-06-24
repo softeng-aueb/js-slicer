@@ -39,9 +39,7 @@ class AstObjectTypesParser {
         if (expressionAstObj.type === AST_OBJECT_TYPES.CONTINUE_STATEMENT) {
             return this.continueStatementParser(expressionAstObj);
         }
-        if (expressionAstObj.type === AST_OBJECT_TYPES.CONTINUE_STATEMENT) {
-            return;
-        }
+
         if (
             expressionAstObj.type === AST_OBJECT_TYPES.WHILE_STATEMENT ||
             expressionAstObj.type === AST_OBJECT_TYPES.DO_WHILE_STATEMENT ||
