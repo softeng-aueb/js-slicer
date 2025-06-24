@@ -520,3 +520,35 @@ it("visitor v16", () => {
     expectHasEdge(cfg, 7, 3); // do..while loop back
     expectHasEdge(cfg, 7, 8); // do..while loop exit
 });
+
+/**
+ * Should support for each loops
+ */
+it("visitor v17", () => {
+    let code = `
+    function foo(a){  
+        let i = 0; //1
+        let j = 0; //2
+                //3
+        for(let a of v){
+            console.log(a); //4
+                //5
+            if(a > 5){
+                break; //6
+            }           
+                       //7
+            else if (a > 15){
+                continue; //8
+            }
+            j = a + i; //9
+        }
+    }
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CFGVisitor17");
+    expectHasEdge(cfg, 3, 10); // foreach condition to exit with false
+    expectHasEdge(cfg, 3, 4); // foreach condition to 4 with true
+    expectHasEdge(cfg, 6, 10); // break to exit
+    expectHasEdge(cfg, 8, 3); // continue to condition/var declaration
+});

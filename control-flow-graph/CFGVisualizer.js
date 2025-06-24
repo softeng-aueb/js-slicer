@@ -11,7 +11,7 @@ class CFGVisualizer {
     }
 
     exportCFGToDot(cfg, filename) {
-        let dot = this.writeCFGToDot(cfg);
+        let dot = CFGVisualizer.writeCFGToDot(cfg);
         fs.writeFileSync(`./output/cfg-${filename}.dot`, dot);
     }
 
@@ -45,7 +45,7 @@ class CFGVisualizer {
             for (let edge of node.edges) {
                 digraph += `\t"${edge.source}" -> "${edge.target}"`;
                 let properties = [];
-                if (edge.condition) {
+                if (edge.condition === true || edge.condition === false) {
                     properties.push(`label="${edge.condition}"`);
                 }
                 digraph += `[${properties.join(", ")}];\n`;

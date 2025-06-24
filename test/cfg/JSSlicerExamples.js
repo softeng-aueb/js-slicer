@@ -1,4 +1,13 @@
 const a = function (a, b) {
+    let c = a + b * 2;
+    for (let a of d) {
+        if (a >= b) {
+            console.log(a);
+        } else {
+            console.log(b);
+        }
+        c--;
+    }
     return a + b;
 };
 
@@ -6,7 +15,7 @@ function foo(a, b) {
     //IDS:
     let c = a + b; //1
     console.log(a); //2
-    //3      //4    //13
+    //      3         4     13
     for (let i = 0; i < c; i++) {
         //5
         if (i > 5) {
@@ -22,5 +31,5 @@ function foo(a, b) {
         }
         console.log(a + b); //12
     }
-    return;
-} //14
+    return; //14
+}

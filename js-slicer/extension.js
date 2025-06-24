@@ -121,10 +121,12 @@ function activate(context) {
         acornWalk.fullAncestor(ast, (node, ancestors) => {
             let name = null;
             let type = null;
+            let funcNode = null;
 
             if (node.type === "FunctionDeclaration" && node.id?.name) {
                 name = node.id.name;
                 type = "FunctionDeclaration";
+                funcNode = node;
             } else if (
                 node.type === "VariableDeclarator" &&
                 node.id?.name &&
@@ -132,6 +134,7 @@ function activate(context) {
             ) {
                 name = node.id.name;
                 type = node.init.type;
+                funcNode = node.init;
             } else if (
                 (node.type === "MethodDefinition" || node.type === "Property") &&
                 node.key?.name &&
@@ -139,17 +142,23 @@ function activate(context) {
             ) {
                 name = node.key.name;
                 type = "Class/Object Method";
+                funcNode = node.value;
             }
 
-            if (name && node.start != null && node.end != null) {
-                const snippet = code.slice(node.start, node.end);
+            if (name && funcNode?.start != null && funcNode?.end != null) {
+                let snippet = code.slice(funcNode.start, funcNode.end);
+
+                // Inject name into anonymous function expressions for our parser to properly work
+                if (type === "FunctionExpression" && !funcNode.id) {
+                    snippet = snippet.replace(/^function\s*\(/, `function ${name}(`);
+                }
                 const preview = snippet.split("\n")[0].trim();
                 functions.push({
                     name,
                     code: snippet,
                     type,
                     preview,
-                    line: node.loc?.start?.line || 0,
+                    line: funcNode.loc?.start?.line || 0,
                 });
             }
         });
