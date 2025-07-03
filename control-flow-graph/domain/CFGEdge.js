@@ -1,17 +1,17 @@
 class CFGEdge {
     constructor(source, target, condition, sourceNode, targetNode) {
-        this._source = source;
-        this._target = target;
+        this._sourceId = sourceNode.id;
+        this._targetId = targetNode.id;
         this._condition = condition;
         this._sourceNode = sourceNode;
         this._targetNode = targetNode;
     }
 
-    get sourceNode(){
+    get sourceNode() {
         return this._sourceNode;
     }
 
-    get targetNode(){
+    get targetNode() {
         return this._targetNode;
     }
 
@@ -24,19 +24,19 @@ class CFGEdge {
     }
 
     get source() {
-        return this._source;
+        return this._sourceNode.id;
     }
 
     set source(value) {
-        this._source = value;
+        this._sourceId = value;
     }
 
     get target() {
-        return this._target;
+        return this._targetNode.id;
     }
 
     set target(value) {
-        this._target = value;
+        this._targetId = value;
     }
 }
 

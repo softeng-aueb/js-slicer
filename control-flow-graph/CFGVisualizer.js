@@ -39,11 +39,11 @@ class CFGVisualizer {
                 style="filled"];`;
 
         for (let node of cfg.nodes) {
-            digraph += `\t"${node._id}";\n`;
+            digraph += `\t"${node.label}";\n`;
         }
         for (let node of cfg.nodes) {
             for (let edge of node.edges) {
-                digraph += `\t"${edge.source}" -> "${edge.target}"`;
+                digraph += `\t"${edge.sourceNode.label}" -> "${edge.targetNode.label}"`;
                 let properties = [];
                 if (edge.condition === true || edge.condition === false) {
                     properties.push(`label="${edge.condition}"`);

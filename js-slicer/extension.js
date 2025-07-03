@@ -55,7 +55,7 @@ function activate(context) {
 
         try {
             let funcObj = parse(selectedFunction.code);
-            let cfg = CFGGenerator.generateCfg2(funcObj);
+            let cfg = CFGGenerator.generateCfg2(funcObj, true);
             selectedFunctionName = pickedFunctionItem.label;
             dotGraph = CFGVisualizer.writeCFGToDot(cfg);
 

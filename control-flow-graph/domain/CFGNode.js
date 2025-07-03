@@ -8,10 +8,17 @@ class CFGNode {
         this._statement = statement;
         this._edges = edges;
         this._parents = [];
-        this._parents.push(parent);
+        if (parent) this._parents.push(parent);
         this._nesting = 0;
-        this._breakNodes = [];
-        //this._branchNode = false
+        this._label = id;
+    }
+
+    get label() {
+        return this._label;
+    }
+
+    set label(name) {
+        this._label = name;
     }
 
     get nesting() {
@@ -35,16 +42,20 @@ class CFGNode {
         return this;
     }
 
-    isBreakStatement() {
-        return this._statement.type === astObjectTypes.BREAK_STATEMENT;
-    }
-
-    isReturnStatement() {
-        return this._edges.length == 0;
-    }
-
     hasStatementType(typeStr) {
         return this.statement.constructor.name === typeStr;
+    }
+
+    isJumpNode() {
+        //TODO: Add switch to this
+        let jumpNodeTypes = [
+            astObjectTypes.BREAK_STATEMENT,
+            astObjectTypes.CONTINUE_STATEMENT,
+            astObjectTypes.LOGICAL_EXPRESSION,
+            astObjectTypes.RETURN_STATEMENT,
+        ];
+        if (!this.statement) return false;
+        return this._edges.length >= 2 || jumpNodeTypes.includes(this.statement.constructor.name);
     }
 
     hasEdgeTo(targetNodeId) {
@@ -53,6 +64,14 @@ class CFGNode {
             return true;
         }
         return false;
+    }
+
+    nextNodes(visited) {
+        let result = [];
+        for (let e of this._edges) {
+            if (!visited.includes(e.targetNode)) result.push(e.targetNode);
+        }
+        return result.sort((a, b) => -(a.id - b.id));
     }
 
     addOutgoingEdge(targetNode, condition) {

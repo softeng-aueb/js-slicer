@@ -552,3 +552,125 @@ it("visitor v17", () => {
     expectHasEdge(cfg, 6, 10); // break to exit
     expectHasEdge(cfg, 8, 3); // continue to condition/var declaration
 });
+
+/**
+ * Should support lone do..while loops using Basic Blocks
+ */
+it("visitor v18", () => {
+    let code = `
+    function foo(a,b){  
+                //IDS:
+    let c = a + b; //1
+    let i = 0; //2
+    console.log(a); //3
+    a++; //4
+    do{
+        if(i>5){ //5
+            a--; //6
+            break; //7
+        }
+        else if(i==3){//8
+            a++; //9
+            b++; //10
+        }
+        else{
+            b++; //11
+        }
+        console.log(a+b); //12
+        i++; //13
+    }while(i<c)//14
+    return; //15
+
+    // BB Ids  :  1   2   3   4    5   6     7     8    9
+}   // BB Nodes: 1-4, 5, 6-7, 8, 9-10, 11, 12-14, 15, 16(exit)
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj, true);
+    showCFG(cfg, "CFGVisitor18");
+    expectHasEdge(cfg, 1, 2); // BB 1 -> 2
+    expectHasEdge(cfg, 2, 3); // BB 2 -> 3
+    expectHasEdge(cfg, 2, 4); // BB 2 -> 4
+    expectHasEdge(cfg, 3, 8); // BB 3 -> 8
+    expectHasEdge(cfg, 8, 9); // BB 8 -> 9
+    expectHasEdge(cfg, 4, 5); // BB 4 -> 5
+    expectHasEdge(cfg, 4, 6); // BB 4 -> 6
+    expectHasEdge(cfg, 5, 7); // BB 5 -> 7
+    expectHasEdge(cfg, 6, 7); // BB 6 -> 7
+    expectHasEdge(cfg, 7, 8); // BB 7 -> 8
+    expectHasEdge(cfg, 7, 2); // BB 7 -> 2
+});
+
+/**
+ * Should support for loops with a while loop as the last statement using Basic Blocks
+ */
+it("visitor v19", () => {
+    let code = `
+    function foo(a,b){
+    //IDS:  
+    let c = a + b;  // 1
+    console.log(c); // 2
+        //3      //4    // 11
+    for(let i=0; i<a+b; i++){
+        console.log(i); //5
+        while(a>b){ //6
+            if(a!=b){ //7
+                c--;  //8
+                break; //9
+            }
+            console.log(a); //10
+        }
+    }
+    // BB Ids  :  1   2  3  4  5   6   7   8    9
+}   // BB Nodes: 1-3, 4, 5, 6, 7, 8-9, 10, 11, 12(exit)
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj, true);
+    showCFG(cfg, "CFGVisitor19");
+    expectHasEdge(cfg, 1, 2); // BB 1 -> 2
+    expectHasEdge(cfg, 2, 3); // BB 2 -> 3
+    expectHasEdge(cfg, 2, 9); // BB 2 -> 9
+    expectHasEdge(cfg, 3, 4); // BB 3 -> 4
+    expectHasEdge(cfg, 4, 5); // BB 4 -> 5
+    expectHasEdge(cfg, 4, 8); // BB 4 -> 8
+    expectHasEdge(cfg, 5, 6); // BB 5 -> 6
+    expectHasEdge(cfg, 5, 7); // BB 5 -> 7
+    expectHasEdge(cfg, 7, 4); // BB 7 -> 4
+    expectHasEdge(cfg, 8, 2); // BB 8 -> 2
+});
+
+/**
+ * Should support a do..while loop with a nested for loop using Basic Blocks
+ */
+it("visitor v20", () => {
+    let code = `
+    function foo(a){  
+        let i = 0; //1
+        do{
+                     //2    //3   //7
+            for(let j = 0; j < 2; j++){ 
+                console.log(j); //4
+                if(j === 1){ //5
+                    break; //6
+                }
+            }
+            i++; //8
+        }while(i < a) //9
+        return; //10
+    // BB Ids  : 1  2  3   4   5  6   7   8    9
+}   // BB Nodes: 1, 2, 3, 4-5, 6, 7, 8-9, 10, 11(exit)
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj, true);
+    showCFG(cfg, "CFGVisitor20");
+    expectHasEdge(cfg, 1, 2); // BB 1 -> 2
+    expectHasEdge(cfg, 2, 3); // BB 2 -> 3
+    expectHasEdge(cfg, 3, 7); // BB 3 -> 7
+    expectHasEdge(cfg, 3, 4); // BB 3 -> 4
+    expectHasEdge(cfg, 4, 5); // BB 4 -> 5
+    expectHasEdge(cfg, 4, 6); // BB 4 -> 6
+    expectHasEdge(cfg, 5, 7); // BB 5 -> 7
+    expectHasEdge(cfg, 6, 3); // BB 6 -> 3
+    expectHasEdge(cfg, 7, 2); // BB 7 -> 2
+    expectHasEdge(cfg, 7, 8); // BB 7 -> 8
+    expectHasEdge(cfg, 8, 9); // BB 8 -> 9
+});

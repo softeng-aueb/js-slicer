@@ -32,6 +32,20 @@ class CFG {
         return fromNode.hasEdgeTo(to);
     }
 
+    isJumpTargetNode(node) {
+        return this.findIncomingEdges(node).length >= 2 || node.edges.length == 0 || node.parents.some((parentNode) => parentNode.isJumpNode());
+    }
+
+    findIncomingEdges(node) {
+        let incomingEdges = [];
+        for (let n of this._nodes) {
+            if (n.hasEdgeTo(node.id)) {
+                incomingEdges.push(n);
+            }
+        }
+        return incomingEdges;
+    }
+
     hasExitNode(nodeId) {
         let node = this.getNodeById(nodeId);
         if (!node) {

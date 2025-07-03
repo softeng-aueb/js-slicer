@@ -36,7 +36,7 @@ it("should support break from nested while loops", () => {
     // is located in output folder
     //showCFG(cfg, 'test-while')
     cfg.print();
-    expect(cfg.nodes.length).toBe(11);
+    expect(cfg.nodes.length).toBe(12); // 11 + 1 exit
     expectHasEdge(cfg, 2, 3);
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 8, 9); // inside nested while
@@ -67,7 +67,7 @@ it("should support break from nested for loops", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
-    expect(cfg.nodes.length).toBe(15);
+    expect(cfg.nodes.length).toBe(16); // 15 + 1 exit
     expectHasEdge(cfg, 3, 15); // outer loop exit
     expectHasEdge(cfg, 5, 15); // outer loop break flow
     expectHasEdge(cfg, 14, 3); // outer loop update flow
@@ -91,7 +91,7 @@ it("should support break statements", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
-    expect(cfg.nodes.length).toBe(7);
+    expect(cfg.nodes.length).toBe(8); // 7 + 1 exit
     expectHasEdge(cfg, 2, 3);
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 5, 7); // break control flow
@@ -113,11 +113,11 @@ it("should handle multiple returns", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
-    expect(cfg.nodes.length).toBe(6);
+    expect(cfg.nodes.length).toBe(7); // 6 + 1 exit
     expectHasEdge(cfg, 2, 4);
-    expect(cfg.getNodeById(3).isReturnStatement());
-    expect(cfg.getNodeById(5).isReturnStatement());
-    expect(cfg.getNodeById(6).isReturnStatement());
+    expect(cfg.getNodeById(3).statement.constructor.name == "ReturnStatement");
+    expect(cfg.getNodeById(5).statement.constructor.name == "ReturnStatement");
+    expect(cfg.getNodeById(6).statement.constructor.name == "ReturnStatement");
 });
 
 it("should generate cfg for for statements", () => {
@@ -136,7 +136,7 @@ it("should generate cfg for for statements", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
-    expect(cfg.nodes.length).toBe(9);
+    expect(cfg.nodes.length).toBe(10); // 9 + 1 exit
     expectHasEdge(cfg, 3, 4); // init to condition
     expectHasEdge(cfg, 4, 5); // condition to body or next stmt
     expectHasEdge(cfg, 4, 9);
@@ -163,7 +163,7 @@ it("should generate cfg for nested while statements", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
-    expect(cfg.nodes.length).toBe(10);
+    expect(cfg.nodes.length).toBe(11); // 10 + 1 exit
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 4, 5);
     expectHasEdge(cfg, 3, 10);
@@ -192,7 +192,7 @@ it("should generate cfg for while statements", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
-    expect(cfg.nodes.length).toBe(8);
+    expect(cfg.nodes.length).toBe(9); // 8 + 1 exit
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 6, 3);
     expectHasEdge(cfg, 7, 3);
@@ -216,7 +216,7 @@ it("should generate cfg for nested if statements", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
-    expect(cfg.nodes.length).toBe(8);
+    expect(cfg.nodes.length).toBe(9); // 8 + 1 exit
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 5, 6);
     expectHasEdge(cfg, 6, 7);
@@ -250,7 +250,7 @@ it("should generate cfg for if else if", () => {
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
     showCFG(cfg, "CFGGeneratorTestIfElseIf");
-    expect(cfg.nodes.length).toBe(14);
+    expect(cfg.nodes.length).toBe(15); //14 + 1 exit
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 3, 7);
     expectHasEdge(cfg, 7, 12);
@@ -278,7 +278,7 @@ it("should generate cfg for if then else", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     cfg.print();
-    expect(cfg.nodes.length).toBe(10);
+    expect(cfg.nodes.length).toBe(11); // 10 + 1 exit
     expectHasEdge(cfg, 3, 4);
     expectHasEdge(cfg, 3, 7);
     expectHasEdge(cfg, 6, 10);
@@ -299,7 +299,7 @@ it("should generate cfg for sequential statements", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CFGGeneratorTestSequentialStmts");
-    expect(cfg.nodes.length).toBe(7);
+    expect(cfg.nodes.length).toBe(8); // 7 + 1 exit
     expect(cfg.getNodeById(3).hasStatementType("UpdateExpression")).toBe(true);
     expect(cfg.hasEdge(1, 2)).toBe(true);
     expect(cfg.hasEdge(2, 3)).toBe(true);
