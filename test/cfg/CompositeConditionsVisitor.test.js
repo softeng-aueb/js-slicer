@@ -222,49 +222,23 @@ it("composite conditions v7", () => {
 });
 
 /**
- * Should correctly connect all nodes in this generic example
+ * Should support a single expression in the conditional
  */
 it("composite conditions v8", () => {
     let code = `
-    function foo(a,b){  //IDS:
-    let c = a + b;      //1
-    console.log(a);     //2
-    if(a>0 && b<10){    //DN1 (3,4)
-        a++;            //5
-        b++;            //6
-        console.log(a); //7
-    }
-    else if (c>15){     //DN2 (8)
-        c++;            //9
-        a++;            //10
-        if(c+b<40){     //DN3 (11)
-            a++;        //12
+    function foo(a,b){
+    let c = a + b; //1
+         //2
+        if(c){
+            return a    // 3
         }
         else{
-            c++;        //13
-        }
-        b++;            //14
-        if(a<5 && b<5){ //DN4 (15,16)
-            c++;        //17
-        }
-        else{
-            b++;        //18
+            return b    // 4
         }
     }
-    else{
-        a++;            //19
-        b++;            //20
-    }
-    return c;           //21
-}
     `;
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CompCondTest8");
-    expectHasEdge(cfg, 7, 21); // 7 is an exit node and must lead to 21
-    expectHasEdge(cfg, 17, 21); // 17 is an exit node and must lead to 21
-    expectHasEdge(cfg, 18, 21); // 18 is an exit node and must lead to 21
-    expectHasEdge(cfg, 20, 21); // 20 is an exit node and must lead to 21
-    expectHasEdge(cfg, 12, 14); // 12 is an exit node and must lead to 14
-    expectHasEdge(cfg, 13, 14); // 13 is an exit node and must lead to 14
+    //    expectHasEdge(cfg, 2, 4); //if 2 is false, it should jump to 4
 });

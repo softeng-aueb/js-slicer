@@ -1,3 +1,5 @@
+const { visit } = require("recast");
+
 class Identifier {
     constructor(name) {
         this._name = name;
@@ -11,6 +13,8 @@ class Identifier {
         this._name = value;
     }
 
-    accept(visitor) {}
+    accept(visitor) {
+        visitor.visitIdentifier(this);
+    }
 }
 module.exports = Identifier;

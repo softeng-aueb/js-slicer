@@ -11,8 +11,8 @@ class Literal {
         this._value = value;
     }
 
-    accept(visitor){
-        
+    accept(visitor) {
+        visitor.visitLiteral(this);
     }
 }
 module.exports = Literal;

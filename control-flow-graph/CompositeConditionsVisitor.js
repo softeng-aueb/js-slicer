@@ -3,6 +3,7 @@ const CFG = require("./domain/CFG");
 const UnaryExpression = require("../code-parser-module/domain/UnaryExpression");
 const CFGNode = require("./domain/CFGNode");
 const DecisionNode = require("./domain/DecisionNode");
+const { logicalExpressionParser } = require("../code-parser-module/helpers/AstObjectTypesParser");
 
 class CompositeConditionsVisitor {
     constructor(id, cfg, nesting = -1) {
@@ -187,8 +188,10 @@ class CompositeConditionsVisitor {
 
             reversePostOrderStack.push(stmt);
 
-            if (stmt._left) stack.push(stmt._left);
-            if (stmt._right) stack.push(stmt._right);
+            if (stmt instanceof LogicalExpression) {
+                if (stmt._left) stack.push(stmt._left);
+                if (stmt._right) stack.push(stmt._right);
+            }
         }
 
         return reversePostOrderStack;
@@ -255,7 +258,7 @@ class CompositeConditionsVisitor {
      */
 
     visitLogicalExpression() {
-        //skip
+        //never called, log exp are seperated into left, right, operators in relative lists
     }
 
     visitConditionalStatement(stmt) {
@@ -365,7 +368,7 @@ class CompositeConditionsVisitor {
      * ----- Visiting Leaf Statements -----
      */
     visitBinaryExpression(stmt) {
-        // Only keep logical binary expressions
+        // Only keep logical binary expressions, not left-right seperately
         if (this.validBinaryExpressionOperators.includes(stmt._operator)) {
             let node = new CFGNode(this._id++, null, stmt, [], null);
             this._postOrderNodeQueue.push(node);
@@ -381,17 +384,17 @@ class CompositeConditionsVisitor {
         this._postOrderNodeQueue.push(node);
     }
 
-    /**
-     * ----- Visiting others -----
-     */
-    visitLiteral() {
-        //skip
+    visitLiteral(stmt) {
+        let node = new CFGNode(this._id++, null, stmt, [], null);
+        this._postOrderNodeQueue.push(node);
     }
-    visitIdentifier() {
-        //skip
+    visitIdentifier(stmt) {
+        let node = new CFGNode(this._id++, null, stmt, [], null);
+        this._postOrderNodeQueue.push(node);
     }
-    visitMemberExpression() {
-        //skip
+    visitMemberExpression(stmt) {
+        let node = new CFGNode(this._id++, null, stmt, [], null);
+        this._postOrderNodeQueue.push(node);
     }
 }
 
