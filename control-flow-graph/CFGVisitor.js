@@ -11,7 +11,7 @@ const ContinueStatement = require("../code-parser-module/domain/ContinueStatemen
 const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 
 class CFGVisitor {
-    constructor(debug = true) {
+    constructor(debug = false) {
         this._cfg = new CFG();
         this._id = 1;
         this._parentStack = new Stack();
@@ -86,7 +86,7 @@ class CFGVisitor {
 
             exitNodes = stmt.accept(this);
 
-            if (exitNodes /*&& exitNodes.list.length > 0*/) {
+            if (exitNodes) {
                 this._parentStack.push(exitNodes);
             }
         }
@@ -278,6 +278,120 @@ class CFGVisitor {
         return conditionalExitsJoinNode;
     }
 
+    visitSwitchStatement(stmt, isCalledAsFirstOnDoWhile = false) {
+        this.visitSequentialStatement(stmt.discriminant);
+        let discriminant = this._parentStack.pop();
+        if (isCalledAsFirstOnDoWhile) {
+            this._doWhileLoopBackTargets.push(discriminant);
+        }
+
+        let currentBreakNodes = { breaks: [] };
+        this._loopJumpNodeRecords.push(currentBreakNodes);
+
+        let switchExitNode = new JoinNode();
+
+        let defaultCase; // locate the default case if exists
+        let lastCaseBeforeDefault; // locate and keep the last non default case for connecting with default case or exit node
+        let previousCase;
+
+        // ------- connect DN of cases -------
+        for (let c of stmt.cases) {
+            structuralParse(c, this);
+        }
+
+        // when there is only a default case in the statement
+        if (discriminant.edges.length === 0 && stmt.cases.length === 1 && defaultCase) {
+            this._parentStack.push(discriminant);
+            let defaultCaseBlock = this.visitBlockStatement(defaultCase.consequent);
+            switchExitNode.merge(defaultCaseBlock);
+        }
+        if (lastCaseBeforeDefault && !defaultCase) {
+            switchExitNode.merge(lastCaseBeforeDefault.test);
+        }
+
+        let groupNode = new JoinNode(); // collection of nodes that need to be connected to the next non empty case block
+        let currentBlock = new JoinNode();
+
+        for (let c of stmt.cases) {
+            caseBlockParse(c, this);
+        }
+
+        // swap edge conditions of last case block if default is above it
+        if (lastCaseBeforeDefault && defaultCase) {
+            let lastCaseIndex = stmt.cases.findIndex((c) => c === lastCaseBeforeDefault);
+            let defaultCaseIndex = stmt.cases.findIndex((c) => c === defaultCase);
+            if (defaultCaseIndex < lastCaseIndex) {
+                for (let edge of lastCaseBeforeDefault.test.getRoot().edges) {
+                    edge.condition = !edge.condition;
+                }
+            }
+        }
+
+        currentBreakNodes = this._loopJumpNodeRecords.pop();
+        let breakJoinNode = new JoinNode();
+        breakJoinNode.list = [...currentBreakNodes.breaks];
+
+        switchExitNode.merge(breakJoinNode);
+        switchExitNode.merge(groupNode);
+        return switchExitNode;
+
+        function caseBlockParse(c, visitor) {
+            if (c !== defaultCase) {
+                // connect previous hanging edges or non break blocks to current block through a join node
+                // only if current case has non empty block statement
+                if (c.consequent.stmts.length > 0) {
+                    groupNode.merge(c.test);
+                    visitor._parentStack.push(groupNode);
+                    currentBlock.merge(visitor.visitBlockStatement(c.consequent));
+                    groupNode.list = [];
+                    groupNode.merge(currentBlock);
+                    currentBlock.list = [];
+                }
+
+                // empty block statement, merge with previous similar hanging nodes
+                else {
+                    groupNode.merge(c.test);
+                }
+            } else if (c === defaultCase && lastCaseBeforeDefault) {
+                groupNode.merge(lastCaseBeforeDefault.test);
+
+                if (defaultCase.consequent.stmts.length > 0) {
+                    visitor._parentStack.push(groupNode);
+                    currentBlock.merge(visitor.visitBlockStatement(defaultCase.consequent));
+                    groupNode.list = [];
+                    groupNode.merge(currentBlock);
+                    currentBlock.list = [];
+                }
+            }
+        }
+
+        // connect each case's DN and create the control flow structure
+        function structuralParse(c, visitor) {
+            if (c.test) {
+                // convert case test to DN if non default
+                c.test = visitor.visitLogicalExpression(c.test, visitor.nesting);
+                lastCaseBeforeDefault = c;
+
+                if (previousCase) {
+                    // add false edge from previous non default case test to current test
+                    previousCase.test.getRoot().addOutgoingEdge(c.test.getRoot(), false);
+                    c.test.getRoot().addParent(previousCase.test.getRoot());
+                }
+                // connect discriminant to first non default case
+                else if (discriminant.edges.length === 0) {
+                    discriminant.addNextNode(c.test.getRoot());
+                }
+                previousCase = c;
+            } else {
+                defaultCase = c;
+            }
+        }
+    }
+
+    visitSwitchCase(stmt) {
+        //
+    }
+
     visitSequentialStatement(stmt) {
         let node = new CFGNode(this._id++, null, stmt, [], null);
 
@@ -296,14 +410,14 @@ class CFGVisitor {
 
     visitVariableDeclaration(stmt) {
         for (let i = 0; i < stmt.names.length; i++) {
-            this.visitIdentifier(stmt.names[i]);
+            this.visitSequentialStatement(stmt.names[i]);
             stmt.values[i].accept(this);
         }
     }
 
-    visitIdentifier(stmt) {
-        this.visitSequentialStatement(stmt);
-    }
+    visitIdentifier(stmt) {}
+
+    visitLiteral(stmt) {}
 
     visitBinaryExpression(stmt) {
         stmt.left.accept(this);

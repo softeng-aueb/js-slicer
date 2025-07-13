@@ -21,6 +21,8 @@ const AST_OBJECT_TYPES = {
     MEMBER_EXPRESSION: "MemberExpression",
     OBJECT_EXPRESSION: "ObjectExpression",
     RETURN_STATEMENT: "ReturnStatement",
+    SWITCH_STATEMENT: "SwitchStatement",
+    SWITCH_CASE: "SwitchCase",
     UNARY_EXPRESSION: "UnaryExpression",
     UPDATE_EXPRESSION: "UpdateExpression",
     VARIABLE_DECLARATION: "VariableDeclaration",

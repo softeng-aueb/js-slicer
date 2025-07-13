@@ -28,6 +28,54 @@ function parse(str) {
  */
 
 /**
+ * Should correctly connect all nodes in this generic example
+ */
+it("visitor v0", () => {
+    let code = `
+    function foo(a,b){  //IDS:
+    let c = a + b;      //1
+    console.log(a);     //2
+    if(a>0 && b<10){    //DN1 (3,4)
+        a++;            //5
+        b++;            //6
+        console.log(a); //7
+    }
+    else if (c>15){     //DN2 (8)
+        c++;            //9
+        a++;            //10
+        if(c+b<40){     //DN3 (11)
+            a++;        //12
+        }
+        else{
+            c++;        //13
+        }
+        b++;            //14
+        if(a<5 && b<5){ //DN4 (15,16)
+            c++;        //17
+        }
+        else{
+            b++;        //18
+        }
+    }
+    else{
+        a++;            //19
+        b++;            //20
+    }
+    return c;           //21
+}
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj);
+    showCFG(cfg, "CFGVisitor0");
+    expectHasEdge(cfg, 7, 21); // 7 is an exit node and must lead to 21
+    expectHasEdge(cfg, 17, 21); // 17 is an exit node and must lead to 21
+    expectHasEdge(cfg, 18, 21); // 18 is an exit node and must lead to 21
+    expectHasEdge(cfg, 20, 21); // 20 is an exit node and must lead to 21
+    expectHasEdge(cfg, 12, 14); // 12 is an exit node and must lead to 14
+    expectHasEdge(cfg, 13, 14); // 13 is an exit node and must lead to 14
+});
+
+/**
  * Should support lone for loops
  */
 it("visitor v1", () => {
@@ -673,4 +721,140 @@ it("visitor v20", () => {
     expectHasEdge(cfg, 7, 2); // BB 7 -> 2
     expectHasEdge(cfg, 7, 8); // BB 7 -> 8
     expectHasEdge(cfg, 8, 9); // BB 8 -> 9
+});
+
+/**
+ * Should support switch statements without default case
+ */
+it("visitor v21", () => {
+    let code = `
+    function foo(a){  
+        let i = 0; //1
+        switch(a){ //2
+                //3
+            case 1:{
+                i++; //6
+            }
+                //4 
+            case 2:{
+                c++; //7
+                break;  //8  
+            }
+                //5
+            case !i:{
+                i++; //9
+                break; //10  
+            }
+        }
+    
+} 
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj, false);
+    showCFG(cfg, "CFGVisitor21");
+    expectHasEdge(cfg, 2, 3);
+    expectHasEdge(cfg, 3, 6);
+    expectHasEdge(cfg, 3, 4);
+    expectHasEdge(cfg, 6, 7);
+    expectHasEdge(cfg, 4, 7);
+    expectHasEdge(cfg, 4, 5);
+    expectHasEdge(cfg, 8, 11);
+    expectHasEdge(cfg, 5, 9);
+    expectHasEdge(cfg, 5, 11);
+    expectHasEdge(cfg, 10, 11);
+});
+
+/**
+ * Should support switch statements with a default case as the last case
+ */
+it("visitor v22", () => {
+    let code = `
+    function foo(a){  
+        let i = 0; //1
+        switch(a){ //2
+                //3
+            case 1:
+                //4 
+            case 2:{
+                c++; //5
+                break; //6  
+            }
+            default:{
+                console.log(i); //7    
+            }
+        }
+    
+} 
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj, false);
+    showCFG(cfg, "CFGVisitor22");
+    expectHasEdge(cfg, 2, 3);
+    expectHasEdge(cfg, 3, 5);
+    expectHasEdge(cfg, 3, 4);
+    expectHasEdge(cfg, 6, 8);
+    expectHasEdge(cfg, 4, 7);
+    expectHasEdge(cfg, 4, 5);
+    expectHasEdge(cfg, 5, 6);
+    expectHasEdge(cfg, 7, 8);
+});
+
+/**
+ * Should support switch statements with a default case not as the last case
+ */
+it("visitor v23", () => {
+    let code = `
+    function foo(a){  
+        let i = 0; //1
+        switch(a){ //2
+                //3
+            case 1:{
+                
+            }
+
+            default:{
+                console.log(i); //5    
+            }
+                //4
+            case 2:{
+                c++; //6
+                break; //7  
+            }
+
+        }
+    
+} 
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj, false);
+    showCFG(cfg, "CFGVisitor23");
+    expectHasEdge(cfg, 2, 3);
+    expectHasEdge(cfg, 3, 4);
+    expectHasEdge(cfg, 7, 8);
+    expectHasEdge(cfg, 4, 6);
+    expectHasEdge(cfg, 4, 5);
+    expectHasEdge(cfg, 5, 6);
+    expectHasEdge(cfg, 3, 5);
+});
+
+/**
+ * Should support switch statements with just a default case
+ */
+it("visitor v24", () => {
+    let code = `
+    function foo(a){  
+        let i = 0; //1
+        switch(a){ //2
+            default:{
+                console.log(i); //3    
+            }
+        }
+    
+} 
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj, false);
+    showCFG(cfg, "CFGVisitor24");
+    expectHasEdge(cfg, 2, 3);
+    expectHasEdge(cfg, 3, 4);
 });

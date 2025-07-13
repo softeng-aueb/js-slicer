@@ -103,8 +103,6 @@ class CFGGenerator {
             }
         }
 
-        //TODO: Fix algorithm for creation order, issues with v18 and v19
-
         CFGGenerator.correctBasicBlockOrdering(BBcfg);
         return BBcfg;
     }

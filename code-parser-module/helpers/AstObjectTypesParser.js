@@ -22,6 +22,8 @@ const DoWhileStatement = require("../domain/DoWhileStatement");
 const ContinueStatement = require("../domain/ContinueStatement");
 const BlockStatement = require("../domain/BlockStatement");
 const ForEachStatement = require("../domain/ForEachStatement");
+const SwitchStatement = require("../domain/SwitchStatement");
+const SwitchCase = require("../domain/SwitchCase");
 
 class AstObjectTypesParser {
     static expressionParser(expressionAstObj) {
@@ -29,7 +31,10 @@ class AstObjectTypesParser {
             throw new Error(`Missing required param. Was given ${expressionAstObj}`);
         }
 
-        //TODO: Add more cases
+        if (expressionAstObj.type === AST_OBJECT_TYPES.SWITCH_STATEMENT) {
+            return this.switchStatementParser(expressionAstObj);
+        }
+
         if (expressionAstObj.type === AST_OBJECT_TYPES.ARRAY_EXPRESSION) {
             return this.arrayExpressionParser(expressionAstObj);
         }
@@ -86,6 +91,47 @@ class AstObjectTypesParser {
         throw new Error("Unrecognized expression " + expressionAstObj.type);
     }
 
+    static switchStatementParser(switchStatementAstObj) {
+        if (!switchStatementAstObj || switchStatementAstObj.type !== AST_OBJECT_TYPES.SWITCH_STATEMENT)
+            throw new Error(`Not a ${AST_OBJECT_TYPES.SWITCH_STATEMENT} object.`);
+
+        let discriminant = this.expressionParser(switchStatementAstObj.discriminant);
+
+        let cases = switchStatementAstObj.cases.flatMap((statement) => {
+            return this.switchCaseParser(statement, switchStatementAstObj.discriminant);
+        });
+
+        return new SwitchStatement(discriminant, cases);
+    }
+
+    static switchCaseParser(switchCaseAstObj, discriminant) {
+        if (!switchCaseAstObj || switchCaseAstObj.type !== AST_OBJECT_TYPES.SWITCH_CASE)
+            throw new Error(`Not a ${AST_OBJECT_TYPES.SWITCH_CASE} object.`);
+
+        let test =
+            switchCaseAstObj.test !== null
+                ? this.expressionParser({
+                      type: AST_OBJECT_TYPES.BINARY_EXPRESSION,
+                      left: discriminant,
+                      right: switchCaseAstObj.test,
+                      operator: "===",
+                  })
+                : null;
+        let consequent = switchCaseAstObj.consequent;
+
+        if (consequent.length > 0) {
+            consequent =
+                switchCaseAstObj.consequent[0].type === AST_OBJECT_TYPES.BlockStatement
+                    ? consequent
+                    : { type: AST_OBJECT_TYPES.BLOCK_STATEMENT, body: consequent };
+        } else {
+            consequent = { type: AST_OBJECT_TYPES.BLOCK_STATEMENT, body: consequent };
+        }
+        consequent = this.blockStatementParser(consequent);
+
+        return new SwitchCase(test, consequent);
+    }
+
     static memberExpressionParser(memberExpressionAstObj) {
         if (!memberExpressionAstObj || memberExpressionAstObj.type !== AST_OBJECT_TYPES.MEMBER_EXPRESSION) {
             throw new Error(`Not a ${AST_OBJECT_TYPES.MEMBER_EXPRESSION} object.`);
@@ -114,7 +160,6 @@ class AstObjectTypesParser {
             return AstObjectTypesParser.expressionParser(value.id);
         });
 
-        //let value = this.expressionParser(variableDeclarationAstObj.declarations.find((val) => val.init).init);
         let values = _.map(variableDeclarationAstObj.declarations, function (declaration) {
             if (declaration.init !== undefined) {
                 return declaration.init === null ? null : AstObjectTypesParser.expressionParser(declaration.init);

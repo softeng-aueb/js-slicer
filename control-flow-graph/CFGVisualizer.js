@@ -1,4 +1,5 @@
 const fs = require("fs");
+const BasicBlock = require("./domain/BasicBlock");
 
 class CFGVisualizer {
     constructor(cfg, filename) {
@@ -39,7 +40,12 @@ class CFGVisualizer {
                 style="filled"];`;
 
         for (let node of cfg.nodes) {
-            digraph += `\t"${node.label}";\n`;
+            if (node instanceof BasicBlock) {
+                let label = node.nodes.map((n) => n.id).join("\\l") + "\\l";
+                digraph += `\t"${node._id}" [label="${label}"];\n`;
+            } else {
+                digraph += `\t"${node.label}";\n`;
+            }
         }
         for (let node of cfg.nodes) {
             for (let edge of node.edges) {
