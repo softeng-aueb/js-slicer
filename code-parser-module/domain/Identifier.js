@@ -16,5 +16,8 @@ class Identifier {
     accept(visitor) {
         visitor.visitIdentifier(this);
     }
+    asText() {
+        return this._name;
+    }
 }
 module.exports = Identifier;

@@ -37,11 +37,12 @@ class CFGVisualizer {
                 colorscheme="blues4", 
                 color="2", 
                 fontcolor="4", 
-                style="filled"];`;
+                style="filled",
+                shape=box];`;
 
         for (let node of cfg.nodes) {
             if (node instanceof BasicBlock) {
-                let label = node.nodes.map((n) => n.id).join("\\l") + "\\l";
+                let label = node.nodes.map((n) => n.statement?.asText() ?? "EXIT").join("\\\\l") + "\\\\l";
                 digraph += `\t"${node._id}" [label="${label}"];\n`;
             } else {
                 digraph += `\t"${node.label}";\n`;

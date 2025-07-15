@@ -2,12 +2,10 @@ const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
 class FunctionCall {
-
     constructor(name, args) {
         this._name = name;
         this._args = args;
     }
-
 
     get name() {
         return this._name;
@@ -35,15 +33,22 @@ class FunctionCall {
             } else if (!(arg instanceof Identifier) && !(arg instanceof Literal)) {
                 varArray = varArray.concat(arg.getUsedVariableNames());
             }
-
         }
         return varArray;
     }
 
     accept(visitor) {
-        visitor.visitFunctionCall(this)
+        visitor.visitFunctionCall(this);
     }
 
+    asText() {
+        let str = "";
+        for (let arg of this._args) {
+            str = str.concat(arg.asText(), ", ");
+        }
+        str = str.slice(0, -2);
+        return `${this._name.asText()}(${str})`;
+    }
 }
 
 module.exports = FunctionCall;

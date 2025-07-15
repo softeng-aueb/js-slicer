@@ -409,10 +409,11 @@ class CFGVisitor {
     }
 
     visitVariableDeclaration(stmt) {
-        for (let i = 0; i < stmt.names.length; i++) {
-            this.visitSequentialStatement(stmt.names[i]);
-            stmt.values[i].accept(this);
-        }
+        // for (let i = 0; i < stmt.names.length; i++) {
+        //     this.visitSequentialStatement(stmt.names[i]);
+        //     stmt.values[i].accept(this);
+        // }
+        this.visitSequentialStatement(stmt);
     }
 
     visitIdentifier(stmt) {}

@@ -1,6 +1,3 @@
-const Identifier = require("./Identifier");
-const Literal = require("./Literal");
-
 class ArrayExpression {
     constructor(elements) {
         this._elements = elements;
@@ -16,6 +13,15 @@ class ArrayExpression {
 
     accept(visitor) {
         visitor.visitArrayExpression(this);
+    }
+
+    asText() {
+        let str = "";
+        for (let elem of this._elements) {
+            str = str.concat(elem.asText(), ", ");
+        }
+        str = str.slice(0, -2);
+        return `[${str}]`;
     }
 }
 

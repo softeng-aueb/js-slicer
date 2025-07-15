@@ -1,8 +1,7 @@
 const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
-class ObjectExpression{
-
+class ObjectExpression {
     constructor(properties) {
         this._properties = properties;
     }
@@ -15,12 +14,21 @@ class ObjectExpression{
         this._properties = value;
     }
 
-    getUsedVariableNames(){
+    getUsedVariableNames() {
         let varArray = [];
-        for(let i in this._properties){
+        for (let i in this._properties) {
             varArray = varArray.concat(this._properties[i].getUsedVariableNames());
         }
-        return varArray;    }
+        return varArray;
+    }
 
+    asText() {
+        let str = "";
+        for (let prop of this._properties) {
+            str = str.concat(prop.asText(), ", ");
+        }
+        str = str.slice(0, -2);
+        return `{${str}}`;
+    }
 }
 module.exports = ObjectExpression;

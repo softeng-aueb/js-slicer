@@ -1,12 +1,11 @@
 const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
-class UnaryExpression{
-    constructor(argument,operator) {
+class UnaryExpression {
+    constructor(argument, operator) {
         this._argument = argument;
         this._operator = operator;
     }
-
 
     get argument() {
         return this._argument;
@@ -24,20 +23,24 @@ class UnaryExpression{
         this._operator = value;
     }
 
-    getUsedVariableNames(){
-        let varArray = []
-        if(this._argument instanceof Identifier){
+    getUsedVariableNames() {
+        let varArray = [];
+        if (this._argument instanceof Identifier) {
             varArray.push(this._argument._name);
             //return varArray
-        }else if(!(this._argument instanceof Identifier) && !(this._argument instanceof Literal)){
+        } else if (!(this._argument instanceof Identifier) && !(this._argument instanceof Literal)) {
             varArray = varArray.concat(this.argument.getUsedVariableNames());
         }
 
         return varArray;
     }
 
-    accept(visitor){
-        visitor.visitUnaryExpression(this)
+    accept(visitor) {
+        visitor.visitUnaryExpression(this);
+    }
+
+    asText() {
+        return `${this._operator}${this._argument.asText()}`;
     }
 }
 

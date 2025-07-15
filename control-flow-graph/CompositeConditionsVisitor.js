@@ -3,7 +3,6 @@ const CFG = require("./domain/CFG");
 const UnaryExpression = require("../code-parser-module/domain/UnaryExpression");
 const CFGNode = require("./domain/CFGNode");
 const DecisionNode = require("./domain/DecisionNode");
-const { logicalExpressionParser } = require("../code-parser-module/helpers/AstObjectTypesParser");
 
 class CompositeConditionsVisitor {
     constructor(id, cfg, nesting = -1) {

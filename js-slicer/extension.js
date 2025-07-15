@@ -1,18 +1,9 @@
-// The module 'vscode' contains the VS Code extensibility API
-
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
 const CFGGenerator = require("../control-flow-graph/CFGGenerator");
 const Parser = require("../code-parser-module/Parser");
 const CFGVisualizer = require("../control-flow-graph/CFGVisualizer");
 const acorn = require("acorn");
 const acornWalk = require("acorn-walk");
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-
-/**
- * @param {vscode.ExtensionContext} context
- */
 
 // This function will be run once after the extension is loaded
 function activate(context) {
@@ -74,6 +65,7 @@ function activate(context) {
         }
 
         function getWebviewContent(dot) {
+            const escapedDot = dot.replace(/`/g, "\\`");
             return `
                 <!DOCTYPE html>
                 <html lang="en">
@@ -89,7 +81,7 @@ function activate(context) {
                 <body>
                 <div id="graph"></div>
                 <script>
-                    const dot = \`${dot.replace(/`/g, "\\`")}\`;
+                    const dot = \`${escapedDot}\`;
                     const viz = new Viz();
                     viz.renderSVGElement(dot)
                         .then(svg => {

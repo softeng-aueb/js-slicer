@@ -14,5 +14,9 @@ class ContinueStatement {
     accept(visitor) {
         visitor.visitContinueStatement(this);
     }
+
+    asText() {
+        return "continue";
+    }
 }
 module.exports = ContinueStatement;

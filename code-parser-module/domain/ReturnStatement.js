@@ -14,18 +14,20 @@ class ReturnStatement {
         this._value = value;
     }
 
-    getUsedVariableNames(){
-        if(this._value instanceof Identifier)
-            return [this._value._name];
+    getUsedVariableNames() {
+        if (this._value instanceof Identifier) return [this._value._name];
 
-        if(this._value instanceof Literal)
-            return [];
+        if (this._value instanceof Literal) return [];
 
         return this._value.getUsedVariableNames();
     }
 
-    accept(visitor){
-        visitor.visitReturnStatement(this) 
+    accept(visitor) {
+        visitor.visitReturnStatement(this);
+    }
+
+    asText() {
+        return "return";
     }
 }
 module.exports = ReturnStatement;

@@ -1,13 +1,12 @@
 const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
-class UpdateExpression{
-    constructor(argument,prefix,operator) {
+class UpdateExpression {
+    constructor(argument, prefix, operator) {
         this._argument = argument;
         this._prefix = prefix;
         this._operator = operator;
     }
-
 
     get argument() {
         return this._argument;
@@ -33,10 +32,10 @@ class UpdateExpression{
         this._operator = value;
     }
 
-    getUsedVariableNames(){
+    getUsedVariableNames() {
         let varArray = [];
         //We use only the right part of the assignment as the left is not a variable use but an assignment.
-        if(this._argument instanceof Identifier){
+        if (this._argument instanceof Identifier) {
             varArray.push(this._argument._name);
         }
         // else if(!(this._prefix instanceof Identifier) && !(this._prefix instanceof Literal)){
@@ -45,13 +44,15 @@ class UpdateExpression{
         return varArray;
     }
 
-
-    getDefinedVariable(){
+    getDefinedVariable() {
         return this._argument._name;
     }
 
-    accept(visitor){
-        visitor.visitUpdateExpression(this)
+    accept(visitor) {
+        visitor.visitUpdateExpression(this);
+    }
+    asText() {
+        return this._prefix ? `${this._operator}${this._argument.asText()}` : `${this._argument.asText()}${this._operator}`;
     }
 }
 

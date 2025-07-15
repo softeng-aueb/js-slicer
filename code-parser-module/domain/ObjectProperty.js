@@ -2,11 +2,10 @@ const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
 class ObjectProperty {
-    constructor(key,value) {
+    constructor(key, value) {
         this._key = key;
         this._value = value;
     }
-
 
     get key() {
         return this._key;
@@ -24,14 +23,16 @@ class ObjectProperty {
         this._value = value;
     }
 
-    getUsedVariableNames(){
-        if(this._value instanceof Identifier)
-            return [this._value._name];
+    getUsedVariableNames() {
+        if (this._value instanceof Identifier) return [this._value._name];
 
-        if(this._value instanceof Literal)
-            return [];
+        if (this._value instanceof Literal) return [];
 
         return this._value.getUsedVariableNames();
+    }
+
+    asText() {
+        return `${this._key.asText()}: ${this._value.asText()}`;
     }
 }
 module.exports = ObjectProperty;

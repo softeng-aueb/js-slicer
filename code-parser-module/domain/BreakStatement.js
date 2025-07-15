@@ -14,5 +14,9 @@ class BreakStatement {
     accept(visitor) {
         visitor.visitBreakStatement(this);
     }
+
+    asText() {
+        return "break";
+    }
 }
 module.exports = BreakStatement;
