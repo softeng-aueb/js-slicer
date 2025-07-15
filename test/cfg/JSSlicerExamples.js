@@ -1,14 +1,16 @@
-const a = function (a, b) {
-    let c = a + b * 2;
-    for (let a of d) {
-        if (a >= b) {
-            console.log(a);
-        } else {
-            console.log(b);
+const obj = {
+    a: (a, b) => {
+        let c = a + b * 2;
+        for (let a of d) {
+            if (a >= b) {
+                console.log(a);
+            } else {
+                console.log(b);
+            }
+            c--;
         }
-        c--;
-    }
-    return a + b;
+        return a + b;
+    },
 };
 
 function foo(a, b) {

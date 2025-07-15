@@ -10,7 +10,7 @@ function activate(context) {
     let dotGraph, selectedFunctionName;
     const extensionUri = context.extensionUri;
     // main functionality of the extension
-    const disposable = vscode.commands.registerCommand("js-slicer.generateCFG", async function () {
+    const generateCFGDisposable = vscode.commands.registerCommand("js-slicer.generateCFG", async function (qualifiedNameFromHover) {
         const editor = vscode.window.activeTextEditor;
 
         if (!editor) {
@@ -19,7 +19,6 @@ function activate(context) {
         }
 
         const code = editor.document.getText();
-
         const allFunctions = findAllFunctionsWithMetadata(code);
 
         if (allFunctions.length === 0) {
@@ -27,46 +26,89 @@ function activate(context) {
             return;
         }
 
-        // Generate QuickPickItems with better labeling for duplicates
-        const itemListShown = allFunctions.map((f) => ({
-            label: `${f.name}  (Line ${f.line})`,
-            description: `${f.type}`,
-            detail: f.preview.slice(0, 80) + (f.code.length > 80 ? "..." : ""),
-            func: f,
-        }));
+        let selectedFunction;
 
-        const pickedFunctionItem = await vscode.window.showQuickPick(itemListShown, {
-            placeHolder: "Select a function to generate CFG",
-            matchOnDetail: true,
-        });
+        if (typeof qualifiedNameFromHover === "string") {
+            selectedFunction = allFunctions.find((f) => f.qualifiedName === qualifiedNameFromHover);
+            if (!selectedFunction) {
+                vscode.window.showErrorMessage(`Function "${qualifiedNameFromHover}" not found.`);
+                return;
+            }
+        } else {
+            const itemListShown = allFunctions.map((f) => ({
+                label: `${f.name}  (Line ${f.line})`,
+                description: f.qualifiedName,
+                detail: f.preview.slice(0, 80) + (f.code.length > 80 ? "..." : ""),
+                func: f,
+            }));
 
-        if (!pickedFunctionItem) return;
+            const pickedFunctionItem = await vscode.window.showQuickPick(itemListShown, {
+                placeHolder: "Select a function to generate CFG",
+                matchOnDetail: true,
+            });
 
-        const selectedFunction = pickedFunctionItem.func;
+            if (!pickedFunctionItem) return;
+
+            selectedFunction = pickedFunctionItem.func;
+        }
 
         try {
-            let funcObj = parse(selectedFunction.code);
-            let cfg = CFGGenerator.generateCfg2(funcObj, true);
-            selectedFunctionName = pickedFunctionItem.label;
-            dotGraph = CFGVisualizer.writeCFGToDot(cfg);
+            const funcObj = parse(selectedFunction.code);
+            const cfg = CFGGenerator.generateCfg2(funcObj, true);
+            const dotGraph = CFGVisualizer.writeCFGToDot(cfg);
 
-            showGraph(dotGraph);
+            showGraph(dotGraph, selectedFunction.qualifiedName);
         } catch (e) {
             vscode.window.showErrorMessage(`Error parsing function: ${e.message || e}`);
         }
 
-        // show graph to user using webview panels
-        function showGraph(dot) {
-            const panel = vscode.window.createWebviewPanel("jsSlicerGraph", `JS-Slicer CFG -> ${selectedFunctionName}`, vscode.ViewColumn.Two, {
+        function showGraph(dot, titleName) {
+            const panel = vscode.window.createWebviewPanel("jsSlicerGraph", `JS-Slicer CFG → ${titleName}`, vscode.ViewColumn.Two, {
                 enableScripts: true,
             });
 
             panel.webview.html = getWebviewContent(dot);
         }
+    });
 
-        function getWebviewContent(dot) {
-            const escapedDot = dot.replace(/`/g, "\\`");
-            return `
+    const hoverProvider = vscode.languages.registerHoverProvider("javascript", {
+        provideHover(document, position) {
+            const code = document.getText();
+            const allFunctions = findAllFunctionsWithMetadata(code);
+
+            const offset = document.offsetAt(position);
+            const hoveredFunction = allFunctions.find((f) => {
+                const start = document.offsetAt(new vscode.Position(f.line - 1, 0));
+                const end = start + f.code.length;
+                return offset >= start && offset <= end;
+            });
+
+            if (!hoveredFunction) return;
+
+            const commandUri = `command:js-slicer.generateCFG?${encodeURIComponent(JSON.stringify(hoveredFunction.qualifiedName))}`;
+            const markdown = new vscode.MarkdownString(`[Generate CFG for **${hoveredFunction.qualifiedName}**](${commandUri})`);
+            markdown.isTrusted = true;
+
+            return new vscode.Hover(markdown);
+        },
+    });
+
+    context.subscriptions.push(generateCFGDisposable);
+    context.subscriptions.push(hoverProvider);
+}
+
+// This method is called when your extension is deactivated
+function deactivate() {}
+
+/**
+ *
+ *  Helper Functions
+ *
+ */
+
+function getWebviewContent(dot) {
+    const escapedDot = dot.replace(/`/g, "\\`");
+    return `
                 <!DOCTYPE html>
                 <html lang="en">
                 <head>
@@ -97,76 +139,129 @@ function activate(context) {
                 </body>
                 </html>
                 `;
+}
+
+// Find all functions in the current open js file and return them with some extra details
+function findAllFunctionsWithMetadata(code) {
+    const ast = acorn.parse(code, {
+        ecmaVersion: 2020,
+        locations: true,
+        sourceType: "module",
+    });
+
+    const functions = [];
+
+    acornWalk.fullAncestor(ast, (node, ancestors) => {
+        let name = null;
+        let type = null;
+        let funcNode = null;
+
+        if (node.type === "FunctionDeclaration" && node.id?.name) {
+            name = node.id.name;
+            type = "FunctionDeclaration";
+            funcNode = node;
+        } else if (
+            node.type === "VariableDeclarator" &&
+            node.id?.name &&
+            ["FunctionExpression", "ArrowFunctionExpression"].includes(node.init?.type)
+        ) {
+            name = node.id.name;
+            type = node.init.type;
+            funcNode = node.init;
+        } else if (
+            (node.type === "MethodDefinition" || node.type === "Property") &&
+            node.key?.name &&
+            ["FunctionExpression", "ArrowFunctionExpression"].includes(node.value?.type)
+        ) {
+            name = node.key.name;
+            type = "Class/Object Method";
+            funcNode = node.value;
+        }
+
+        if (name && funcNode?.start != null && funcNode?.end != null) {
+            const snippet = code.slice(funcNode.start, funcNode.end);
+            const preview = snippet.split("\n")[0].trim();
+
+            // Build qualified path
+            const qualified = getQualifiedName(ancestors, name);
+
+            let finalCode = snippet;
+            if (type === "FunctionExpression" && !funcNode.id) {
+                finalCode = snippet.replace(/^function\s*\(/, `function ${name}(`);
+            }
+
+            functions.push({
+                name,
+                qualifiedName: qualified,
+                code: finalCode,
+                type,
+                preview,
+                line: funcNode.loc?.start?.line || 0,
+            });
         }
     });
 
-    // Find all functions in the current open js file and return them with some extra details
-    function findAllFunctionsWithMetadata(code) {
-        const ast = acorn.parse(code, {
-            ecmaVersion: 2020,
-            locations: true,
-            sourceType: "module",
-        });
-
-        const functions = [];
-
-        acornWalk.fullAncestor(ast, (node, ancestors) => {
-            let name = null;
-            let type = null;
-            let funcNode = null;
-
-            if (node.type === "FunctionDeclaration" && node.id?.name) {
-                name = node.id.name;
-                type = "FunctionDeclaration";
-                funcNode = node;
-            } else if (
-                node.type === "VariableDeclarator" &&
-                node.id?.name &&
-                ["FunctionExpression", "ArrowFunctionExpression"].includes(node.init?.type)
-            ) {
-                name = node.id.name;
-                type = node.init.type;
-                funcNode = node.init;
-            } else if (
-                (node.type === "MethodDefinition" || node.type === "Property") &&
-                node.key?.name &&
-                ["FunctionExpression", "ArrowFunctionExpression"].includes(node.value?.type)
-            ) {
-                name = node.key.name;
-                type = "Class/Object Method";
-                funcNode = node.value;
-            }
-
-            if (name && funcNode?.start != null && funcNode?.end != null) {
-                let snippet = code.slice(funcNode.start, funcNode.end);
-
-                // Inject name into anonymous function expressions for our parser to properly work
-                if (type === "FunctionExpression" && !funcNode.id) {
-                    snippet = snippet.replace(/^function\s*\(/, `function ${name}(`);
-                }
-                const preview = snippet.split("\n")[0].trim();
-                functions.push({
-                    name,
-                    code: snippet,
-                    type,
-                    preview,
-                    line: funcNode.loc?.start?.line || 0,
-                });
-            }
-        });
-
-        return functions;
-    }
-
-    function parse(str) {
-        return Parser.parse(str.split("\n"));
-    }
-
-    context.subscriptions.push(disposable);
+    return functions;
 }
 
-// This method is called when your extension is deactivated
-function deactivate() {}
+function parse(str) {
+    return Parser.parse(str.split("\n"));
+}
+
+function getQualifiedName(ancestors, name) {
+    const names = [];
+
+    for (const node of ancestors) {
+        if (node.type === "FunctionDeclaration" && node.id?.name) {
+            names.push(node.id.name);
+        } else if (node.type === "VariableDeclarator" && node.id?.name) {
+            names.push(node.id.name);
+        } else if (node.type === "MethodDefinition" && node.key?.name) {
+            names.push(node.key.name);
+        } else if (node.type === "Property" && node.key?.name) {
+            names.push(node.key.name);
+        } else if (node.type === "ClassDeclaration" && node.id?.name) {
+            names.push(node.id.name);
+        }
+    }
+
+    // Only add `name` if it's not already the last one in the path
+    if (names.length === 0 || names[names.length - 1] !== name) {
+        names.push(name);
+    }
+
+    return names.join(".");
+}
+
+// Used to determine if a function declaration is being hovered
+function walkAST(node, visit) {
+    if (!node || typeof node !== "object") return;
+
+    visit(node);
+
+    for (const key in node) {
+        const child = node[key];
+        if (Array.isArray(child)) {
+            child.forEach((c) => walkAST(c, visit));
+        } else {
+            walkAST(child, visit);
+        }
+    }
+}
+
+function isWithinLoc(position, loc) {
+    const line = position.line + 1; // Acorn lines are 1-based
+    const char = position.character;
+
+    const start = loc.start;
+    const end = loc.end;
+
+    if (line < start.line || line > end.line) return false;
+    if (line === start.line && char < start.column) return false;
+    if (line === end.line && char > end.column) return false;
+
+    return true;
+}
 
 module.exports = {
     activate,

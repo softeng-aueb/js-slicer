@@ -9,13 +9,15 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onLanguage:javascript"
+    ],
     "main": "./extension.js",
     "contributes": {
         "commands": [
             {
                 "command": "js-slicer.generateCFG",
-                "title": "Generate CFG"
+                "title": "JS-Slicer CFG"
             }
         ],
         "menus": {
