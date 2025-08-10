@@ -9,12 +9,12 @@ class CompositeConditionsVisitor {
         this._cfg = !cfg ? new CFG() : cfg;
         this._id = id;
         this._postOrderNodeQueue = [];
-        this._specialNodes = [];
+        this._compositeNodes = [];
         // Used to filter out non logical Binary Expressions
         this.validBinaryExpressionOperators = [">", "<", "==", "===", "<=", ">=", "!="];
         // Lists for nodes that should be placed in the true/false final node
-        this._addToTrue = [];
-        this._addToFalse = [];
+        this._trueEdges = [];
+        this._falseEdges = [];
         this._nesting = nesting;
     }
 
@@ -23,7 +23,7 @@ class CompositeConditionsVisitor {
      *  */
     visit(root, returnDecisionNode = true) {
         if (!root) {
-            console.log("Invalid Condition tree root!");
+            console.log(`Invalid Condition tree root: ${root}`);
             return;
         }
 
@@ -32,10 +32,6 @@ class CompositeConditionsVisitor {
         let operatorQueue = this.createOperatorsQueue(root);
 
         this.createPostOrderNodeQueue(reversePostOrderStack);
-
-        /**
-         * Use the post order queue and create the condition's full CFG
-         */
 
         let CFGNodeLastVisited = [];
 
@@ -73,13 +69,13 @@ class CompositeConditionsVisitor {
                     }
                     // If no other next node found on the same level or higher, connect with True node
                     if (!nextNode) {
-                        if (this._specialNodes.includes(previousNode)) {
-                            this._addToTrue.push(...previousNode.true);
+                        if (this._compositeNodes.includes(previousNode)) {
+                            this._trueEdges.push(...previousNode.true);
                         } else {
-                            this._addToTrue.push(previousNode);
+                            this._trueEdges.push(previousNode);
                         }
                     } else {
-                        if (this._specialNodes.includes(previousNode)) {
+                        if (this._compositeNodes.includes(previousNode)) {
                             for (const n of previousNode.true) {
                                 n.addOutgoingEdge(nextNode, previousNode.isNegated ? false : true);
                                 nextNode.addParent(n);
@@ -93,7 +89,7 @@ class CompositeConditionsVisitor {
                     CFGNodeLastVisited.push(currentNode);
 
                     // If false, connect to current node
-                    if (this._specialNodes.includes(previousNode)) {
+                    if (this._compositeNodes.includes(previousNode)) {
                         for (const n of previousNode.false) {
                             n.addOutgoingEdge(currentNode, previousNode.isNegated ? true : false);
                             currentNode.addParent(n);
@@ -122,11 +118,11 @@ class CompositeConditionsVisitor {
                     }
                     // If no other next node found on the same level or higher, connect with False node
                     if (!nextNode) {
-                        if (this._specialNodes.includes(previousNode)) {
-                            this._addToFalse.push(...previousNode.false);
-                        } else this._addToFalse.push(previousNode);
+                        if (this._compositeNodes.includes(previousNode)) {
+                            this._falseEdges.push(...previousNode.false);
+                        } else this._falseEdges.push(previousNode);
                     } else {
-                        if (this._specialNodes.includes(previousNode)) {
+                        if (this._compositeNodes.includes(previousNode)) {
                             for (const n of previousNode.false) {
                                 n.addOutgoingEdge(nextNode, previousNode.isNegated ? true : false);
                                 nextNode.addParent(n);
@@ -140,7 +136,7 @@ class CompositeConditionsVisitor {
                     CFGNodeLastVisited.push(currentNode);
 
                     // If true, connect to current node
-                    if (this._specialNodes.includes(previousNode)) {
+                    if (this._compositeNodes.includes(previousNode)) {
                         for (const n of previousNode.true) {
                             n.addOutgoingEdge(currentNode, previousNode.isNegated ? false : true);
                             currentNode.addParent(n);
@@ -155,20 +151,20 @@ class CompositeConditionsVisitor {
             // If current node is the final expression in the condition
             // it decides the final outcome of the condition
             if (operatorQueue.length === 0) {
-                if (this._specialNodes.includes(currentNode)) {
-                    this._addToTrue.push(...currentNode.true);
-                    this._addToFalse.push(...currentNode.false);
+                if (this._compositeNodes.includes(currentNode)) {
+                    this._trueEdges.push(...currentNode.true);
+                    this._falseEdges.push(...currentNode.false);
                 } else {
-                    this._addToFalse.push(currentNode);
-                    this._addToTrue.push(currentNode);
+                    this._falseEdges.push(currentNode);
+                    this._trueEdges.push(currentNode);
                 }
                 this._cfg.addNode(currentNode);
             }
         }
 
         return returnDecisionNode
-            ? new DecisionNode(treeRootNode, this._addToTrue, this._addToFalse, this._nesting)
-            : { id: this._id, true: this._addToTrue, false: this._addToFalse, root: treeRootNode };
+            ? new DecisionNode(treeRootNode, this._trueEdges, this._falseEdges, this._nesting)
+            : { id: this._id, true: this._trueEdges, false: this._falseEdges, root: treeRootNode };
     }
 
     /**
@@ -271,7 +267,7 @@ class CompositeConditionsVisitor {
         // connect it correctly with the previous in the queue node.
         // It is also used to connect the resulting final true/false nodes with the correct next nodes.
         let conditionRootNode = condResult.root;
-        this._specialNodes.push(conditionRootNode);
+        this._compositeNodes.push(conditionRootNode);
         this._postOrderNodeQueue.push(conditionRootNode);
 
         // Create sub CFGs if then or alternate nodes are composite logical expressions
@@ -342,7 +338,7 @@ class CompositeConditionsVisitor {
 
         let argRootNode = visitResult.root;
 
-        this._specialNodes.push(argRootNode);
+        this._compositeNodes.push(argRootNode);
         this._postOrderNodeQueue.push(argRootNode);
 
         argRootNode.isNegated = isNegated;

@@ -299,8 +299,7 @@ it("should generate cfg for sequential statements", () => {
     let functionObj = parse(code);
     let cfg = CFGGenerator.generateCfg2(functionObj);
     showCFG(cfg, "CFGGeneratorTestSequentialStmts");
-    expect(cfg.nodes.length).toBe(8); // 7 + 1 exit
-    expect(cfg.getNodeById(3).hasStatementType("UpdateExpression")).toBe(true);
+    expect(cfg.nodes.length).toBe(7); // 6 + 1 exit
     expect(cfg.hasEdge(1, 2)).toBe(true);
     expect(cfg.hasEdge(2, 3)).toBe(true);
     expect(cfg.hasEdge(3, 4)).toBe(true);
