@@ -302,6 +302,7 @@ it("visitor v7", () => {
     expectHasEdge(cfg, 6, 8); // 6 leads to 8
     expectHasEdge(cfg, 7, 4); // 7 leads to 4
     expectHasEdge(cfg, 2, 9); // 2 leads to 9 if false
+    expectHasEdge(cfg, 5, 7);
 });
 
 /**
@@ -857,4 +858,40 @@ it("visitor v24", () => {
     showCFG(cfg, "CFGVisitor24");
     expectHasEdge(cfg, 2, 3);
     expectHasEdge(cfg, 3, 4);
+});
+
+/**
+ * Should support switch statements with a default case as the last case using Basic Blocks
+ */
+it("visitor v25", () => {
+    let code = `
+    function foo(a){  
+        let i = 0; //1
+        switch(a){ //2
+                //3
+            case 1:
+                //4 
+            case 2:{
+                c++; //5
+                break; //6  
+            }
+            default:{
+                console.log(i); //7    
+            }
+        }
+
+        // BBIds:  1   2   3   4  5
+        // BBs  : 1-3, 4, 5-6, 7, 8(exit)
+    
+} 
+    `;
+    let functionObj = parse(code);
+    let cfg = CFGGenerator.generateCfg2(functionObj, true);
+    showCFG(cfg, "CFGVisitor25");
+    expectHasEdge(cfg, 1, 2);
+    expectHasEdge(cfg, 1, 3);
+    expectHasEdge(cfg, 2, 3);
+    expectHasEdge(cfg, 2, 4);
+    expectHasEdge(cfg, 4, 5);
+    expectHasEdge(cfg, 3, 5);
 });

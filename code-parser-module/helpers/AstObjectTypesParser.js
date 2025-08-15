@@ -96,7 +96,7 @@ class AstObjectTypesParser {
             throw new Error(`Not a ${AST_OBJECT_TYPES.SWITCH_STATEMENT} object.`);
 
         let discriminant = this.expressionParser(switchStatementAstObj.discriminant);
-
+        discriminant.uniqueText = `switch(${discriminant.name})`;
         let cases = switchStatementAstObj.cases.flatMap((statement) => {
             return this.switchCaseParser(statement, switchStatementAstObj.discriminant);
         });
@@ -361,6 +361,10 @@ class AstObjectTypesParser {
             loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_OF_STATEMENT ||
             loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_IN_STATEMENT
         ) {
+            let rightSide = this.expressionParser(loopStatementAstObj.right);
+            condition.uniqueText = `${condition.asText()} ${
+                loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_IN_STATEMENT ? "in" : "of"
+            } ${rightSide.asText()}`;
             return new ForEachStatement(loopStatementAstObj.type, condition, body);
         }
     }

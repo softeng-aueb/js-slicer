@@ -47,12 +47,12 @@ class CFGNode {
     }
 
     isJumpNode() {
-        //TODO: Add switch to this
         let jumpNodeTypes = [
             astObjectTypes.BREAK_STATEMENT,
             astObjectTypes.CONTINUE_STATEMENT,
             astObjectTypes.LOGICAL_EXPRESSION,
             astObjectTypes.RETURN_STATEMENT,
+            astObjectTypes.SWITCH_STATEMENT,
         ];
         if (!this.statement) return false;
         return this._edges.length >= 2 || jumpNodeTypes.includes(this.statement.constructor.name);

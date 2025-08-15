@@ -6,10 +6,15 @@ class VariableDeclaration {
         this._type = type;
         this._names = names;
         this._values = values;
+        this._uniqueText;
     }
 
     get type() {
         return this._type;
+    }
+
+    get uniqueText() {
+        return this._uniqueText;
     }
 
     set type(value) {
@@ -32,6 +37,10 @@ class VariableDeclaration {
         this._values = values;
     }
 
+    set uniqueText(text) {
+        this._uniqueText = text;
+    }
+
     getUsedVariableNames() {
         return this._values;
     }
@@ -45,6 +54,10 @@ class VariableDeclaration {
     }
 
     asText() {
+        // unique text is used when a variable declaration is used in foreach loops
+        // where normally it is not shown with context (shown without any indication of where it originates)
+        if (this._uniqueText) return this._uniqueText;
+
         let index = 0;
         let str = "";
         while (index < this.values.length) {

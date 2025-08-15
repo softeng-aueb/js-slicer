@@ -27,7 +27,7 @@ class ReturnStatement {
     }
 
     asText() {
-        return "return";
+        return `return ${this._value ? this._value.asText() : ""}`;
     }
 }
 module.exports = ReturnStatement;

@@ -13,25 +13,30 @@ const obj = {
     },
 };
 
-function foo(a, b) {
-    //IDS:
-    let c = a + b; //1
-    console.log(a); //2
-    //      3         4     13
-    for (let i = 0; i < c; i++) {
-        //5
-        if (i > 5) {
-            a--; //6
-            break; //7
-        }
-        //8
-        else if (i == 3) {
-            a++; //9
-            continue; //10
+let generic = (a, b) => {
+    let c = a + b;
+    console.log(a);
+    if (a > 0 && b < 10) {
+        a++;
+        b++;
+        console.log(a);
+    } else if (c > 15) {
+        c++;
+        a++;
+        if (c + b < 40) {
+            a++;
         } else {
-            b++; //11
+            c++;
         }
-        console.log(a + b); //12
+        b++;
+        if (a < 5 && b < 5) {
+            c++;
+        } else {
+            b++;
+        }
+    } else {
+        a++;
+        b++;
     }
-    return; //14
-}
+    return c;
+};

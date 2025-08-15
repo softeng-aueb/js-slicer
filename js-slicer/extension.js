@@ -9,7 +9,7 @@ const acornWalk = require("acorn-walk");
 function activate(context) {
     let dotGraph, selectedFunctionName;
     const extensionUri = context.extensionUri;
-    // main functionality of the extension
+    // menu picking mode
     const generateCFGDisposable = vscode.commands.registerCommand("js-slicer.generateCFG", async function (qualifiedNameFromHover) {
         const editor = vscode.window.activeTextEditor;
 
@@ -71,6 +71,7 @@ function activate(context) {
         }
     });
 
+    // function hover mode
     const hoverProvider = vscode.languages.registerHoverProvider("javascript", {
         provideHover(document, position) {
             const code = document.getText();
@@ -97,7 +98,6 @@ function activate(context) {
     context.subscriptions.push(hoverProvider);
 }
 
-// This method is called when your extension is deactivated
 function deactivate() {}
 
 /**
