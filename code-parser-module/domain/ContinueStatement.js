@@ -1,4 +1,4 @@
-class BreakStatement {
+class ContinueStatement {
     constructor(label) {
         this._label = label;
     }
@@ -12,11 +12,11 @@ class BreakStatement {
     }
 
     accept(visitor) {
-        visitor.visitBreakStatement(this);
+        visitor.visitContinueStatement(this);
     }
 
     asText() {
-        return "break";
+        return "continue";
     }
 }
-module.exports = BreakStatement;
+module.exports = ContinueStatement;

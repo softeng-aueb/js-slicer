@@ -2,16 +2,19 @@ const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
 class VariableDeclaration {
-
-    constructor(type,names,value) {
+    constructor(type, names, values) {
         this._type = type;
         this._names = names;
-        this._value = value;
+        this._values = values;
+        this._uniqueText;
     }
-
 
     get type() {
         return this._type;
+    }
+
+    get uniqueText() {
+        return this._uniqueText;
     }
 
     set type(value) {
@@ -26,32 +29,49 @@ class VariableDeclaration {
         this._names = value;
     }
 
-    get value() {
-        return this._value;
+    get values() {
+        return this._values;
     }
 
-    set value(value) {
-        this._value = value;
+    set values(values) {
+        this._values = values;
     }
 
-    getUsedVariableNames(){
-        if(this._value instanceof Identifier)
-            return [this._value._name];
-
-        if(this._value instanceof Literal)
-            return [];
-
-        return this._value.getUsedVariableNames();
+    set uniqueText(text) {
+        this._uniqueText = text;
     }
 
-    getDefinedVariable(){
+    getUsedVariableNames() {
+        return this._values;
+    }
+
+    getDefinedVariable() {
         return this._names;
     }
 
-    accept(visitor){
+    accept(visitor) {
         visitor.visitVariableDeclaration(this);
     }
 
+    asText() {
+        // unique text is used when a variable declaration is used in foreach loops
+        // where normally it is not shown with context (shown without any indication of where it originates)
+        if (this._uniqueText) return this._uniqueText;
+
+        let index = 0;
+        let str = "";
+        while (index < this.values.length) {
+            str += `${this._names[index].asText()}`;
+            if (this.values[index]) {
+                str += ` = ${this.values[index].asText()}`;
+            }
+            if (index + 1 !== this.values.length) {
+                str += `, `;
+            }
+            index++;
+        }
+        return `${this._type} ${str}`;
+    }
 }
 
 module.exports = VariableDeclaration;

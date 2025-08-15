@@ -1,13 +1,12 @@
 const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
-class BinaryExpression{
-    constructor(left,right,operator) {
+class BinaryExpression {
+    constructor(left, right, operator) {
         this._left = left;
         this._right = right;
         this._operator = operator;
     }
-
 
     get left() {
         return this._left;
@@ -33,27 +32,30 @@ class BinaryExpression{
         this._operator = value;
     }
 
-    getUsedVariableNames(){
-        let varArray = []
-        if(this._left instanceof Identifier){
+    getUsedVariableNames() {
+        let varArray = [];
+        if (this._left instanceof Identifier) {
             varArray.push(this._left._name);
             //return varArray
-        }else if(!(this._left instanceof Identifier) && !(this._left instanceof Literal)){
+        } else if (!(this._left instanceof Identifier) && !(this._left instanceof Literal)) {
             varArray = varArray.concat(this.left.getUsedVariableNames());
         }
 
-        if(this._right instanceof Identifier){
+        if (this._right instanceof Identifier) {
             varArray.push(this._right._name);
             // return varArray
-        }else if(!(this._right instanceof Identifier) && !(this._right instanceof Literal)){
+        } else if (!(this._right instanceof Identifier) && !(this._right instanceof Literal)) {
             varArray = varArray.concat(this._right.getUsedVariableNames());
         }
 
         return varArray;
     }
 
-    accept(visitor){
-        visitor.visitBinaryExpression(this)
+    accept(visitor) {
+        visitor.visitBinaryExpression(this);
+    }
+    asText() {
+        return `${this._left.asText()} ${this._operator} ${this._right.asText()}`;
     }
 }
 

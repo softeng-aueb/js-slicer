@@ -2,65 +2,94 @@ const astObjectTypes = require("../../code-parser-module/constants/astObjectType
 const CFGEdge = require("./CFGEdge");
 
 class CFGNode {
-
-    constructor(id,executionCondition,statement,edges, parent) {
+    constructor(id, executionCondition, statement, edges, parent) {
         this._id = id;
-        this._executionCondition = executionCondition
+        this._executionCondition = executionCondition;
         this._statement = statement;
         this._edges = edges;
         this._parents = [];
-        this._parents.push(parent)
-        this._nesting = 0
-        this._breakNodes = []
-        //this._branchNode = false
+        if (parent) this._parents.push(parent);
+        this._nesting = 0;
+        this._label = id;
     }
 
-
-    get nesting(){
-        return this._nesting
+    get label() {
+        return this._label;
     }
 
-    set nesting(value){
-        this._nesting = value
+    set label(name) {
+        this._label = name;
     }
 
-    isBreakStatement(){
-        return this._statement.type === astObjectTypes.BREAK_STATEMENT;
+    get nesting() {
+        return this._nesting;
     }
 
-    isReturnStatement(){
-        return this._edges.length == 0
+    set nesting(value) {
+        this._nesting = value;
     }
 
-    hasStatementType(typeStr){
+    addNextNode(node) {
+        this.addOutgoingEdge(node.getRoot());
+        node.getRoot().addParent(this);
+    }
+
+    hasDanglingEdges() {
+        return false;
+    }
+
+    getRoot() {
+        return this;
+    }
+
+    hasStatementType(typeStr) {
         return this.statement.constructor.name === typeStr;
     }
 
-    hasEdgeTo(targetNodeId){
-        let result = this.edges.filter(e => e.target === targetNodeId);
-        if (result && result.length > 0){
-            return true
+    isJumpNode() {
+        let jumpNodeTypes = [
+            astObjectTypes.BREAK_STATEMENT,
+            astObjectTypes.CONTINUE_STATEMENT,
+            astObjectTypes.LOGICAL_EXPRESSION,
+            astObjectTypes.RETURN_STATEMENT,
+            astObjectTypes.SWITCH_STATEMENT,
+        ];
+        if (!this.statement) return false;
+        return this._edges.length >= 2 || jumpNodeTypes.includes(this.statement.constructor.name);
+    }
+
+    hasEdgeTo(targetNodeId) {
+        let result = this.edges.filter((e) => e.target === targetNodeId);
+        if (result && result.length > 0) {
+            return true;
         }
-        return false
+        return false;
     }
 
-    addOutgoingEdge(targetNode, condition){
-        //console.log(`Adding edge to ${targetNode.id}`)
-        let edge = new CFGEdge(this.id, targetNode.id, condition, 
-            this, targetNode);
-        this.edges.push(edge)
+    nextNodes(visited) {
+        let result = [];
+        for (let e of this._edges) {
+            if (!visited.includes(e.targetNode)) result.push(e.targetNode);
+        }
+        return result.sort((a, b) => -(a.id - b.id));
     }
 
-    get parents(){
+    addOutgoingEdge(targetNode, condition) {
+        //console.log(`Adding edge from ${this._id} to ${targetNode.id} with condition: ${condition}`);
+        let edge = new CFGEdge(this.id, targetNode.id, condition, this, targetNode);
+        this.edges.push(edge);
+    }
+
+    get parents() {
         return this._parents;
     }
 
-    set parents(value){
-        this._parents = value
+    set parents(value) {
+        this._parents = value;
     }
 
-    addParent(parent){
-        this._parents.push(parent)
+    addParent(parent) {
+        this._parents.push(parent);
     }
 
     get id() {
@@ -95,19 +124,22 @@ class CFGNode {
         this._edges = value;
     }
 
-    isDependantNode (cfg) {
-        return cfg.find(node =>  node._edges.find(edge => edge._condition === true && edge._target === this._id));
+    isDependantNode(cfg) {
+        return cfg.find((node) => node._edges.find((edge) => edge._condition === true && edge._target === this._id));
     }
 
-    dominatesNode(paths,node){
-        if(this._id === node._id){
+    isExitNode() {
+        return this._edges.length === 0;
+    }
+
+    dominatesNode(paths, node) {
+        if (this._id === node._id) {
             return true;
         }
-        if(this._id !== node._id && paths.every(path => path.includes(this._id))){
+        if (this._id !== node._id && paths.every((path) => path.includes(this._id))) {
             return true;
         }
         return false;
-
     }
 }
 module.exports = CFGNode;
