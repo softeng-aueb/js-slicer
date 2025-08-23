@@ -7,7 +7,6 @@ const ReturnStatement = require("../domain/ReturnStatement");
 const ConditionalStatement = require("../domain/ConditionalStatement");
 const Literal = require("../domain/Literal");
 const AssignmentStatement = require("../domain/AssignmentStatement");
-const _ = require("lodash");
 const LogicalExpression = require("../domain/LogicalExpression");
 const FunctionCall = require("../domain/FunctionCall");
 const ObjectExpression = require("../domain/ObjectExpression");
@@ -24,6 +23,10 @@ const BlockStatement = require("../domain/BlockStatement");
 const ForEachStatement = require("../domain/ForEachStatement");
 const SwitchStatement = require("../domain/SwitchStatement");
 const SwitchCase = require("../domain/SwitchCase");
+const FunctionDeclaration = require("../domain/FunctionDeclaration");
+const FunctionExpression = require("../domain/FunctionExpression");
+const ArrowFunctionExpression = require("../domain/ArrowFunctionExpression");
+const AssignmentPattern = require("../domain/AssignmentPattern");
 
 class AstObjectTypesParser {
     static expressionParser(expressionAstObj) {
@@ -31,64 +34,86 @@ class AstObjectTypesParser {
             throw new Error(`Missing required param. Was given ${expressionAstObj}`);
         }
 
-        if (expressionAstObj.type === AST_OBJECT_TYPES.SWITCH_STATEMENT) {
-            return this.switchStatementParser(expressionAstObj);
-        }
+        switch (expressionAstObj.type) {
+            case AST_OBJECT_TYPES.ARROW_FUNCTION_EXPRESSION:
+                return this.arrowFunctionExpressionParser(expressionAstObj);
 
-        if (expressionAstObj.type === AST_OBJECT_TYPES.ARRAY_EXPRESSION) {
-            return this.arrayExpressionParser(expressionAstObj);
-        }
-        if (expressionAstObj.type === AST_OBJECT_TYPES.BREAK_STATEMENT) {
-            return this.breakStatementParser(expressionAstObj);
-        }
-        if (expressionAstObj.type === AST_OBJECT_TYPES.CONTINUE_STATEMENT) {
-            return this.continueStatementParser(expressionAstObj);
-        }
+            case AST_OBJECT_TYPES.FUNCTION_EXPRESSION:
+                return this.functionExpressionParser(expressionAstObj);
 
-        if (
-            expressionAstObj.type === AST_OBJECT_TYPES.WHILE_STATEMENT ||
-            expressionAstObj.type === AST_OBJECT_TYPES.DO_WHILE_STATEMENT ||
-            expressionAstObj.type === AST_OBJECT_TYPES.FOR_STATEMENT ||
-            expressionAstObj.type === AST_OBJECT_TYPES.FOR_OF_STATEMENT ||
-            expressionAstObj.type === AST_OBJECT_TYPES.FOR_IN_STATEMENT
-        ) {
-            return this.loopStatementParser(expressionAstObj);
-        }
-        if (expressionAstObj.type === AST_OBJECT_TYPES.VARIABLE_DECLARATION) {
-            return this.variableDeclarationsParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.UNARY_EXPRESSION) {
-            return this.unaryExpressionParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.BINARY_EXPRESSION) {
-            return this.binaryExpressionParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION) {
-            return this.conditionalStatementParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.LOGICAL_EXPRESSION) {
-            return this.logicalExpressionParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.IDENTIFIER) {
-            return this.identifierParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.LITERAL) {
-            return this.literalParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.CALL_EXPRESSION) {
-            return this.callExpressionParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION) {
-            return this.assignmentExpressionParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.UPDATE_EXPRESSION) {
-            return this.updateExpressionParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.EXPRESSION_STATEMENT) {
-            return this.expressionStatementParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.BLOCK_STATEMENT) {
-            return this.blockStatementParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.IF_STATEMENT) {
-            return this.ifStatementParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.RETURN_STATEMENT) {
-            return this.returnStatementParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.OBJECT_EXPRESSION) {
-            return this.objectExpressionParser(expressionAstObj);
-        } else if (expressionAstObj.type === AST_OBJECT_TYPES.MEMBER_EXPRESSION) {
-            return this.memberExpressionParser(expressionAstObj);
-        }
+            case AST_OBJECT_TYPES.FUNCTION_DECLARATION:
+                return this.functionDeclarationParser(expressionAstObj);
 
-        throw new Error("Unrecognized expression " + expressionAstObj.type);
+            case AST_OBJECT_TYPES.SWITCH_STATEMENT:
+                return this.switchStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.ARRAY_EXPRESSION:
+                return this.arrayExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.BREAK_STATEMENT:
+                return this.breakStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.CONTINUE_STATEMENT:
+                return this.continueStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.WHILE_STATEMENT:
+            case AST_OBJECT_TYPES.DO_WHILE_STATEMENT:
+            case AST_OBJECT_TYPES.FOR_STATEMENT:
+            case AST_OBJECT_TYPES.FOR_OF_STATEMENT:
+            case AST_OBJECT_TYPES.FOR_IN_STATEMENT:
+                return this.loopStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.VARIABLE_DECLARATION:
+                return this.variableDeclarationsParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.UNARY_EXPRESSION:
+                return this.unaryExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.BINARY_EXPRESSION:
+                return this.binaryExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.CONDITIONAL_EXPRESSION:
+                return this.conditionalStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.LOGICAL_EXPRESSION:
+                return this.logicalExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.IDENTIFIER:
+                return this.identifierParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.LITERAL:
+                return this.literalParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.CALL_EXPRESSION:
+                return this.callExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.ASSIGNMENT_EXPRESSION:
+                return this.assignmentExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.UPDATE_EXPRESSION:
+                return this.updateExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.EXPRESSION_STATEMENT:
+                return this.expressionStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.BLOCK_STATEMENT:
+                return this.blockStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.IF_STATEMENT:
+                return this.ifStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.RETURN_STATEMENT:
+                return this.returnStatementParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.OBJECT_EXPRESSION:
+                return this.objectExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.MEMBER_EXPRESSION:
+                return this.memberExpressionParser(expressionAstObj);
+
+            default:
+                throw new Error(`Unsupported AST node type: ${expressionAstObj.type}`);
+        }
     }
 
     static switchStatementParser(switchStatementAstObj) {
@@ -117,16 +142,8 @@ class AstObjectTypesParser {
                       operator: "===",
                   })
                 : null;
-        let consequent = switchCaseAstObj.consequent;
+        let consequent = { type: AST_OBJECT_TYPES.BLOCK_STATEMENT, body: switchCaseAstObj.consequent };
 
-        if (consequent.length > 0) {
-            consequent =
-                switchCaseAstObj.consequent[0].type === AST_OBJECT_TYPES.BlockStatement
-                    ? consequent
-                    : { type: AST_OBJECT_TYPES.BLOCK_STATEMENT, body: consequent };
-        } else {
-            consequent = { type: AST_OBJECT_TYPES.BLOCK_STATEMENT, body: consequent };
-        }
         consequent = this.blockStatementParser(consequent);
 
         return new SwitchCase(test, consequent);
@@ -156,15 +173,11 @@ class AstObjectTypesParser {
 
         let kind = variableDeclarationAstObj.kind;
 
-        let varNames = _.map(variableDeclarationAstObj.declarations, function (value) {
-            return AstObjectTypesParser.expressionParser(value.id);
-        });
+        let varNames = variableDeclarationAstObj.declarations.map((d) => AstObjectTypesParser.expressionParser(d.id));
 
-        let values = _.map(variableDeclarationAstObj.declarations, function (declaration) {
-            if (declaration.init !== undefined) {
-                return declaration.init === null ? null : AstObjectTypesParser.expressionParser(declaration.init);
-            }
-        });
+        let values = variableDeclarationAstObj.declarations.map((d) =>
+            d.init === undefined ? undefined : d.init === null ? null : AstObjectTypesParser.expressionParser(d.init)
+        );
 
         return new VariableDeclaration(kind, varNames, values);
     }
@@ -326,20 +339,6 @@ class AstObjectTypesParser {
     }
 
     static loopStatementParser(loopStatementAstObj) {
-        if (
-            !loopStatementAstObj ||
-            (loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_STATEMENT &&
-                loopStatementAstObj.type !== AST_OBJECT_TYPES.WHILE_STATEMENT &&
-                loopStatementAstObj.type !== AST_OBJECT_TYPES.DO_WHILE_STATEMENT &&
-                loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_OF_STATEMENT &&
-                loopStatementAstObj.type !== AST_OBJECT_TYPES.FOR_IN_STATEMENT)
-        ) {
-            throw new Error(
-                `Not a ${AST_OBJECT_TYPES.FOR_STATEMENT} or  ${AST_OBJECT_TYPES.WHILE_STATEMENT}
-                 or ${AST_OBJECT_TYPES.DO_WHILE_STATEMENT} or ${AST_OBJECT_TYPES.FOR_OF_STATEMENT} object.`
-            );
-        }
-
         let condition;
         if (loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_OF_STATEMENT || loopStatementAstObj.type === AST_OBJECT_TYPES.FOR_IN_STATEMENT) {
             condition = this.expressionParser(loopStatementAstObj.left);
@@ -367,6 +366,46 @@ class AstObjectTypesParser {
             } ${rightSide.asText()}`;
             return new ForEachStatement(loopStatementAstObj.type, condition, body);
         }
+    }
+
+    static functionDeclarationParser(functionDeclarationObj) {
+        let id = this.expressionParser(functionDeclarationObj.id);
+        let params = functionDeclarationObj.params.flatMap((param) => {
+            return this.expressionParser(param);
+        });
+        let body = this.expressionParser(functionDeclarationObj.body);
+        let isAsync = functionDeclarationObj.async;
+        let isGenerator = functionDeclarationObj.generator;
+
+        return new FunctionDeclaration(id, params, body, isAsync, isGenerator);
+    }
+
+    static functionExpressionParser(functionExpressionObj) {
+        let params = functionExpressionObj.params.flatMap((param) => {
+            return this.expressionParser(param);
+        });
+        let body = this.expressionParser(functionExpressionObj.body);
+        let isAsync = functionExpressionObj.async;
+        let isGenerator = functionExpressionObj.generator;
+
+        return new FunctionExpression(params, body, isAsync, isGenerator);
+    }
+
+    static arrowFunctionExpressionParser(arrowFunctionExpressionObj) {
+        let params = arrowFunctionExpressionObj.params.flatMap((param) => {
+            return this.expressionParser(param);
+        });
+        let body = this.expressionParser(arrowFunctionExpressionObj.body);
+        let isAsync = arrowFunctionExpressionObj.async;
+
+        return new ArrowFunctionExpression(params, body, isAsync);
+    }
+
+    static assignmentPatternParser(assignmentPatternObj) {
+        let left = this.expressionParser(assignmentPatternObj.left);
+        let right = this.expressionParser(assignmentPatternObj.right);
+
+        return new AssignmentPattern(left, right);
     }
 }
 

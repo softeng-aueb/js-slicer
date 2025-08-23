@@ -51,7 +51,6 @@ class AssignmentStatement {
         visitor.visitAssignmentStatement(this);
     }
 
-    // TODO: continue with asText logic
     asText() {
         return `${this._left.asText()} ${this._operator} ${this._right.asText()}`;
     }

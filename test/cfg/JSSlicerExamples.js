@@ -34,6 +34,7 @@ let switchFunc = (a, c, b) => {
 };
 
 const sayHello = function (name) {
+    const test = async function (a, b = true) {};
     return "Hello " + name;
 };
 
