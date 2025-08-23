@@ -141,7 +141,6 @@ function getWebviewContent(dot) {
                 `;
 }
 
-// Find all functions in the current open js file and return them with some extra details
 function findAllFunctionsWithMetadata(code) {
     const ast = acorn.parse(code, {
         ecmaVersion: 2020,
@@ -182,7 +181,6 @@ function findAllFunctionsWithMetadata(code) {
             const snippet = code.slice(funcNode.start, funcNode.end);
             const preview = snippet.split("\n")[0].trim();
 
-            // Build qualified path
             const qualified = getQualifiedName(ancestors, name);
 
             let finalCode = snippet;
@@ -225,42 +223,11 @@ function getQualifiedName(ancestors, name) {
         }
     }
 
-    // Only add `name` if it's not already the last one in the path
     if (names.length === 0 || names[names.length - 1] !== name) {
         names.push(name);
     }
 
     return names.join(".");
-}
-
-// Used to determine if a function declaration is being hovered
-function walkAST(node, visit) {
-    if (!node || typeof node !== "object") return;
-
-    visit(node);
-
-    for (const key in node) {
-        const child = node[key];
-        if (Array.isArray(child)) {
-            child.forEach((c) => walkAST(c, visit));
-        } else {
-            walkAST(child, visit);
-        }
-    }
-}
-
-function isWithinLoc(position, loc) {
-    const line = position.line + 1; // Acorn lines are 1-based
-    const char = position.character;
-
-    const start = loc.start;
-    const end = loc.end;
-
-    if (line < start.line || line > end.line) return false;
-    if (line === start.line && char < start.column) return false;
-    if (line === end.line && char > end.column) return false;
-
-    return true;
 }
 
 module.exports = {

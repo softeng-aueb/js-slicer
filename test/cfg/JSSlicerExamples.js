@@ -1,6 +1,9 @@
 const obj = {
     a: (a, b) => {
         let c = a + b * 2;
+        b = (a, b) => {
+            return b;
+        };
         for (let a of d) {
             if (a >= b) {
                 console.log(a);
@@ -11,6 +14,27 @@ const obj = {
         }
         return a + b;
     },
+};
+
+let switchFunc = (a, c, b) => {
+    switch (a) {
+        case 2: {
+            console.log(a);
+        }
+        case 4: {
+            console.log(b);
+        }
+        default: {
+            console.log(c);
+        }
+        case 10: {
+            return a + b;
+        }
+    }
+};
+
+const sayHello = function (name) {
+    return "Hello " + name;
 };
 
 let generic = (a, b) => {
@@ -26,7 +50,7 @@ let generic = (a, b) => {
         if (c + b < 40) {
             a++;
         } else {
-            c++;
+            return a;
         }
         b++;
         if (a < 5 && b < 5) {

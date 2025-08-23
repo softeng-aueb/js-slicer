@@ -16,7 +16,7 @@ class Literal {
     }
 
     asText() {
-        return `${this._value}`;
+        return typeof this._value === "string" ? `\'${this._value}\'` : `${this._value}`;
     }
 }
 module.exports = Literal;
