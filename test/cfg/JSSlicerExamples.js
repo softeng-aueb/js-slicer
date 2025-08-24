@@ -34,7 +34,9 @@ let switchFunc = (a, c, b) => {
 };
 
 const sayHello = function (name) {
+    //TODO FIX TEST2 error when empty block, add extension support for arrow func inside funcs
     const test = async function (a, b = true) {};
+    function test2(c) {}
     return "Hello " + name;
 };
 

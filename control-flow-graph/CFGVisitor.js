@@ -388,8 +388,10 @@ class CFGVisitor {
         }
     }
 
-    visitSwitchCase(stmt) {
-        //
+    visitSwitchCase(stmt) {}
+
+    visitFunctionDeclaration(stmt) {
+        this.visitSequentialStatement(stmt);
     }
 
     visitSequentialStatement(stmt) {

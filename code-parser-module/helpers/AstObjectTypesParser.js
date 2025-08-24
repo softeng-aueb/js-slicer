@@ -35,6 +35,9 @@ class AstObjectTypesParser {
         }
 
         switch (expressionAstObj.type) {
+            case AST_OBJECT_TYPES.ASSIGNMENT_PATTERN:
+                return this.assignmentPatternParser(expressionAstObj);
+
             case AST_OBJECT_TYPES.ARROW_FUNCTION_EXPRESSION:
                 return this.arrowFunctionExpressionParser(expressionAstObj);
 
@@ -302,7 +305,8 @@ class AstObjectTypesParser {
         let block = blockStatementAstObj.body.flatMap((statement) => {
             return this.expressionParser(statement);
         });
-        return new BlockStatement(block);
+        if (block && block.length > 0) return new BlockStatement(block);
+        else return new BlockStatement([]);
     }
 
     static arrayExpressionParser(arrayExpressionAstObj) {
