@@ -52,6 +52,10 @@ class LogicalExpression {
     accept(visitor) {
         visitor.visitLogicalExpression(this);
     }
+
+    asText() {
+        return `${this._left.asText()} ${this._operator} ${this._right.asText()}`;
+    }
 }
 
 module.exports = LogicalExpression;

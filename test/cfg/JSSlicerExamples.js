@@ -33,15 +33,24 @@ let switchFunc = (a, c, b) => {
     }
 };
 
-const sayHello = function (name) {
-    //TODO FIX TEST2 error when empty block, add extension support for arrow func inside funcs
-    const test = async function (a, b = true) {};
-    function test2(c) {}
-    return "Hello " + name;
+const nestedFunctions = function (name) {
+    const test = async function (a, b = true) {
+        return a + b;
+    };
+
+    function test2(c) {
+        return c;
+    }
+
+    let test3 = () => {
+        console.log("Hello World");
+    };
+
+    return `Hello ${name}` + test(1, 2) + test2(3) + test3();
 };
 
 let generic = (a, b) => {
-    let c = a + b;
+    let c = a > 5 || b < 5 ? a + b : b;
     console.log(a);
     if (a > 0 && b < 10) {
         a++;

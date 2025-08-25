@@ -27,6 +27,7 @@ const FunctionDeclaration = require("../domain/FunctionDeclaration");
 const FunctionExpression = require("../domain/FunctionExpression");
 const ArrowFunctionExpression = require("../domain/ArrowFunctionExpression");
 const AssignmentPattern = require("../domain/AssignmentPattern");
+const TemplateLiteral = require("../domain/TemplateLiteral");
 
 class AstObjectTypesParser {
     static expressionParser(expressionAstObj) {
@@ -35,6 +36,9 @@ class AstObjectTypesParser {
         }
 
         switch (expressionAstObj.type) {
+            case AST_OBJECT_TYPES.TEMPLATE_LITERAL:
+                return this.templateLiteralParser(expressionAstObj);
+
             case AST_OBJECT_TYPES.ASSIGNMENT_PATTERN:
                 return this.assignmentPatternParser(expressionAstObj);
 
@@ -410,6 +414,15 @@ class AstObjectTypesParser {
         let right = this.expressionParser(assignmentPatternObj.right);
 
         return new AssignmentPattern(left, right);
+    }
+
+    static templateLiteralParser(templateLiteralObj) {
+        let quasis = templateLiteralObj.quasis;
+        let expressions = templateLiteralObj.expressions.flatMap((expr) => {
+            return { expression: this.expressionParser(expr), loc: expr.loc };
+        });
+
+        return new TemplateLiteral(quasis, expressions);
     }
 }
 

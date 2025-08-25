@@ -107,7 +107,7 @@ function deactivate() {}
  */
 
 function getWebviewContent(dot) {
-    const escapedDot = dot.replace(/`/g, "\\`");
+    const escapedDot = dot.replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
     return `
                 <!DOCTYPE html>
                 <html lang="en">
@@ -185,7 +185,7 @@ function findAllFunctionsWithMetadata(code) {
 
             let finalCode = snippet;
             if (type === "FunctionExpression" && !funcNode.id) {
-                finalCode = snippet.replace(/^function\s*\(/, `function ${name}(`);
+                finalCode = snippet.replace(/function(\s*\*?)\s*\(/, `function$1 ${name}(`);
             }
 
             functions.push({

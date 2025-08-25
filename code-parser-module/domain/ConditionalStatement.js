@@ -74,6 +74,10 @@ class ConditionalStatement {
         return statements;
     }
 
+    asText() {
+        return `${this._condition.asText()} ? ${this._then.asText()} : ${this._alternates.asText()}`;
+    }
+
     accept(visitor, isCalledAsFirstOnDoWhile = false) {
         return visitor.visitConditionalStatement(this, isCalledAsFirstOnDoWhile);
     }

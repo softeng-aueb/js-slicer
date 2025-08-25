@@ -25,6 +25,7 @@ const AST_OBJECT_TYPES = {
     RETURN_STATEMENT: "ReturnStatement",
     SWITCH_STATEMENT: "SwitchStatement",
     SWITCH_CASE: "SwitchCase",
+    TEMPLATE_LITERAL: "TemplateLiteral",
     UNARY_EXPRESSION: "UnaryExpression",
     UPDATE_EXPRESSION: "UpdateExpression",
     VARIABLE_DECLARATION: "VariableDeclaration",
