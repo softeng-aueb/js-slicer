@@ -1,0 +1,48 @@
+{
+    "name": "js-slicer",
+    "displayName": "JS-Slicer",
+    "description": "The project aspires to create a library for construction of common program analysis structures (e.g. CFG, PDG), as well as extensions for slicing of JS functions. Current version is under maintenance, involving refactoring of the CFG construction subsystem and providing simple utilities for visualization of generated graphs with the help of the GraphViz library.",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.60.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:javascript"
+    ],
+    "main": "./extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "js-slicer.generateCFG",
+                "title": "JS-Slicer CFG"
+            }
+        ],
+        "menus": {
+            "editor/title": [
+                {
+                    "when": "resourceLangId == javascript",
+                    "command": "js-slicer.generateCFG",
+                    "group": "navigation"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "lint": "eslint .",
+        "pretest": "npm run lint",
+        "test": "vscode-test"
+    },
+    "devDependencies": {
+        "@vscode/test-cli": "^0.0.11",
+        "eslint": "^9.34.0"
+    },
+    "dependencies": {
+        "acorn": "^8.15.0",
+        "acorn-walk": "^8.3.4",
+        "globals": "^16.3.0",
+        "vscode": "^1.1.34"
+    }
+}
