@@ -5,97 +5,79 @@ const CFGVisualizer = require("../lib/control-flow-graph/CFGVisualizer");
 const acorn = require("acorn");
 const acornWalk = require("acorn-walk");
 
-// This function will be run once after the extension is loaded
 function activate(context) {
-    let dotGraph, selectedFunctionName;
     const extensionUri = context.extensionUri;
-    // menu picking mode
-    const generateCFGDisposable = vscode.commands.registerCommand("js-slicer.generateCFG", async function (qualifiedNameFromHover) {
-        const editor = vscode.window.activeTextEditor;
 
-        if (!editor) {
-            vscode.window.showErrorMessage("Open a JavaScript file first.");
-            return;
-        }
+    context.subscriptions.push(
+        vscode.commands.registerCommand("js-slicer.generateCFG", generateCFG),
+        vscode.languages.registerHoverProvider("javascript", { provideHover })
+    );
+}
 
-        const code = editor.document.getText();
-        const allFunctions = findAllFunctionsWithMetadata(code);
+async function generateCFG(qualifiedNameFromHover) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return vscode.window.showErrorMessage("Open a JavaScript file first.");
 
-        if (allFunctions.length === 0) {
-            vscode.window.showInformationMessage("No functions found in the file.");
-            return;
-        }
+    const code = editor.document.getText();
+    const allFunctions = findAllFunctionsWithMetadata(code);
+    if (!allFunctions.length) return vscode.window.showInformationMessage("No JavaScript functions found in the file.");
 
-        let selectedFunction;
+    const selectedFunction = await pickFunction(allFunctions, qualifiedNameFromHover);
+    if (!selectedFunction) return;
 
-        if (typeof qualifiedNameFromHover === "string") {
-            selectedFunction = allFunctions.find((f) => f.qualifiedName === qualifiedNameFromHover);
-            if (!selectedFunction) {
-                vscode.window.showErrorMessage(`Function "${qualifiedNameFromHover}" not found.`);
-                return;
-            }
-        } else {
-            const itemListShown = allFunctions.map((f) => ({
-                label: `${f.name}  (Line ${f.line})`,
-                description: f.qualifiedName,
-                detail: f.preview.slice(0, 80) + (f.code.length > 80 ? "..." : ""),
-                func: f,
-            }));
+    try {
+        const funcObj = parse(selectedFunction.code);
+        const cfg = CFGGenerator.generateCfg2(funcObj, true);
+        const dotGraph = CFGVisualizer.writeCFGToDot(cfg);
+        showGraph(dotGraph, selectedFunction.qualifiedName);
+    } catch (e) {
+        vscode.window.showErrorMessage(`Error parsing function: ${e.message || e}`);
+    }
+}
 
-            const pickedFunctionItem = await vscode.window.showQuickPick(itemListShown, {
-                placeHolder: "Select a function to generate CFG",
-                matchOnDetail: true,
-            });
+async function pickFunction(allFunctions, qualifiedNameFromHover) {
+    if (typeof qualifiedNameFromHover === "string") {
+        return allFunctions.find((f) => f.qualifiedName === qualifiedNameFromHover);
+    }
 
-            if (!pickedFunctionItem) return;
+    const items = allFunctions.map((f) => ({
+        label: `${f.name} (Line ${f.line})`,
+        description: f.qualifiedName,
+        detail: f.preview.slice(0, 80) + (f.code.length > 80 ? "..." : ""),
+        func: f,
+    }));
 
-            selectedFunction = pickedFunctionItem.func;
-        }
-
-        try {
-            const funcObj = parse(selectedFunction.code);
-            const cfg = CFGGenerator.generateCfg2(funcObj, true);
-            const dotGraph = CFGVisualizer.writeCFGToDot(cfg);
-
-            showGraph(dotGraph, selectedFunction.qualifiedName);
-        } catch (e) {
-            vscode.window.showErrorMessage(`Error parsing function: ${e.message || e}`);
-        }
-
-        function showGraph(dot, titleName) {
-            const panel = vscode.window.createWebviewPanel("jsSlicerGraph", `JS-Slicer CFG → ${titleName}`, vscode.ViewColumn.Two, {
-                enableScripts: true,
-            });
-
-            panel.webview.html = getWebviewContent(dot);
-        }
+    const picked = await vscode.window.showQuickPick(items, {
+        placeHolder: "Select a function to generate CFG",
+        matchOnDetail: true,
     });
 
-    // function hover mode
-    const hoverProvider = vscode.languages.registerHoverProvider("javascript", {
-        provideHover(document, position) {
-            const code = document.getText();
-            const allFunctions = findAllFunctionsWithMetadata(code);
+    return picked?.func;
+}
 
-            const offset = document.offsetAt(position);
-            const hoveredFunction = allFunctions.find((f) => {
-                const start = document.offsetAt(new vscode.Position(f.line - 1, 0));
-                const end = start + f.code.length;
-                return offset >= start && offset <= end;
-            });
+function showGraph(dot, title) {
+    const panel = vscode.window.createWebviewPanel("jsSlicerGraph", `JS-Slicer CFG → ${title}`, vscode.ViewColumn.Two, { enableScripts: true });
+    panel.webview.html = getWebviewContent(dot);
+}
 
-            if (!hoveredFunction) return;
+function provideHover(document, position) {
+    const code = document.getText();
+    const allFunctions = findAllFunctionsWithMetadata(code);
 
-            const commandUri = `command:js-slicer.generateCFG?${encodeURIComponent(JSON.stringify(hoveredFunction.qualifiedName))}`;
-            const markdown = new vscode.MarkdownString(`[Generate CFG for **${hoveredFunction.qualifiedName}**](${commandUri})`);
-            markdown.isTrusted = true;
-
-            return new vscode.Hover(markdown);
-        },
+    const offset = document.offsetAt(position);
+    const hoveredFunction = allFunctions.find((f) => {
+        const start = document.offsetAt(new vscode.Position(f.line - 1, 0));
+        const end = start + f.code.length;
+        return offset >= start && offset <= end;
     });
 
-    context.subscriptions.push(generateCFGDisposable);
-    context.subscriptions.push(hoverProvider);
+    if (!hoveredFunction) return;
+
+    const commandUri = `command:js-slicer.generateCFG?${encodeURIComponent(JSON.stringify(hoveredFunction.qualifiedName))}`;
+    const markdown = new vscode.MarkdownString(`[Generate CFG for **${hoveredFunction.qualifiedName}**](${commandUri})`);
+    markdown.isTrusted = true;
+
+    return new vscode.Hover(markdown);
 }
 
 function deactivate() {}
