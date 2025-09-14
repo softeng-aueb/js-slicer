@@ -47,9 +47,5 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/softeng-aueb/js-slicer.git"
-    },
-    "files": [
-        "**/*",
-        "../lib/**/*"
-    ]
+    }
 }
