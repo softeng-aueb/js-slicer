@@ -7,7 +7,7 @@ as well as extensions for slicing of JS functions. Current version is under main
 
 Download the latest release of the extension:
 
-[JS Slicer v0.1.0 (.vsix)](https://github.com/username/repo/releases/download/v0.0.1/my-extension-0.0.1.vsix)
+[JS Slicer v0.1.0 (.vsix)](https://github.com/softeng-aueb/js-slicer/releases/download/0.0.1/js-slicer-0.0.1.vsix)
 
 Then install it in VS Code:
 
@@ -18,8 +18,12 @@ Then install it in VS Code:
 ## How to use
 
 -   Open any JavaScript file.
--   You will find a **GenerateCFG** button on the right of the top menu.
+-   You will find a **JS-Slicer CFG** button on the right of the top menu.
 -   Alternatively, hover over any supported JavaScript function and select  
     **Generate CFG for (function name)** from the context menu.
 
 Both methods will open a new tab with the CFG result of the selected function.
+
+## Known Issues
+
+-   Try..Catch..Finally statements are not fully supported yet on version v0.0.1.
