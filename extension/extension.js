@@ -1,7 +1,7 @@
 const vscode = require("vscode");
-const CFGGenerator = require("../lib/control-flow-graph/CFGGenerator");
-const Parser = require("../lib/code-parser-module/Parser");
-const CFGVisualizer = require("../lib/control-flow-graph/CFGVisualizer");
+const CFGGenerator = require("./lib/control-flow-graph/CFGGenerator");
+const Parser = require("./lib/code-parser-module/Parser");
+const CFGVisualizer = require("./lib/control-flow-graph/CFGVisualizer");
 const acorn = require("acorn");
 const acornWalk = require("acorn-walk");
 

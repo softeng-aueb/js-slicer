@@ -3,8 +3,27 @@
 The project aspires to create a library for construction of common program analysis structures (e.g. CFG, PDG),
 as well as extensions for slicing of JS functions. Current version is under maintenance, involving refactoring of the CFG construction subsystem and providing simple utilities for visualization of generated graphs with the help of the GraphViz library.
 
+## Installation
+
+Download the latest release of the extension:
+
+[JS Slicer v0.1.0 (.vsix)](https://github.com/softeng-aueb/js-slicer/releases/download/0.0.1/js-slicer-0.0.1.vsix)
+
+Then install it in VS Code:
+
+1. Open VS Code
+2. Go to Extensions → … menu → _Install from VSIX…_
+3. Select the downloaded file
+
 ## How to use
 
-First you need to install the extension on VSCode, found here(add link when published). 
-Then, open any javascript file and you will find a GenerateCFG button at the right of the top menu, alternatively you can hover over any supported javascript functions and click Generate CFG for (function name) on the context menu that appears.
-Both methods of execution will open a new tab with the CFG result of the selected function.
+-   Open any JavaScript file.
+-   You will find a **JS-Slicer CFG** button on the right of the top menu.
+-   Alternatively, hover over any supported JavaScript function and select  
+    **Generate CFG for (function name)** from the context menu.
+
+Both methods will open a new tab with the CFG result of the selected function.
+
+## Known Issues
+
+-   Try..Catch..Finally statements are not fully supported yet on version v0.0.1.
