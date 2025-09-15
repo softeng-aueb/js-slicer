@@ -10,6 +10,7 @@ const BreakStatement = require("../code-parser-module/domain/BreakStatement");
 const ContinueStatement = require("../code-parser-module/domain/ContinueStatement");
 const LoopStatement = require("../code-parser-module/domain/LoopStatement");
 const SwitchStatement = require("../code-parser-module/domain/SwitchStatement");
+const ThrowStatement = require("../code-parser-module/domain/ThrowStatement");
 
 class CFGVisitor {
     constructor(debug = false) {
@@ -20,6 +21,7 @@ class CFGVisitor {
         this._visualizer = new CFGVisualizer();
         this._returnExitStack = [];
         this._breakAndContinueNodeRecords = [];
+        this._throwAndReturnNodeRecords = [];
         this._complexStatementsFirstNodes = [];
         this._debug = debug;
     }
@@ -77,7 +79,12 @@ class CFGVisitor {
         let stmts = block._stmts;
 
         for (let stmt of stmts) {
-            if (stmt instanceof ReturnStatement || stmt instanceof BreakStatement || stmt instanceof ContinueStatement) {
+            if (
+                stmt instanceof ReturnStatement ||
+                stmt instanceof BreakStatement ||
+                stmt instanceof ContinueStatement ||
+                stmt instanceof ThrowStatement
+            ) {
                 stmt.accept(this);
                 this.nesting--;
                 return null;
@@ -86,6 +93,7 @@ class CFGVisitor {
             exitNodes = stmt.accept(this);
 
             if (exitNodes) {
+                if (exitNodes.list.length === 0) return null;
                 this._parentStack.push(exitNodes);
             }
         }
@@ -327,13 +335,24 @@ class CFGVisitor {
                 } else if (
                     firstStatement instanceof ReturnStatement ||
                     firstStatement instanceof BreakStatement ||
-                    firstStatement instanceof ContinueStatement
+                    firstStatement instanceof ContinueStatement ||
+                    firstStatement instanceof ThrowStatement
                 ) {
                     visitor.visitSequentialStatement(firstStatement);
                     firstBlockNode = visitor._parentStack.pop();
 
-                    if (firstStatement instanceof ReturnStatement) visitor._returnExitStack.push(firstBlockNode);
-                    else switchExitNode.merge(firstBlockNode);
+                    if (firstStatement instanceof ReturnStatement) {
+                        visitor.logReturnNode(firstBlockNode);
+                    } else if (firstStatement instanceof ThrowStatement) {
+                        visitor.logThrowNode(firstBlockNode);
+                    } else if (firstStatement instanceof ContinueStatement) {
+                        // add to nearest loop log
+                        let index = visitor._breakAndContinueNodeRecords.length - 1;
+                        while (index >= 0) {
+                            visitor._breakAndContinueNodeRecords[index].continues?.push(firstBlockNode);
+                            index--;
+                        }
+                    } else switchExitNode.merge(firstBlockNode);
                 } else {
                     firstStatement.accept(visitor);
                     firstBlockNode = visitor._parentStack.peek();
@@ -356,7 +375,8 @@ class CFGVisitor {
                         firstBlockNodeExitNodes ??
                             (firstStatement instanceof ReturnStatement ||
                             firstStatement instanceof BreakStatement ||
-                            firstStatement instanceof ContinueStatement
+                            firstStatement instanceof ContinueStatement ||
+                            firstStatement instanceof ThrowStatement
                                 ? null
                                 : firstBlockNode)
                     );
@@ -373,118 +393,146 @@ class CFGVisitor {
         if (stmt.handler?.body.stmts.length === 0) throw new Error("Empty catch block is not supported.");
         if (stmt.finalizer?.stmts.length === 0) throw new Error("Empty finally block is not supported.");
 
-        const tryBlockFirstStatment = stmt.block.stmts.splice(0, 1)[0];
-        let tryBlockFirstNode;
-        let tryBlockExitNodes;
-        if (
-            tryBlockFirstStatment instanceof ConditionalStatement ||
-            tryBlockFirstStatment instanceof LoopStatement ||
-            tryBlockFirstStatment instanceof SwitchStatement
-        ) {
-            tryBlockExitNodes = tryBlockFirstStatment.accept(this, true);
-            tryBlockFirstNode = this._complexStatementsFirstNodes.pop();
-        } else {
-            this.visitSequentialStatement(tryBlockFirstStatment);
-            tryBlockFirstNode = this._parentStack.peek();
-            if (tryBlockFirstStatment instanceof ReturnStatement) this._returnExitStack.push(this._parentStack.pop());
-        }
+        const tryBlock = parseTryCatchFinallyBlock(this, stmt.block);
+        const catchBlock = parseTryCatchFinallyBlock(this, stmt.handler?.body);
+        const finallyBlock = parseTryCatchFinallyBlock(this, stmt.finalizer);
 
-        if (returnFirstStatement) this._complexStatementsFirstNodes.push(tryBlockFirstNode);
+        const exitNodes = new JoinNode();
 
-        if (stmt.block.stmts.length > 0) this._parentStack.push(tryBlockExitNodes ?? tryBlockFirstNode);
-
-        tryBlockExitNodes =
-            stmt.block.stmts.length > 0
-                ? this.visitBlockStatement(stmt.block)
-                : tryBlockExitNodes
-                ? tryBlockExitNodes
-                : tryBlockFirstStatment instanceof ReturnStatement
-                ? null
-                : tryBlockFirstNode;
-
-        let tryHandlerFirstNode;
-        let tryHandlerExitNodes;
-        if (stmt.handler) {
-            let tryHandlerFirstStatement = stmt.handler.body.stmts.splice(0, 1)[0];
-            if (
-                tryHandlerFirstStatement instanceof ConditionalStatement ||
-                tryHandlerFirstStatement instanceof LoopStatement ||
-                tryHandlerFirstStatement instanceof SwitchStatement
-            ) {
-                tryHandlerExitNodes = tryHandlerFirstStatement.accept(this, true);
-                tryHandlerFirstNode = this._complexStatementsFirstNodes.pop();
-            } else {
-                this.visitSequentialStatement(tryHandlerFirstStatement);
-                tryHandlerFirstNode = this._parentStack.peek();
-                if (tryHandlerFirstStatement instanceof ReturnStatement) this._returnExitStack.push(this._parentStack.pop());
+        if (catchBlock) {
+            // try throws to catch
+            for (const throwNode of tryBlock.throwReturns.throws) {
+                throwNode.addOutgoingEdge(catchBlock.first);
             }
 
-            if (stmt.handler.body.stmts.length > 0) this._parentStack.push(tryHandlerExitNodes ?? tryHandlerFirstNode);
-            tryHandlerExitNodes =
-                stmt.handler.body.stmts.length > 0
-                    ? this.visitBlockStatement(stmt.handler.body)
-                    : tryHandlerExitNodes
-                    ? tryHandlerExitNodes
-                    : tryHandlerFirstStatement instanceof ReturnStatement
-                    ? null
-                    : tryHandlerFirstNode;
-
-            if (tryBlockExitNodes instanceof JoinNode)
-                for (let tryBlockNode of tryBlockExitNodes.list) {
-                    tryBlockNode.addOutgoingEdge(tryHandlerFirstNode, `error`);
-                    tryBlockNode.edges.filter((edge) => edge.condition?.includes("error"));
+            if (finallyBlock) {
+                // try returns to finally
+                for (const returnNode of tryBlock.throwReturns.returns) {
+                    returnNode.addOutgoingEdge(finallyBlock.first);
                 }
-            else if (tryBlockExitNodes instanceof CFGNode) {
-                tryBlockExitNodes.addOutgoingEdge(tryHandlerFirstNode, `error`);
-                tryBlockExitNodes.edges.filter((edge) => edge.condition?.includes("error"));
-            }
-        }
 
-        let tryFinalizerFirstNode;
-        let tryFinalizerExitNodes;
-        if (stmt.finalizer) {
-            let tryFinalizerFirstStatement = stmt.finalizer.stmts.splice(0, 1)[0];
-            if (
-                tryFinalizerFirstStatement instanceof ConditionalStatement ||
-                tryFinalizerFirstStatement instanceof LoopStatement ||
-                tryFinalizerFirstStatement instanceof SwitchStatement
-            ) {
-                tryFinalizerExitNodes = tryFinalizerFirstStatement.accept(this, true);
-                tryFinalizerFirstNode = this._complexStatementsFirstNodes.pop();
-            } else {
-                this.visitSequentialStatement(tryFinalizerFirstStatement);
-                if (tryFinalizerFirstStatement instanceof ReturnStatement) this._returnExitStack.push(this._parentStack.pop());
-                else tryFinalizerFirstNode = this._parentStack.peek();
-            }
+                //try exit to finally
+                tryBlock.exit?.addNextNode(finallyBlock.first);
 
-            if (stmt.finalizer.stmts.length > 0) this._parentStack.push(tryFinalizerExitNodes ?? tryFinalizerFirstNode);
-
-            tryFinalizerExitNodes =
-                stmt.finalizer.stmts.length > 0
-                    ? this.visitBlockStatement(stmt.finalizer)
-                    : tryFinalizerExitNodes
-                    ? tryFinalizerExitNodes
-                    : tryFinalizerFirstStatement instanceof ReturnStatement
-                    ? null
-                    : tryFinalizerFirstNode;
-
-            if (tryBlockExitNodes instanceof JoinNode)
-                for (let tryBlockExitNode of tryBlockExitNodes.list) {
-                    tryBlockExitNode.addOutgoingEdge(tryFinalizerFirstNode, null);
+                // catch returns to finally
+                for (const returnNode of catchBlock.throwReturns.returns) {
+                    returnNode.addOutgoingEdge(finallyBlock.first);
                 }
-            else if (tryBlockExitNodes instanceof CFGNode) tryBlockExitNodes.addOutgoingEdge(tryFinalizerFirstNode, null);
 
-            if (stmt.handler) {
-                if (tryHandlerExitNodes instanceof JoinNode)
-                    for (let tryHandlerExitNode of tryHandlerExitNodes.list) {
-                        tryHandlerExitNode.addOutgoingEdge(tryFinalizerFirstNode, null);
+                // catch throws to finally
+                for (const throwNode of catchBlock.throwReturns.throws) {
+                    throwNode.addOutgoingEdge(catchBlock.first);
+                }
+
+                // catch exit to finally
+                catchBlock.exit?.addNextNode(finallyBlock.first);
+
+                // finally throws to exit
+                for (const throwNode of finallyBlock.throwReturns.throws) {
+                    this._returnExitStack.push(throwNode);
+                }
+
+                // finally returns to exit
+                for (const returnNode of finallyBlock.throwReturns.returns) {
+                    this._returnExitStack.push(returnNode);
+                }
+
+                // if catch or try had throw/return, exitNodes from finally must exit
+                if (
+                    tryBlock.throwReturns.throws.length > 0 ||
+                    tryBlock.throwReturns.returns.length > 0 ||
+                    catchBlock.throwReturns.throws.length > 0 ||
+                    catchBlock.throwReturns.returns.length > 0
+                ) {
+                    for (const exitNode of finallyBlock.exit.list) {
+                        this._returnExitStack.push(exitNode);
                     }
-                else if (tryHandlerExitNodes instanceof CFGNode) {
-                    tryHandlerExitNodes.addOutgoingEdge(tryFinalizerFirstNode, null);
                 }
+                exitNodes.merge(finallyBlock.exit);
+            } else {
+                // try returns to exit
+                for (const returnNode of tryBlock.throwReturns.returns) {
+                    this._returnExitStack.push(returnNode);
+                }
+
+                //try exit to exitNodes
+                exitNodes.merge(tryBlock.exit);
+
+                // catch throws to exit
+                for (const throwNode of catchBlock.throwReturns.throws) {
+                    this._returnExitStack.push(throwNode);
+                }
+
+                // catch returns to exit
+                for (const returnNode of catchBlock.throwReturns.returns) {
+                    this._returnExitStack.push(returnNode);
+                }
+
+                //catch exit to exitNodes
+                exitNodes.merge(catchBlock.exit);
+            }
+        } else {
+            // try exit to exitNodes
+            exitNodes.merge(tryBlock.exit);
+
+            // try returns to exit
+            for (const returnNode of tryBlock.throwReturns.returns) {
+                this._returnExitStack.push(returnNode);
+            }
+
+            // try throws to exit
+            for (const throwNode of tryBlock.throwReturns.throws) {
+                this._returnExitStack.push(throwNode);
             }
         }
-        return tryFinalizerExitNodes;
+
+        return exitNodes;
+
+        function parseTryCatchFinallyBlock(visitor, body) {
+            if (!body) return null;
+            visitor._throwAndReturnNodeRecords.push({ returns: [], throws: [] });
+
+            let firstNode;
+            let exitNodes;
+            let throwReturns;
+            let skipBlock = false;
+            let firstStatement = body.stmts.splice(0, 1)[0];
+            if (
+                firstStatement instanceof ConditionalStatement ||
+                firstStatement instanceof LoopStatement ||
+                firstStatement instanceof SwitchStatement
+            ) {
+                exitNodes = firstStatement.accept(visitor, true);
+                firstNode = visitor._complexStatementsFirstNodes.pop();
+            } else {
+                firstNode = new CFGNode(visitor._id++, null, firstStatement, [], null);
+                firstNode.nesting = visitor.nesting;
+                visitor.cfg.addNode(firstNode);
+
+                if (firstStatement instanceof ReturnStatement) {
+                    visitor.logReturnNode(firstNode);
+                    skipBlock = true;
+                } else if (firstStatement instanceof ThrowStatement) {
+                    visitor.logThrowNode(firstNode);
+                    skipBlock = true;
+                } //TODO: If needed check edge case for loop/switch with try as first and first node is continue/break (not logged atm) need special handling
+            }
+
+            if (body.stmts.length > 0 && skipBlock === false) visitor._parentStack.push(exitNodes ?? firstNode);
+
+            exitNodes =
+                body.stmts.length > 0 && skipBlock == false
+                    ? visitor.visitBlockStatement(body)
+                    : exitNodes
+                    ? exitNodes
+                    : firstStatement instanceof ReturnStatement || firstStatement instanceof ThrowStatement
+                    ? null
+                    : new JoinNode(firstNode);
+
+            throwReturns = visitor._throwAndReturnNodeRecords.pop();
+
+            return { first: firstNode, exit: exitNodes, throwReturns: throwReturns };
+        }
     }
 
     visitFunctionDeclaration(stmt) {
@@ -526,8 +574,22 @@ class CFGVisitor {
 
     visitReturnStatement(stmt) {
         this.visitSequentialStatement(stmt);
-        // subsequent nodes should not have incoming edges from this node
-        this._returnExitStack.push(this._parentStack.pop());
+        let node = this._parentStack.pop();
+
+        this.logReturnNode(node);
+    }
+
+    logReturnNode(node) {
+        let returnLog = this._throwAndReturnNodeRecords.pop();
+        // return log not null -> inside try block, keep track of node for connections
+        if (returnLog) {
+            returnLog.returns.push(node);
+            this._throwAndReturnNodeRecords.push(returnLog);
+        }
+        // return log is null -> not inside try block, connect with exit
+        else {
+            this._returnExitStack.push(node);
+        }
     }
 
     visitBreakStatement(stmt) {
@@ -555,6 +617,34 @@ class CFGVisitor {
     visitMemberExpression(stmt) {
         stmt.property.accept(this);
         stmt.object.accept(this);
+    }
+
+    visitThrowStatement(stmt) {
+        this.visitSequentialStatement(stmt);
+        let node = this._parentStack.pop(); // subsequent nodes should not have incoming edges from this node
+
+        this.logThrowNode(node);
+    }
+
+    logThrowNode(node) {
+        let throwLog = this._throwAndReturnNodeRecords.pop();
+        // throw log not null -> inside try block, keep track of node for connections
+        if (throwLog) {
+            throwLog.throws.push(node);
+            this._throwAndReturnNodeRecords.push(throwLog);
+        }
+        // throw log is null -> not inside try block, connect with exit
+        else {
+            this._returnExitStack.push(node);
+        }
+    }
+
+    visitNewExpression(stmt) {
+        this.visitSequentialStatement(stmt);
+    }
+
+    visitAwaitExpression(stmt) {
+        this.visitSequentialStatement(stmt);
     }
 
     visitLogicalExpression(stmt, nesting) {
