@@ -26,4 +26,4 @@ Both methods will open a new tab with the CFG result of the selected function.
 
 ## Known Issues
 
--   Try..Catch..Finally statements are not fully supported yet on version v0.0.1.
+-   Optional Chaining Operator and Nullish Coalescing Operator is not supported by recast in which the project depends on.
