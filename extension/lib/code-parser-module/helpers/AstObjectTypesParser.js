@@ -30,6 +30,9 @@ const AssignmentPattern = require("../domain/AssignmentPattern");
 const TemplateLiteral = require("../domain/TemplateLiteral");
 const TryStatement = require("../domain/TryStatement");
 const CatchClause = require("../domain/CatchClause");
+const ThrowStatement = require("../domain/ThrowStatement");
+const NewExpression = require("../domain/NewExpression");
+const AwaitExpression = require("../domain/AwaitExpression");
 
 class AstObjectTypesParser {
     static expressionParser(expressionAstObj) {
@@ -38,6 +41,15 @@ class AstObjectTypesParser {
         }
 
         switch (expressionAstObj.type) {
+            case AST_OBJECT_TYPES.AWAIT_EXPRESSION:
+                return this.awaitExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.NEW_EXPRESSION:
+                return this.newExpressionParser(expressionAstObj);
+
+            case AST_OBJECT_TYPES.THROW_STATEMENT:
+                return this.throwStatementParser(expressionAstObj);
+
             case AST_OBJECT_TYPES.CATCH_CLAUSE:
                 return this.catchClauseParser(expressionAstObj);
 
@@ -129,6 +141,27 @@ class AstObjectTypesParser {
             default:
                 throw new Error(`Unsupported AST node type: ${expressionAstObj.type}`);
         }
+    }
+
+    static awaitExpressionParser(awaitExpressionObj) {
+        let argument = this.expressionParser(awaitExpressionObj.argument);
+
+        return new AwaitExpression(argument);
+    }
+
+    static newExpressionParser(newExpressionObj) {
+        let callee = this.expressionParser(newExpressionObj.callee);
+        let args = newExpressionObj.arguments.map((arg) => {
+            return this.expressionParser(arg);
+        });
+
+        return new NewExpression(callee, args);
+    }
+
+    static throwStatementParser(throwStatmementObj) {
+        let argument = this.expressionParser(throwStatmementObj.argument);
+
+        return new ThrowStatement(argument);
     }
 
     static catchClauseParser(catchClauseAstObj) {

@@ -1,10 +1,16 @@
 class JoinNode {
     static idCount = 1;
 
-    constructor() {
+    constructor(item) {
         this.list = [];
         this._id = "JN" + JoinNode.idCount++;
+        this.merge(item);
     }
+
+    // constructor() {
+    //     this.list = [];
+    //     this._id = "JN" + JoinNode.idCount++;
+    // }
 
     get id() {
         return this._id;

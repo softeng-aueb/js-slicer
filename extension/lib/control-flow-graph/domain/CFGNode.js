@@ -53,6 +53,7 @@ class CFGNode {
             astObjectTypes.CONTINUE_STATEMENT,
             astObjectTypes.LOGICAL_EXPRESSION,
             astObjectTypes.RETURN_STATEMENT,
+            astObjectTypes.THROW_STATEMENT,
         ];
         if (!this.statement) return false;
         return (
@@ -79,6 +80,7 @@ class CFGNode {
     }
 
     addOutgoingEdge(targetNode, condition) {
+        if (this._edges.find((edge) => edge.sourceNode === this && edge.targetNode === targetNode)) return;
         //console.log(`Adding edge from ${this._id} to ${targetNode.id} with condition: ${condition}`);
         let edge = new CFGEdge(this.id, targetNode.id, condition, this, targetNode);
         this.edges.push(edge);
