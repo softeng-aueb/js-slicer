@@ -2,9 +2,10 @@ const Identifier = require("./Identifier");
 const Literal = require("./Literal");
 
 class MemberExpression {
-    constructor(object, property) {
+    constructor(object, property, computed) {
         this._object = object;
         this._property = property;
+        this._computed = computed;
     }
 
     get object() {
@@ -21,6 +22,10 @@ class MemberExpression {
 
     set property(value) {
         this._property = value;
+    }
+
+    get computed() {
+        return this._computed;
     }
 
     getUsedVariableNames() {
@@ -47,7 +52,7 @@ class MemberExpression {
     }
 
     asText() {
-        return `${this._object.asText()}.${this._property.asText()}`;
+        return `${this._object.asText()}${this._computed ? `[${this._property.asText()}]` : `.${this._property.asText()}`}`;
     }
 }
 module.exports = MemberExpression;

@@ -9,6 +9,7 @@ const CFGEdge = require("./domain/CFGEdge");
 const CFGVisitor = require("./CFGVisitor");
 const BlockStatement = require("../code-parser-module/domain/BlockStatement");
 const BasicBlock = require("./domain/BasicBlock");
+const ThrowStatement = require("../code-parser-module/domain/ThrowStatement");
 
 class CFGGenerator {
     static generateCfg(functionObj) {
@@ -53,7 +54,7 @@ class CFGGenerator {
         // Add exit node for return jumps
         let exitNode = new CFGNode(visitor._id, null, null, [], null);
         for (const n of visitor._returnExitStack) {
-            n.addOutgoingEdge(exitNode);
+            n.addOutgoingEdge(exitNode, n.hasError || n.statement instanceof ThrowStatement ? "error" : null);
         }
         cfg.addNode(exitNode);
         // Add edges from final nodes that are not return nodes

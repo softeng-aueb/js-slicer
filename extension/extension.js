@@ -112,7 +112,9 @@ function getWebviewContent(dot) {
                         document.getElementById("graph").appendChild(svg);
                         svgPanZoom(svg, {
                         zoomEnabled: true,
-                        controlIconsEnabled: true,
+                        dblClickZoomEnabled: false,
+                        paneEnabled: true,
+                        controlIconsEnabled: false,
                         fit: true,
                         center: true
                         });
