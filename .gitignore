@@ -38,7 +38,9 @@ bower_components
 build/Release
 
 # Dependency directories
-node_modules/
+# Ignore all node_modules anywhere
+**/node_modules/
+
 jspm_packages/
 
 # TypeScript v1 declaration files
@@ -105,3 +107,5 @@ dist
 
 extension/lib/output/
 extension/lib/test/cfg/JSSlicerExamples.js
+extension/node_modules/
+extension/lib/node_modules/

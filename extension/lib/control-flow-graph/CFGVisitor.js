@@ -445,6 +445,7 @@ class CFGVisitor {
                     catchBlock.throwReturns.returns.length > 0
                 ) {
                     for (const exitNode of finallyBlock.exit.list) {
+                        exitNode.hasError = true;
                         this._returnExitStack.push(exitNode);
                     }
                 }

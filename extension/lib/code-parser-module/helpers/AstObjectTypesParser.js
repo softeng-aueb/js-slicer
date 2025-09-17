@@ -222,8 +222,9 @@ class AstObjectTypesParser {
 
         let object = this.expressionParser(memberExpressionAstObj.object);
         let property = this.expressionParser(memberExpressionAstObj.property);
+        let computed = memberExpressionAstObj.computed;
 
-        return new MemberExpression(object, property);
+        return new MemberExpression(object, property, computed);
     }
     static expressionStatementParser(expressionStatementAstObj) {
         if (!expressionStatementAstObj || expressionStatementAstObj.type !== AST_OBJECT_TYPES.EXPRESSION_STATEMENT) {
