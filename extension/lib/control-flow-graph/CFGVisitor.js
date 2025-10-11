@@ -160,7 +160,7 @@ class CFGVisitor {
         for (const continueNode of currentLoopJumpNodes.continues) {
             continueNode.addNextNode(conditionNode);
         }
-        loopBackNode.addNextNode(conditionNode);
+        loopBackNode?.addNextNode(conditionNode);
 
         // In Do...While the loop back target is the first statement in the loop's block
         conditionNode.addNextNode(firstBlockNode);
@@ -229,7 +229,7 @@ class CFGVisitor {
         for (const continueNode of currentLoopJumpNodes.continues) {
             continueNode.addNextNode(hasUpdateExpression ? loopBackNode : conditionNode);
         }
-        loopBackNode.addNextNode(conditionNode);
+        loopBackNode?.addNextNode(conditionNode);
 
         // Push the correct node for do while if this loop is
         // a first expression of the block and is a while loop.
