@@ -7,7 +7,7 @@ as well as extensions for slicing of JS functions. Current version is under main
 
 Download the latest release of the extension:
 
-[JS Slicer v0.1.1 (.vsix)](https://github.com/softeng-aueb/js-slicer/releases/latest)
+[JS Slicer v0.1.2 (.vsix)](https://github.com/softeng-aueb/js-slicer/releases/latest)
 
 Then install it in VS Code:
 
