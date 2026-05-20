@@ -7,7 +7,7 @@ Current version is under maintenance, involving refactoring of the CFG construct
 
 Download the latest release of the extension:
 
-[JS Slicer v0.1.2 (.vsix)](https://github.com/softeng-aueb/js-slicer/releases/latest)
+[JS Slicer v0.1.3 (.vsix)](https://github.com/softeng-aueb/js-slicer/releases/latest)
 
 Then install it in VS Code:
 
